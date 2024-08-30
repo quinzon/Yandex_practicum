@@ -1,0 +1,7 @@
+elasticsearch[async]==8.15.0
+fastapi[standard]==0.112.2
+pydantic==2.8.2
+uvicorn[standard]==0.30.6
+pydantic-settings==2.4.0
+python-dotenv==1.0.1
+redis==5.0.8
