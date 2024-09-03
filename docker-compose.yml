@@ -26,21 +26,10 @@ services:
 
   elasticsearch:
     image: elasticsearch:8.6.2
-    container_name: es
     environment:
       ES_JAVA_OPTS: "${ES_JAVA_OPTS}"
       discovery.type: "${DISCOVERY_TYPE}"
-      cluster.routing.allocation.disk.watermark.high: "${DISK_WATERMARK_HIGH}"
-      cluster.routing.allocation.disk.watermark.high.max_headroom: "${DISK_WATERMARK_HIGH_MAX_HEADROOM}"
-      cluster.routing.allocation.disk.watermark.flood_stage: "${DISK_WATERMARK_FLOOD_STAGE}"
-      cluster.routing.allocation.disk.watermark.flood_stage.max_headroom: "${DISK_WATERMARK_FLOOD_STAGE_MAX_HEADROOM}"
-      cluster.routing.allocation.disk.watermark.low: "${DISK_WATERMARK_LOW}"
-      cluster.routing.allocation.disk.watermark.low.max_headroom: "${DISK_WATERMARK_LOW_MAX_HEADROOM}"
-      ingest.geoip.downloader.enabled: "${INGEST_GEOIP_DOWNLOADER_ENABLED}"
       xpack.security.enabled: "${XPACK_SECURITY_ENABLED}"
-      ELASTIC_CONTAINER: "${ELASTIC_CONTAINER}"
-    ports:
-      - "9200:9200"
     volumes:
       - es-data:/usr/share/elasticsearch/data
     healthcheck:
