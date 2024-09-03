@@ -3,9 +3,10 @@ from fastapi import FastAPI
 from fastapi.responses import ORJSONResponse
 from redis.asyncio import Redis
 
-from api.v1 import films
-from core.config import RedisSettings, ElasticSearchSettings, PROJECT_NAME
-from db import elastic, redis
+from .api.v1 import films
+from .core.config import (PROJECT_NAME,
+                          get_redis_settings, get_elastic_settings)
+from .db import elastic, redis
 
 app = FastAPI(
     title=PROJECT_NAME,
@@ -17,9 +18,13 @@ app = FastAPI(
 
 @app.on_event('startup')
 async def startup():
-    redis.redis = Redis(host=RedisSettings.REDIS_HOST, port=RedisSettings.REDIS_PORT)
+    redis_settings = get_redis_settings()
+    elastic_settings = get_elastic_settings()
+
+    redis.redis = Redis(host=redis_settings.host, port=redis_settings.port)
     elastic.es = AsyncElasticsearch(
-        hosts=[f'{ElasticSearchSettings.ELASTIC_HOST}:{ElasticSearchSettings.ELASTIC_PORT}'])
+        hosts=[f'{elastic_settings.host}:{elastic_settings.port}']
+    )
 
 
 @app.on_event('shutdown')
