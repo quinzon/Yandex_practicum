@@ -146,3 +146,5 @@ MOVIES_INDEX_SETTINGS='{
 
 create_index_if_not_exists "movies" "$MOVIES_INDEX_SETTINGS"
 echo "All indexes created successfully."
+
+python main.py

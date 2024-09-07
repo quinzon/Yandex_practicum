@@ -17,7 +17,7 @@ services:
   postgres:
     image: postgres:16-alpine
     volumes:
-      - postgres-data:/var/lib/postgres/data
+      - postgres-data:/var/lib/postgresql/data
       - ./database_dump.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
       <<: *common-healthcheck
@@ -37,13 +37,14 @@ services:
       test: ["CMD-SHELL", "curl --silent --fail localhost:9200/_cluster/health || exit 1"]
     <<: [*common-variables, *common-env]
 
-  create-index:
+  etl:
     build:
-      context: .
+      context: ./etl
       dockerfile: Dockerfile
-    entrypoint: ["/bin/sh", "/opt/app/create_index.sh"]
     depends_on:
       elasticsearch:
+        condition: service_healthy
+      postgres:
         condition: service_healthy
     <<: [*common-variables, *common-env]
 
@@ -68,8 +69,8 @@ services:
         condition: service_healthy
       postgres:
         condition: service_healthy
-      create-index:
-        condition: service_completed_successfully
+      etl:
+        condition: service_started
     <<: [*common-variables, *common-env]
 
   nginx:
