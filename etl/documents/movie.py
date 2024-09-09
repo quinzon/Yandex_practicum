@@ -40,10 +40,19 @@ class Writer(InnerDoc):
         dynamic = MetaField('strict')
 
 
+class Genre(InnerDoc):
+    id = Keyword()
+    name = Text(analyzer='ru_en')
+    description = Text(analyzer='ru_en', required=False)
+
+    class Meta:
+        dynamic = MetaField('strict')
+
+
 class Movie(Document):
     id = Keyword()
     imdb_rating = Float()
-    genres = Keyword()
+    genres = Nested(Genre)
     title = Text(analyzer='ru_en', fields={'raw': Keyword()})
     description = Text(analyzer='ru_en')
     directors_names = Text(analyzer='ru_en')
@@ -102,7 +111,16 @@ def get_movie_index_data(
             fw.title,
             fw.description,
             fw.rating as imdb_rating,
-            COALESCE (array_agg(DISTINCT g.name),'{}') as genres,
+            COALESCE (
+                json_agg(
+                    DISTINCT jsonb_build_object(
+                        'id', g.id,
+                        'name', g.name,
+                        'description', g.description
+                    )
+                ) FILTER (WHERE g.id is not null),
+                '[]'
+            ) as genres,
             COALESCE (array_agg(DISTINCT p.full_name) FILTER (WHERE pfw.role='director'),'{}') as directors_names,
             COALESCE (array_agg(DISTINCT p.full_name) FILTER (WHERE pfw.role='actor'),'{}') as actors_names, 
             COALESCE (array_agg(DISTINCT p.full_name) FILTER (WHERE pfw.role='writer'),'{}') as writers_names,  

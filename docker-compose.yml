@@ -39,8 +39,8 @@ services:
 
   etl:
     build:
-      context: ./etl
-      dockerfile: Dockerfile
+      context: .
+    command: ["python", "/opt/app/etl/main.py"]
     depends_on:
       elasticsearch:
         condition: service_healthy

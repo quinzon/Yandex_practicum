@@ -9,6 +9,7 @@ from elasticsearch_dsl import connections, Document
 
 from documents.movie import Movie, get_movie_index_data
 from documents.person import Person, get_person_index_data
+from documents.genre import Genre, get_genre_index_data
 from helpers.backoff_func_wrapper import backoff
 from logger import logger
 from settings import settings
@@ -57,6 +58,7 @@ if __name__ == '__main__':
         try:
             update_index('person_index_last_sync_state', Person, get_person_index_data)
             update_index('movie_index_last_sync_state', Movie, get_movie_index_data)
+            update_index('genre_index_last_sync_state', Genre, get_genre_index_data)
             time.sleep(60)
         except Exception as e:
             logger.exception(e)

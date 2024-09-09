@@ -5,7 +5,7 @@ import psycopg
 from elasticsearch_dsl import Document, Keyword, Text, InnerDoc, Nested
 from psycopg import ServerCursor
 from psycopg.conninfo import make_conninfo
-from psycopg.rows import class_row
+from psycopg.rows import class_row, dict_row
 
 
 class Film(InnerDoc):
@@ -42,7 +42,8 @@ def get_person_index_data(
         database_settings: dict, last_sync_state: datetime, batch_size: int = 100
 ) -> Generator[list[Person], None, None]:
     dsn = make_conninfo(**database_settings)
-    with psycopg.connect(dsn, row_factory=class_row(Person)) as conn, ServerCursor(conn, 'fetcher') as cursor:
+
+    with psycopg.connect(dsn, row_factory=dict_row) as conn, ServerCursor(conn, 'fetcher') as cursor:
         raw_sql = '''
         WITH person_film_work_details AS (
             SELECT
@@ -86,6 +87,16 @@ def get_person_index_data(
         GROUP BY
             person_id, person_full_name
         '''
-        cursor.execute(raw_sql, params=(last_sync_state, ))
+        cursor.execute(raw_sql, params=(last_sync_state,))
+
         while results := cursor.fetchmany(size=batch_size):
-            yield results
+            persons = []
+            for result in results:
+                person = Person(
+                    id=result['person_id'],
+                    full_name=result['person_full_name'],
+                    films=[Film(id=film['id'], roles=film['roles']) for film in result['films']],
+                    last_change_date=result['last_change_date']
+                )
+                persons.append(person)
+            yield persons
