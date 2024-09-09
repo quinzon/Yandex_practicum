@@ -9,7 +9,9 @@ from redis.asyncio import Redis
 
 from src.db.elastic import get_elastic
 from src.db.redis import get_redis
+from src.models.film import Film
 from src.models.genre import Genre
+from src.services.film import FilmService, get_film_service
 
 GENRE_CACHE_EXPIRE_IN_SECONDS = 60 * 5
 
@@ -19,9 +21,10 @@ class GenreService:
         "name": "name.keyword"
     }
 
-    def __init__(self, redis: Redis, elastic: AsyncElasticsearch):
+    def __init__(self, redis: Redis, elastic: AsyncElasticsearch, film_service: FilmService):
         self.elastic = elastic
         self.redis = redis
+        self.film_service = film_service
 
     async def get_genre_by_id(self, genre_id: UUID) -> Optional[Genre]:
         """
@@ -42,7 +45,7 @@ class GenreService:
 
     async def get_all_genres(
             self,
-            page_size: int = 10,
+            page_size: int = 50,
             page_number: int = 1,
             sort: Optional[str] = None
     ) -> List[Genre]:
@@ -54,7 +57,7 @@ class GenreService:
     async def search_genres(
             self,
             query: str,
-            page_size: int = 10,
+            page_size: int = 50,
             page_number: int = 1,
             sort: Optional[str] = None
     ) -> List[Genre]:
@@ -68,7 +71,25 @@ class GenreService:
                 "fuzziness": "AUTO"
             }
         }
-        return await self._fetch_genres(page_size=page_size, page_number=page_number, sort=sort, search_body=search_body)
+        return await self._fetch_genres(page_size=page_size, page_number=page_number, sort=sort,
+                                        search_body=search_body)
+
+    async def get_genre_films(self, genre_id: UUID, page_size: int = 50, page_number: int = 1,
+                              sort: Optional[str] = "-imdb_rating") -> List[Film]:
+        """
+        Get all films associated with a genre by genre ID, with pagination and sorting.
+        """
+        from_ = (page_number - 1) * page_size
+
+        films_data = await self.film_service.get_films_by_genre_id(genre_id, from_=from_, size=page_size, sort=sort)
+
+        films = []
+        for film_data in films_data:
+            film = await self.film_service.get_by_id(str(film_data['_id']))
+            if film:
+                films.append(film)
+
+        return films
 
     async def _fetch_genres(
             self,
@@ -150,6 +171,7 @@ class GenreService:
 @lru_cache()
 def get_genre_service(
         redis: Redis = Depends(get_redis),
-        elastic: AsyncElasticsearch = Depends(get_elastic)
+        elastic: AsyncElasticsearch = Depends(get_elastic),
+        film_service: FilmService = Depends(get_film_service)
 ) -> GenreService:
-    return GenreService(redis, elastic)
+    return GenreService(redis, elastic, film_service)

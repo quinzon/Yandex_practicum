@@ -1,14 +1,16 @@
-from pydantic import BaseModel
-from uuid import UUID
 from typing import Optional
-from genre import Genre
-from person import Person
+from uuid import UUID
+
+from pydantic import BaseModel
+
+from src.models.genre import Genre
+from src.models.person import Person
 
 
 class Film(BaseModel):
     id: UUID
     title: str
-    rating: float
+    imdb_rating: float
 
 
 class FilmDetail(Film):

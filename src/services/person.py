@@ -3,13 +3,15 @@ from functools import lru_cache
 from typing import Optional, List
 from uuid import UUID
 
-from redis.asyncio import Redis
 from elasticsearch import AsyncElasticsearch
 from fastapi import HTTPException, Depends
+from redis.asyncio import Redis
 
 from src.db.elastic import get_elastic
 from src.db.redis import get_redis
-from src.models.person import PersonFilmsParticipant, Person, PersonFilm
+from src.models.film import Film
+from src.models.person import PersonFilmsParticipant, Person, PersonFilm, Roles
+from src.services.film import FilmService, get_film_service
 
 PERSON_CACHE_EXPIRE_IN_SECONDS = 60 * 5
 
@@ -19,13 +21,14 @@ class PersonService:
         "full_name": "full_name.keyword"
     }
 
-    def __init__(self, redis: Redis, elastic: AsyncElasticsearch):
+    def __init__(self, redis: Redis, elastic: AsyncElasticsearch, film_service: FilmService):
         self.elastic = elastic
         self.redis = redis
+        self.film_service = film_service
 
     async def get_person_by_id(self, person_id: UUID) -> Optional[PersonFilmsParticipant]:
         """
-        Get a person by their ID, including their films and roles. The result will be cached if found.
+        Get a person by their ID, including their films and roles.
         """
         cache_key = f"person:{person_id}"
         cached_data = await self._get_single_person_from_cache(cache_key)
@@ -35,8 +38,12 @@ class PersonService:
         try:
             response = await self.elastic.get(index='persons', id=str(person_id))
             person_data = response['_source']
-            films = [PersonFilm(**film) for film in person_data.get('films', [])]
-            person = PersonFilmsParticipant(id=person_data['id'], full_name=person_data['full_name'], films=films)
+            person = PersonFilmsParticipant(id=person_data['id'], full_name=person_data['full_name'], films=[])
+
+            films_data = await self.film_service.get_films_by_person_id(person_id)
+
+            person.films = self._process_film_roles(films_data, person_id)
+
             await self._put_single_person_to_cache(cache_key, person)
             return person
         except Exception as e:
@@ -56,7 +63,7 @@ class PersonService:
     async def search_persons(
             self,
             query: str,
-            page_size: int = 10,
+            page_size: int = 50,
             page_number: int = 1,
             sort: Optional[str] = None
     ) -> List[Person]:
@@ -70,16 +77,47 @@ class PersonService:
                 "fuzziness": "AUTO"
             }
         }
-        return await self._fetch_persons(page_size=page_size, page_number=page_number, sort=sort, search_body=search_body)
+        return await self._fetch_persons(page_size=page_size, page_number=page_number, sort=sort,
+                                         search_body=search_body)
 
-    async def get_person_films(self, person_id: UUID) -> List[PersonFilm]:
+    async def get_person_films(self, person_id: UUID, page_size: int = 50, page_number: int = 1,
+                               sort: Optional[str] = "-imdb_rating") -> List[Film]:
         """
-        Get all films associated with a person by their ID, including roles in the films.
+        Get all films associated with a person by their ID, with pagination and sorting.
         """
-        person = await self.get_person_by_id(person_id)
-        if not person:
-            raise HTTPException(status_code=404, detail="Person not found")
-        return person.films
+        from_ = (page_number - 1) * page_size
+
+        films_data = await self.film_service.get_films_by_person_id(person_id, from_=from_, size=page_size, sort=sort)
+
+        films = []
+        for person_film in films_data:
+            film = await self.film_service.get_by_id(str(person_film['_id']))
+            if film:
+                films.append(film)
+
+        return films
+
+    def _process_film_roles(self, films_data: List[dict], person_id: UUID) -> List[PersonFilm]:
+        """
+        Process raw film data and determine the roles of the person in each film (actor, writer, director).
+        """
+        films = []
+        for hit in films_data:
+            film_id = hit['_id']
+            source = hit['_source']
+
+            roles = []
+            if any(actor['id'] == str(person_id) for actor in source.get('actors', [])):
+                roles.append(Roles.ACTOR)
+            if any(writer['id'] == str(person_id) for writer in source.get('writers', [])):
+                roles.append(Roles.WRITER)
+            if any(director['id'] == str(person_id) for director in source.get('directors', [])):
+                roles.append(Roles.DIRECTOR)
+
+            person_film = PersonFilm(film_id=UUID(film_id), roles=roles)
+            films.append(person_film)
+
+        return films
 
     async def _fetch_persons(
             self,
@@ -126,6 +164,20 @@ class PersonService:
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Elasticsearch error: {str(e)}")
 
+    async def _get_person_films_data(self, films_data: List[dict]) -> List[PersonFilm]:
+        """
+        Helper method to fetch film data using FilmService.
+        """
+        films = []
+        for film_data in films_data:
+            film_id = film_data.get('film_id')
+            if film_id:
+                film = await self.film_service.get_by_id(film_id)
+                if film:
+                    person_film = PersonFilm(film_id=film.id, roles=film_data.get('roles', []))
+                    films.append(person_film)
+        return films
+
     async def _get_from_cache(self, cache_key: str) -> Optional[List[Person]]:
         """
         Retrieve data from Redis cache.
@@ -161,6 +213,7 @@ class PersonService:
 @lru_cache()
 def get_person_service(
         redis: Redis = Depends(get_redis),
-        elastic: AsyncElasticsearch = Depends(get_elastic)
+        elastic: AsyncElasticsearch = Depends(get_elastic),
+        film_service: FilmService = Depends(get_film_service)
 ) -> PersonService:
-    return PersonService(redis, elastic)
+    return PersonService(redis, elastic, film_service)

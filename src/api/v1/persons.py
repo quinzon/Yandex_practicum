@@ -1,8 +1,11 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
 from typing import List, Optional
 from uuid import UUID
+
+from fastapi import APIRouter, Depends, HTTPException, Query
+
+from src.models.film import Film
+from src.models.person import Person, PersonFilmsParticipant
 from src.services.person import PersonService, get_person_service
-from src.models.person import Person, PersonFilm, PersonFilmsParticipant
 
 router = APIRouter()
 
@@ -20,10 +23,10 @@ async def get_person_by_id(person_id: UUID, person_service: PersonService = Depe
 
 @router.get("/", response_model=List[Person], summary="List Persons with Pagination and Sorting")
 async def list_persons(
-    page_size: int = Query(10, gt=0, description="Number of items per page"),
-    page_number: int = Query(1, gt=0, description="The page number to retrieve"),
-    sort: Optional[str] = Query(None, description="Field to sort by"),
-    person_service: PersonService = Depends(get_person_service),
+        page_size: int = Query(50, gt=0, description="Number of items per page"),
+        page_number: int = Query(1, gt=0, description="The page number to retrieve"),
+        sort: Optional[str] = Query(None, description="Field to sort by"),
+        person_service: PersonService = Depends(get_person_service),
 ):
     """
     Retrieve a list of persons with pagination and optional sorting.
@@ -33,11 +36,11 @@ async def list_persons(
 
 @router.get("/search/", response_model=List[Person], summary="Search Persons")
 async def search_persons(
-    query: str = Query(..., description="Search query"),
-    page_size: int = Query(10, gt=0, description="Number of items per page"),
-    page_number: int = Query(1, gt=0, description="The page number to retrieve"),
-    sort: Optional[str] = Query(None, description="Field to sort by "),
-    person_service: PersonService = Depends(get_person_service),
+        query: str = Query(..., description="Search query"),
+        page_size: int = Query(50, gt=0, description="Number of items per page"),
+        page_number: int = Query(1, gt=0, description="The page number to retrieve"),
+        sort: Optional[str] = Query(None, description="Field to sort by "),
+        person_service: PersonService = Depends(get_person_service),
 ):
     """
     Search for persons by query string with pagination and optional sorting.
@@ -45,9 +48,15 @@ async def search_persons(
     return await person_service.search_persons(query=query, page_size=page_size, page_number=page_number, sort=sort)
 
 
-@router.get("/{person_id}/film/", response_model=List[PersonFilm], summary="Get Films by Person ID")
-async def get_person_films(person_id: UUID, person_service: PersonService = Depends(get_person_service)):
+@router.get("/{person_id}/film/", response_model=List[Film], summary="Get Films by Person ID")
+async def get_person_films(
+        person_id: UUID,
+        page_size: int = Query(50, gt=0),
+        page_number: int = Query(1, gt=0),
+        sort: Optional[str] = Query("-imdb_rating", description="Sort by field (prefix with '-' for descending order)"),
+        person_service: PersonService = Depends(get_person_service)
+):
     """
-    Retrieve all films associated with a person by their ID, including their roles.
+    Retrieve all films associated with a person by their ID, with pagination and sorting.
     """
-    return await person_service.get_person_films(person_id)
+    return await person_service.get_person_films(person_id, page_size=page_size, page_number=page_number, sort=sort)

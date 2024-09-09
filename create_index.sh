@@ -74,7 +74,21 @@ MOVIES_INDEX_SETTINGS='{
         "type": "float"
       },
       "genres": {
-        "type": "keyword"
+        "type": "nested",
+        "dynamic": "strict",
+        "properties": {
+          "id": {
+            "type": "keyword"
+          },
+          "name": {
+            "type": "text",
+            "analyzer": "ru_en"
+          },
+          "description": {
+            "type": "text",
+            "analyzer": "ru_en"
+          }
+        }
       },
       "title": {
         "type": "text",
@@ -144,7 +158,6 @@ MOVIES_INDEX_SETTINGS='{
   }
 }'
 
-# Persons index settings
 PERSONS_INDEX_SETTINGS='{
   "settings": {
     "refresh_interval": "1s",
