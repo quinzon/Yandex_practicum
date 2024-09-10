@@ -3,14 +3,14 @@ from pydantic_settings import BaseSettings
 
 
 class DatabaseSettings(BaseSettings):
-    host: str = Field(..., alias='POSTGRES_SQL_HOST')
-    port: int = Field(..., alias='POSTGRES_SQL_PORT')
+    host: str = Field(..., alias='POSTGRES_HOST')
+    port: int = Field(..., alias='POSTGRES_PORT')
     dbname: str = Field(..., alias='POSTGRES_SQL_DB')
-    user: str = Field(..., alias='POSTGRES_SQL_USER')
-    password: str = Field(..., alias='POSTGRES_SQL_PASSWORD')
+    user: str = Field(..., alias='POSTGRES_USER')
+    password: str = Field(..., alias='POSTGRES_PASSWORD')
 
     class Config:
-        env_file = ".env"
+        env_file = ".env.etl"
         env_file_encoding = 'utf-8'
         extra = Extra.ignore
 
@@ -23,12 +23,12 @@ class ElasticsearchSettings(BaseSettings):
     port: str = Field(..., alias='ES_PORT')
 
     class Config:
-        env_file = ".env"
+        env_file = ".env.etl"
         env_file_encoding = 'utf-8'
         extra = Extra.ignore
 
     def get_host(self):
-        return f'http://{self.host}:{self.port}'
+        return f'{self.host}:{self.port}'
 
 
 class Settings(BaseSettings):

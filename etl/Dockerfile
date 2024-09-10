@@ -1,29 +1,28 @@
 FROM --platform=linux/amd64 python:3.12.1
 
-WORKDIR /opt/app
+WORKDIR /opt/app/etl
 
 RUN apt-get update \
-     &&  apt-get install -y procps="2:4.0.2-3" \
-     && rm -rf /var/lib/apt/lists/*
+    && apt-get install -y procps="2:4.0.2-3" \
+    && rm -rf /var/lib/apt/lists/*
 
-COPY pyproject.toml pyproject.toml
+COPY requirements.txt .
 
 RUN pip install --upgrade pip \
-     && pip install --no-cache-dir poetry==1.7.1 \
-     && poetry config virtualenvs.create false \
-     && poetry install --no-interaction --no-ansi --no-root
+    && pip install --no-cache-dir -r requirements.txt
 
-ENV PYTHONDONTWRITEBYTECODE 1
-ENV PYTHONUNBUFFERED 1
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
 
 COPY . .
 
 RUN chmod +x ./main.py
 
 RUN groupadd -r app_group \
-     && useradd -d /opt/app -r -g app_group app \
-     && chown app:app_group -R /opt/app/ \
-     && chown app:app_group -R /var/log/
+    && useradd -d /opt/app -r -g app_group app \
+    && chown app:app_group -R /opt/app/ \
+    && chown app:app_group -R /var/log/
 
 USER app
-ENTRYPOINT ["python", "/opt/app/main.py"]
+
+ENTRYPOINT ["python", "/opt/app/etl/main.py"]

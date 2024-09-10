@@ -33,7 +33,7 @@ class ElasticSearchSettings(BaseSettings):
     class Config:
         env_file = ".env"
         env_file_encoding = 'utf-8'
-        env_prefix = "elastic_"
+        env_prefix = "es_"
         extra = Extra.ignore
 
 

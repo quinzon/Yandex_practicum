@@ -1,9 +1,9 @@
 from pydantic import BaseModel
 from uuid import UUID
-from enum import StrEnum
+from enum import Enum
 
 
-class Roles(StrEnum):
+class Roles(str, Enum):
     ACTOR = 'actor'
     WRITER = 'writer'
     DIRECTOR = 'director'
