@@ -17,6 +17,7 @@ class Genre(Document):
     id = Keyword()
     name = Text(analyzer='ru_en')
     description = Text(analyzer='ru_en')
+    last_change_date = Keyword(index=False)
 
     class Index:
         name = 'genres'
@@ -74,7 +75,8 @@ def get_genre_index_data(
                 genre = Genre(
                     id=result['id'],
                     name=result['name'],
-                    description=result.get('description', None)
+                    description=result.get('description', None),
+                    last_change_date=result['last_change_date']
                 )
                 genres.append(genre)
 
