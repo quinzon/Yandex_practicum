@@ -1,5 +1,5 @@
 from functools import lru_cache
-from typing import Optional, List
+from typing import Optional, List, Tuple
 from uuid import UUID
 
 from elasticsearch import AsyncElasticsearch, NotFoundError
@@ -34,7 +34,7 @@ class FilmService:
         return film
 
     async def get_films_by_person_id(self, person_id: UUID, from_: int = 0, size: int = 50,
-                                     sort: Optional[str] = "-imdb_rating") -> List[dict]:
+                                     sort: Optional[str] = "-imdb_rating") -> Tuple[List[dict], int]:
         """
         Fetch all films where a person (by person_id) appears in any role: actor, writer, or director.
         Support pagination and sorting.
@@ -78,12 +78,13 @@ class FilmService:
 
         try:
             response = await self.elastic.search(index='movies', body=body)
-            return response['hits']['hits']
+            total_items = response['hits']['total']['value']
+            return response['hits']['hits'], total_items
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Error fetching films for person: {str(e)}")
 
     async def get_films_by_genre_id(self, genre_id: UUID, from_: int = 0, size: int = 50,
-                                    sort: Optional[str] = "-imdb_rating") -> List[dict]:
+                                    sort: Optional[str] = "-imdb_rating") -> Tuple[List[dict], int]:
         """
         Fetch all films where the genre matches genre_id.
         Support pagination and sorting.
@@ -110,9 +111,9 @@ class FilmService:
         }
 
         try:
-            print(body)
             response = await self.elastic.search(index='movies', body=body)
-            return response['hits']['hits']
+            total_items = response['hits']['total']['value']
+            return response['hits']['hits'], total_items
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Error fetching films for genre: {str(e)}")
 

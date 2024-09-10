@@ -60,11 +60,10 @@ def get_genre_index_data(
             g.id,
             g.name,
             g.description,
-            max(v.last_change_date) as last_change_date
+            max(g.updated_at) as last_change_date
         FROM content.genre g
-        cross join lateral (values (g.updated_at)) v(last_change_date)
         GROUP BY g.id
-        having max(v.last_change_date) > %s
+        HAVING max(g.updated_at) > %s
         ORDER BY g.updated_at
         """
         cursor.execute(raw_sql, (last_sync_state,))

@@ -1,6 +1,6 @@
 import json
 from functools import lru_cache
-from typing import Optional, List
+from typing import Optional, List, Tuple
 from uuid import UUID
 
 from elasticsearch import AsyncElasticsearch
@@ -40,23 +40,22 @@ class PersonService:
             person_data = response['_source']
             person = PersonFilmsParticipant(id=person_data['id'], full_name=person_data['full_name'], films=[])
 
-            films_data = await self.film_service.get_films_by_person_id(person_id)
-
+            films_data, total_items = await self.film_service.get_films_by_person_id(person_id)
             person.films = self._process_film_roles(films_data, person_id)
 
             await self._put_single_person_to_cache(cache_key, person)
             return person
         except Exception as e:
-            raise HTTPException(status_code=404, detail=f"Person not found: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"Exception occurred: {str(e)}")
 
     async def get_all_persons(
             self,
             page_size: int = 10,
             page_number: int = 1,
             sort: Optional[str] = None
-    ) -> List[Person]:
+    ) -> Tuple[List[Person], int]:
         """
-        Get a list of persons with pagination and sorting.
+        Get a list of persons with pagination, sorting, and total count.
         """
         return await self._fetch_persons(page_size=page_size, page_number=page_number, sort=sort)
 
@@ -66,9 +65,9 @@ class PersonService:
             page_size: int = 50,
             page_number: int = 1,
             sort: Optional[str] = None
-    ) -> List[Person]:
+    ) -> Tuple[List[Person], int]:
         """
-        Search for persons based on a query string with pagination and sorting.
+        Search for persons based on a query string with pagination, sorting, and total count.
         """
         search_body = {
             "multi_match": {
@@ -81,13 +80,12 @@ class PersonService:
                                          search_body=search_body)
 
     async def get_person_films(self, person_id: UUID, page_size: int = 50, page_number: int = 1,
-                               sort: Optional[str] = "-imdb_rating") -> List[Film]:
+                               sort: Optional[str] = "-imdb_rating") -> tuple[list[Film], int]:
         """
         Get all films associated with a person by their ID, with pagination and sorting.
         """
         from_ = (page_number - 1) * page_size
-
-        films_data = await self.film_service.get_films_by_person_id(person_id, from_=from_, size=page_size, sort=sort)
+        films_data, total_items = await self.film_service.get_films_by_person_id(person_id, from_=from_, size=page_size, sort=sort)
 
         films = []
         for person_film in films_data:
@@ -95,7 +93,7 @@ class PersonService:
             if film:
                 films.append(film)
 
-        return films
+        return films, total_items
 
     def _process_film_roles(self, films_data: List[dict], person_id: UUID) -> List[PersonFilm]:
         """
@@ -103,6 +101,7 @@ class PersonService:
         """
         films = []
         for hit in films_data:
+            print(hit)
             film_id = hit['_id']
             source = hit['_source']
 
@@ -125,9 +124,9 @@ class PersonService:
             page_number: int,
             sort: Optional[str] = None,
             search_body: Optional[dict] = None
-    ) -> List[Person]:
+    ) -> Tuple[List[Person], int]:
         """
-        Helper method to fetch persons from Elasticsearch with pagination, sorting, and optional search.
+        Helper method to fetch persons from Elasticsearch with pagination, sorting, total count, and caching.
         """
         from_ = (page_number - 1) * page_size
 
@@ -157,41 +156,34 @@ class PersonService:
         try:
             response = await self.elastic.search(index='persons', body=body)
             persons = [Person(**doc['_source']) for doc in response['hits']['hits']]
+            total_items = response['hits']['total']['value']
 
-            await self._put_to_cache(cache_key, persons)
+            await self._put_to_cache(cache_key, persons, total_items)
 
-            return persons
+            return persons, total_items
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Elasticsearch error: {str(e)}")
 
-    async def _get_person_films_data(self, films_data: List[dict]) -> List[PersonFilm]:
+    async def _get_from_cache(self, cache_key: str) -> Optional[Tuple[List[Person], int]]:
         """
-        Helper method to fetch film data using FilmService.
-        """
-        films = []
-        for film_data in films_data:
-            film_id = film_data.get('film_id')
-            if film_id:
-                film = await self.film_service.get_by_id(film_id)
-                if film:
-                    person_film = PersonFilm(film_id=film.id, roles=film_data.get('roles', []))
-                    films.append(person_film)
-        return films
-
-    async def _get_from_cache(self, cache_key: str) -> Optional[List[Person]]:
-        """
-        Retrieve data from Redis cache.
+        Retrieve persons and total_items from Redis cache.
         """
         cached_data = await self.redis.get(cache_key)
         if cached_data:
-            return [Person.parse_raw(item) for item in json.loads(cached_data)]
+            cached_dict = json.loads(cached_data)
+            persons = [Person.parse_raw(item) for item in cached_dict['items']]
+            total_items = cached_dict['total_items']
+            return persons, total_items
         return None
 
-    async def _put_to_cache(self, cache_key: str, data: List[Person]) -> None:
+    async def _put_to_cache(self, cache_key: str, persons: List[Person], total_items: int) -> None:
         """
-        Store data in Redis cache.
+        Store persons and total_items in Redis cache.
         """
-        serialized_data = json.dumps([person.json() for person in data])
+        serialized_data = json.dumps({
+            "items": [person.json() for person in persons],
+            "total_items": total_items
+        })
         await self.redis.set(cache_key, serialized_data, ex=PERSON_CACHE_EXPIRE_IN_SECONDS)
 
     async def _get_single_person_from_cache(self, cache_key: str) -> Optional[PersonFilmsParticipant]:

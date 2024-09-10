@@ -1,11 +1,10 @@
 from uuid import UUID
-
 from fastapi import APIRouter, Depends, Query, HTTPException
-from typing import List, Optional
-
+from typing import Optional
 from src.models.film import Film
 from src.services.genre import GenreService, get_genre_service
 from src.models.genre import Genre
+from src.models.pagination import Pagination, paginated_response
 
 router = APIRouter()
 
@@ -21,7 +20,8 @@ async def get_genre_by_id(genre_id: UUID, genre_service: GenreService = Depends(
     return genre
 
 
-@router.get("/", response_model=List[Genre], summary="List Genres")
+@router.get("/", response_model=Pagination[Genre], summary="List Genres with Pagination and Sorting")
+@paginated_response()
 async def list_genres(
     page_size: int = Query(50, gt=0, description="Number of items per page"),
     page_number: int = Query(1, gt=0, description="The page number to retrieve"),
@@ -34,7 +34,8 @@ async def list_genres(
     return await genre_service.get_all_genres(page_size=page_size, page_number=page_number, sort=sort)
 
 
-@router.get("/search/", response_model=List[Genre], summary="Search Genres")
+@router.get("/search/", response_model=Pagination[Genre], summary="Search Genres with Pagination and Sorting")
+@paginated_response()
 async def search_genres(
     query: str = Query(..., description="Search query"),
     page_size: int = Query(50, gt=0, description="Number of items per page"),
@@ -48,7 +49,8 @@ async def search_genres(
     return await genre_service.search_genres(query=query, page_size=page_size, page_number=page_number, sort=sort)
 
 
-@router.get("/{genre_id}/film/", response_model=List[Film], summary="Get Films by Genre ID")
+@router.get("/{genre_id}/film/", response_model=Pagination[Film], summary="Get Films by Genre ID")
+@paginated_response()
 async def get_genre_films(
     genre_id: UUID,
     page_size: int = Query(50, gt=0),

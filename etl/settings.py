@@ -10,7 +10,7 @@ class DatabaseSettings(BaseSettings):
     password: str = Field(..., alias='POSTGRES_PASSWORD')
 
     class Config:
-        env_file = ".env"
+        env_file = ".env.etl"
         env_file_encoding = 'utf-8'
         extra = Extra.ignore
 
@@ -23,7 +23,7 @@ class ElasticsearchSettings(BaseSettings):
     port: str = Field(..., alias='ES_PORT')
 
     class Config:
-        env_file = ".env"
+        env_file = ".env.etl"
         env_file_encoding = 'utf-8'
         extra = Extra.ignore
 
