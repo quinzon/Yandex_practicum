@@ -14,7 +14,6 @@ class Film(BaseModel):
 
 
 class FilmDetail(Film):
-    type: str
     description: Optional[str] = None
     genres: list[Genre] = []
     directors: list[Person] = []

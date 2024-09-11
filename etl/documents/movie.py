@@ -18,7 +18,7 @@ from psycopg.rows import class_row
 
 class Director(InnerDoc):
     id = Keyword()
-    name = Text(analyzer='ru_en')
+    full_name = Text(analyzer='ru_en')
 
     class Meta:
         dynamic = MetaField('strict')
@@ -26,7 +26,7 @@ class Director(InnerDoc):
 
 class Actor(InnerDoc):
     id = Keyword()
-    name = Text(analyzer='ru_en')
+    full_name = Text(analyzer='ru_en')
 
     class Meta:
         dynamic = MetaField('strict')
@@ -34,7 +34,7 @@ class Actor(InnerDoc):
 
 class Writer(InnerDoc):
     id = Keyword()
-    name = Text(analyzer='ru_en')
+    full_name = Text(analyzer='ru_en')
 
     class Meta:
         dynamic = MetaField('strict')
@@ -128,7 +128,7 @@ def get_movie_index_data(
                 json_agg(
                     DISTINCT jsonb_build_object(
                         'id', p.id,
-                        'name', p.full_name
+                        'full_name', p.full_name
                     )
                 ) FILTER (WHERE p.id is not null and pfw.role='director'),
                 '[]'
@@ -138,7 +138,7 @@ def get_movie_index_data(
                 json_agg(
                     DISTINCT jsonb_build_object(
                         'id', p.id,
-                        'name', p.full_name
+                        'full_name', p.full_name
                     )
                 ) FILTER (WHERE p.id is not null and pfw.role='actor'),
                 '[]'
@@ -148,7 +148,7 @@ def get_movie_index_data(
                 json_agg(
                     DISTINCT jsonb_build_object(
                         'id', p.id,
-                        'name', p.full_name
+                        'full_name', p.full_name
                     )
                 ) FILTER (WHERE p.id is not null and pfw.role='writer'),
                 '[]'

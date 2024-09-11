@@ -1,4 +1,3 @@
-import json
 from functools import lru_cache
 from typing import Optional, List, Tuple
 from uuid import UUID
@@ -12,18 +11,17 @@ from src.db.redis import get_redis
 from src.models.film import Film
 from src.models.person import PersonFilmsParticipant, Person, PersonFilm, Roles
 from src.services.film import FilmService, get_film_service
+from src.services.cache import CacheService
 
-PERSON_CACHE_EXPIRE_IN_SECONDS = 60 * 5
 
-
-class PersonService:
+class PersonService(CacheService):
     SORTABLE_FIELDS = {
         "full_name": "full_name.keyword"
     }
 
     def __init__(self, redis: Redis, elastic: AsyncElasticsearch, film_service: FilmService):
+        super().__init__(redis)
         self.elastic = elastic
-        self.redis = redis
         self.film_service = film_service
 
     async def get_person_by_id(self, person_id: UUID) -> Optional[PersonFilmsParticipant]:
@@ -31,7 +29,7 @@ class PersonService:
         Get a person by their ID, including their films and roles.
         """
         cache_key = f"person:{person_id}"
-        cached_data = await self._get_single_person_from_cache(cache_key)
+        cached_data = await self._get_from_cache_by_id(cache_key, PersonFilmsParticipant)
         if cached_data:
             return cached_data
 
@@ -43,7 +41,7 @@ class PersonService:
             films_data, total_items = await self.film_service.get_films_by_person_id(person_id)
             person.films = self._process_film_roles(films_data, person_id)
 
-            await self._put_single_person_to_cache(cache_key, person)
+            await self._put_to_cache_by_id(cache_key, person)
             return person
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Exception occurred: {str(e)}")
@@ -85,17 +83,19 @@ class PersonService:
         Get all films associated with a person by their ID, with pagination and sorting.
         """
         from_ = (page_number - 1) * page_size
-        films_data, total_items = await self.film_service.get_films_by_person_id(person_id, from_=from_, size=page_size, sort=sort)
+        films_data, total_items = await self.film_service.get_films_by_person_id(person_id, from_=from_, size=page_size,
+                                                                                 sort=sort)
 
         films = []
         for person_film in films_data:
-            film = await self.film_service.get_by_id(str(person_film['_id']))
+            film = await self.film_service.get_film_by_id(str(person_film['_id']))
             if film:
                 films.append(film)
 
         return films, total_items
 
-    def _process_film_roles(self, films_data: List[dict], person_id: UUID) -> List[PersonFilm]:
+    @staticmethod
+    def _process_film_roles(films_data: List[dict], person_id: UUID) -> List[PersonFilm]:
         """
         Process raw film data and determine the roles of the person in each film (actor, writer, director).
         """
@@ -149,7 +149,7 @@ class PersonService:
             cache_key_parts.append(str(search_body))
         cache_key = ":".join(cache_key_parts)
 
-        cached_data = await self._get_from_cache(cache_key)
+        cached_data = await self._get_list_from_cache(cache_key, Person)
         if cached_data:
             return cached_data
 
@@ -158,48 +158,11 @@ class PersonService:
             persons = [Person(**doc['_source']) for doc in response['hits']['hits']]
             total_items = response['hits']['total']['value']
 
-            await self._put_to_cache(cache_key, persons, total_items)
+            await self._put_list_to_cache(cache_key, persons, total_items)
 
             return persons, total_items
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Elasticsearch error: {str(e)}")
-
-    async def _get_from_cache(self, cache_key: str) -> Optional[Tuple[List[Person], int]]:
-        """
-        Retrieve persons and total_items from Redis cache.
-        """
-        cached_data = await self.redis.get(cache_key)
-        if cached_data:
-            cached_dict = json.loads(cached_data)
-            persons = [Person.parse_raw(item) for item in cached_dict['items']]
-            total_items = cached_dict['total_items']
-            return persons, total_items
-        return None
-
-    async def _put_to_cache(self, cache_key: str, persons: List[Person], total_items: int) -> None:
-        """
-        Store persons and total_items in Redis cache.
-        """
-        serialized_data = json.dumps({
-            "items": [person.json() for person in persons],
-            "total_items": total_items
-        })
-        await self.redis.set(cache_key, serialized_data, ex=PERSON_CACHE_EXPIRE_IN_SECONDS)
-
-    async def _get_single_person_from_cache(self, cache_key: str) -> Optional[PersonFilmsParticipant]:
-        """
-        Retrieve a single person from Redis cache.
-        """
-        cached_data = await self.redis.get(cache_key)
-        if cached_data:
-            return PersonFilmsParticipant.parse_raw(cached_data)
-        return None
-
-    async def _put_single_person_to_cache(self, cache_key: str, person: PersonFilmsParticipant) -> None:
-        """
-        Store a single person in Redis cache.
-        """
-        await self.redis.set(cache_key, person.json(), ex=PERSON_CACHE_EXPIRE_IN_SECONDS)
 
 
 @lru_cache()
