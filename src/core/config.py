@@ -2,7 +2,7 @@ import os
 from functools import lru_cache
 from logging import config as logging_config
 
-from pydantic import Extra
+from pydantic import Extra, Field
 from pydantic_settings import BaseSettings
 
 from src.core.logger import LOGGING
@@ -16,8 +16,8 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
 class RedisSettings(BaseSettings):
-    host: str
-    port: int
+    host: str = Field(..., alias='REDIS_HOST')
+    port: int = Field(..., alias='REDIS_PORT')
 
     class Config:
         env_file = ".env"
@@ -27,8 +27,8 @@ class RedisSettings(BaseSettings):
 
 
 class ElasticSearchSettings(BaseSettings):
-    host: str
-    port: str
+    host: str = Field(..., alias='ES_HOST')
+    port: int = Field(..., alias='ES_PORT')
 
     class Config:
         env_file = ".env"

@@ -2,36 +2,41 @@ from functools import lru_cache
 from typing import Optional, List, Tuple
 from uuid import UUID
 
-from elasticsearch import AsyncElasticsearch, NotFoundError
+from elasticsearch import AsyncElasticsearch
 from fastapi import Depends, HTTPException
 from redis.asyncio import Redis
 
 from src.db.elastic import get_elastic
 from src.db.redis import get_redis
-from src.models.film import Film
+from src.models.film import FilmDetail
+from src.services.cache import CacheService
 
-FILM_CACHE_EXPIRE_IN_SECONDS = 60 * 5
 
-
-class FilmService:
+class FilmService(CacheService):
     SORTABLE_FIELDS = {
         "imdb_rating": "imdb_rating",
         "title": "title.keyword"
     }
 
     def __init__(self, redis: Redis, elastic: AsyncElasticsearch):
-        self.redis = redis
+        super().__init__(redis)
         self.elastic = elastic
 
-    async def get_by_id(self, film_id: str) -> Optional[Film]:
-        film = await self._film_from_cache(film_id)
-        if not film:
-            film = await self._get_film_from_elastic(film_id)
-            if not film:
-                return None
-            await self._put_film_to_cache(film)
-
-        return film
+    async def get_film_by_id(self, film_id: str) -> Optional[FilmDetail]:
+        """
+        Retrieve a film by its unique ID.
+        """
+        cache_key = f"film:{film_id}"
+        cached_data = await self._get_from_cache_by_id(cache_key, FilmDetail)
+        if cached_data:
+            return cached_data
+        try:
+            response = await self.elastic.get(index='movies', id=film_id)
+            film = FilmDetail(**response['_source'])
+            await self._put_to_cache_by_id(cache_key, film)
+            return film
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Error occurred: {str(e)}")
 
     async def get_films_by_person_id(self, person_id: UUID, from_: int = 0, size: int = 50,
                                      sort: Optional[str] = "-imdb_rating") -> Tuple[List[dict], int]:
@@ -117,23 +122,82 @@ class FilmService:
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Error fetching films for genre: {str(e)}")
 
-    async def _get_film_from_elastic(self, film_id: str) -> Optional[Film]:
+    async def get_all_films(
+            self,
+            page_size: int = 50,
+            page_number: int = 1,
+            sort: Optional[str] = None
+    ) -> Tuple[List[FilmDetail], int]:
+        """
+        Get a list of films with pagination, sorting, and total count of genres.
+        """
+        return await self._fetch_films(page_size=page_size, page_number=page_number, sort=sort)
+
+    async def search_films(
+            self,
+            query: str,
+            page_size: int = 50,
+            page_number: int = 1,
+            sort: Optional[str] = None
+    ) -> Tuple[List[FilmDetail], int]:
+        """
+        Search for films based on a query string with pagination, sorting, and total count of results.
+        """
+        search_body = {
+            "multi_match": {
+                "query": query,
+                "fields": ["title", "description"],
+                "fuzziness": "AUTO"
+            }
+        }
+        return await self._fetch_films(page_size=page_size, page_number=page_number, sort=sort,
+                                       search_body=search_body)
+
+    async def _fetch_films(
+            self,
+            page_size: int,
+            page_number: int,
+            sort: Optional[str] = None,
+            search_body: Optional[dict] = None
+    ) -> Tuple[List[FilmDetail], int]:
+        """
+        Helper method to fetch films from Elasticsearch with pagination, sorting, total count, and caching.
+        """
+        from_ = (page_number - 1) * page_size
+
+        sort_order = "asc"
+        if sort and sort.startswith('-'):
+            sort_order = "desc"
+            sort = sort[1:]
+
+        sort_field = self.SORTABLE_FIELDS.get(sort, sort)
+
+        body = {
+            "from": from_,
+            "size": page_size,
+            "query": search_body if search_body else {"match_all": {}},
+            "sort": [{sort_field: {"order": sort_order}}] if sort_field else []
+        }
+
+        cache_key_parts = [f"films:list:{page_number}:{page_size}:{sort}"]
+        if search_body:
+            cache_key_parts.append(str(search_body))
+        cache_key = ":".join(cache_key_parts)
+
+        cached_data = await self._get_list_from_cache(cache_key, FilmDetail)
+        if cached_data:
+            return cached_data
+
         try:
-            doc = await self.elastic.get(index='movies', id=film_id)
-        except NotFoundError:
-            return None
-        return Film(**doc['_source'])
+            response = await self.elastic.search(index='movies', body=body)
+            films = [FilmDetail(**doc['_source']) for doc in response['hits']['hits']]
+            total_items = response['hits']['total']['value']
 
-    async def _film_from_cache(self, film_id: str) -> Optional[Film]:
-        data = await self.redis.get(film_id)
-        if not data:
-            return None
+            await self._put_list_to_cache(cache_key, films, total_items)
 
-        film = Film.parse_raw(data)
-        return film
-
-    async def _put_film_to_cache(self, film: Film):
-        await self.redis.set(str(film.id), film.json(), FILM_CACHE_EXPIRE_IN_SECONDS)
+            return films, total_items
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Elasticsearch error: {str(e)}")
 
 
 @lru_cache()

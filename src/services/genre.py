@@ -1,4 +1,3 @@
-import json
 from functools import lru_cache
 from typing import Optional, List, Tuple
 from uuid import UUID
@@ -12,18 +11,17 @@ from src.db.redis import get_redis
 from src.models.film import Film
 from src.models.genre import Genre
 from src.services.film import FilmService, get_film_service
+from src.services.cache import CacheService
 
-GENRE_CACHE_EXPIRE_IN_SECONDS = 60 * 5
 
-
-class GenreService:
+class GenreService(CacheService):
     SORTABLE_FIELDS = {
         "name": "name.keyword"
     }
 
     def __init__(self, redis: Redis, elastic: AsyncElasticsearch, film_service: FilmService):
+        super().__init__(redis)
         self.elastic = elastic
-        self.redis = redis
         self.film_service = film_service
 
     async def get_genre_by_id(self, genre_id: UUID) -> Optional[Genre]:
@@ -31,14 +29,14 @@ class GenreService:
         Get a genre by its ID. Cache the result if found.
         """
         cache_key = f"genre:{genre_id}"
-        cached_data = await self._get_single_genre_from_cache(cache_key)
+        cached_data = await self._get_from_cache_by_id(cache_key, Genre)
         if cached_data:
             return cached_data
 
         try:
             response = await self.elastic.get(index='genres', id=str(genre_id))
             genre = Genre(**response['_source'])
-            await self._put_single_genre_to_cache(cache_key, genre)
+            await self._put_to_cache_by_id(cache_key, genre)
             return genre
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Error occurred: {str(e)}")
@@ -80,11 +78,12 @@ class GenreService:
         Get all films associated with a genre by genre ID, with pagination and sorting.
         """
         from_ = (page_number - 1) * page_size
-        films_data, total_items = await self.film_service.get_films_by_genre_id(genre_id, from_=from_, size=page_size, sort=sort)
+        films_data, total_items = await self.film_service.get_films_by_genre_id(genre_id, from_=from_, size=page_size,
+                                                                                sort=sort)
 
         films = []
         for film_data in films_data:
-            film = await self.film_service.get_by_id(str(film_data['_id']))
+            film = await self.film_service.get_film_by_id(str(film_data['_id']))
             if film:
                 films.append(film)
 
@@ -121,7 +120,7 @@ class GenreService:
             cache_key_parts.append(str(search_body))
         cache_key = ":".join(cache_key_parts)
 
-        cached_data = await self._get_from_cache(cache_key)
+        cached_data = await self._get_list_from_cache(cache_key, Genre)
         if cached_data:
             return cached_data
 
@@ -130,48 +129,11 @@ class GenreService:
             genres = [Genre(**doc['_source']) for doc in response['hits']['hits']]
             total_items = response['hits']['total']['value']
 
-            await self._put_to_cache(cache_key, genres, total_items)
+            await self._put_list_to_cache(cache_key, genres, total_items)
 
             return genres, total_items
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Elasticsearch error: {str(e)}")
-
-    async def _get_from_cache(self, cache_key: str) -> Optional[Tuple[List[Genre], int]]:
-        """
-        Retrieve data and total_items from Redis cache.
-        """
-        cached_data = await self.redis.get(cache_key)
-        if cached_data:
-            cached_dict = json.loads(cached_data)
-            genres = [Genre.parse_raw(item) for item in cached_dict['items']]
-            total_items = cached_dict['total_items']
-            return genres, total_items
-        return None
-
-    async def _put_to_cache(self, cache_key: str, genres: List[Genre], total_items: int) -> None:
-        """
-        Store data and total_items in Redis cache.
-        """
-        serialized_data = json.dumps({
-            "items": [genre.json() for genre in genres],
-            "total_items": total_items
-        })
-        await self.redis.set(cache_key, serialized_data, ex=GENRE_CACHE_EXPIRE_IN_SECONDS)
-
-    async def _get_single_genre_from_cache(self, cache_key: str) -> Optional[Genre]:
-        """
-        Retrieve a single genre from Redis cache.
-        """
-        cached_data = await self.redis.get(cache_key)
-        if cached_data:
-            return Genre.parse_raw(cached_data)
-        return None
-
-    async def _put_single_genre_to_cache(self, cache_key: str, genre: Genre) -> None:
-        """
-        Store a single genre in Redis cache.
-        """
-        await self.redis.set(cache_key, genre.json(), ex=GENRE_CACHE_EXPIRE_IN_SECONDS)
 
 
 @lru_cache()

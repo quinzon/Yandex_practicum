@@ -1,5 +1,5 @@
 from functools import wraps
-from typing import List, Generic, TypeVar, Callable, Type
+from typing import List, Generic, TypeVar, Callable
 
 from pydantic import BaseModel
 
@@ -13,7 +13,7 @@ class PaginationMeta(BaseModel):
     total_pages: int
 
 
-class Pagination(Generic[T], BaseModel):
+class Pagination(BaseModel, Generic[T]):
     meta: PaginationMeta
     items: List[T]
 
