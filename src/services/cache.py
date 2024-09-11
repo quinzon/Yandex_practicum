@@ -20,7 +20,7 @@ class CacheService:
             model: Type[Union[Film, Genre, Person]]
     ) -> Optional[Tuple[List[Union[Film, FilmDetail, Genre, Person, PersonFilmsParticipant]], int]]:
         """
-        Retrieve persons and total_items from Redis cache.
+        Retrieve list of data and total_items from Redis cache.
         """
         cached_data = await self.redis.get(cache_key)
         if cached_data:
@@ -37,7 +37,7 @@ class CacheService:
             total_items: int
     ) -> None:
         """
-        Store persons and total_items in Redis cache.
+        Store list of data and total_items in Redis cache.
         """
         serialized_data = json.dumps({
             "items": [film.json() for film in films],
@@ -50,6 +50,9 @@ class CacheService:
             cache_key: str,
             model: Type[Union[Film, FilmDetail, Genre, Person]]
     ) -> Optional[Union[Film, FilmDetail, Genre, Person, PersonFilmsParticipant]]:
+        """
+        Retrieve data by id from Redis cache.
+        """
         data = await self.redis.get(cache_key)
         if not data:
             return None
@@ -60,4 +63,7 @@ class CacheService:
             cache_key: str,
             data: Film | FilmDetail | Genre | Person | PersonFilmsParticipant
     ) -> None:
+        """
+        Store data by id in Redis cache.
+        """
         await self.redis.set(cache_key, data.json(), self.CACHE_EXPIRE_IN_SECONDS)
