@@ -1,4 +1,4 @@
-from typing import Optional
+import http
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -18,7 +18,7 @@ async def get_person_by_id(person_id: UUID, person_service: PersonService = Depe
     """
     person = await person_service.get_person_by_id(person_id)
     if not person:
-        raise HTTPException(status_code=404, detail="Person not found")
+        raise HTTPException(status_code=http.HTTPStatus.NOT_FOUND, detail="Person not found")
     return person
 
 
@@ -27,7 +27,7 @@ async def get_person_by_id(person_id: UUID, person_service: PersonService = Depe
 async def list_persons(
         page_size: int = Query(50, gt=0, description="Number of items per page"),
         page_number: int = Query(1, gt=0, description="The page number to retrieve"),
-        sort: Optional[str] = Query(None, description="Field to sort by"),
+        sort: str | None = Query(None, description="Field to sort by"),
         person_service: PersonService = Depends(get_person_service),
 ):
     """
@@ -42,7 +42,7 @@ async def search_persons(
         query: str = Query(..., description="Search query"),
         page_size: int = Query(50, gt=0, description="Number of items per page"),
         page_number: int = Query(1, gt=0, description="The page number to retrieve"),
-        sort: Optional[str] = Query(None, description="Field to sort by"),
+        sort: str | None = Query(None, description="Field to sort by"),
         person_service: PersonService = Depends(get_person_service),
 ):
     """
@@ -57,7 +57,7 @@ async def get_person_films(
         person_id: UUID,
         page_size: int = Query(50, gt=0),
         page_number: int = Query(1, gt=0),
-        sort: Optional[str] = Query("-imdb_rating", description="Sort by field"),
+        sort: str | None = Query("-imdb_rating", description="Sort by field"),
         person_service: PersonService = Depends(get_person_service)
 ):
     """

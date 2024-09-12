@@ -1,5 +1,6 @@
+import http
 from functools import lru_cache
-from typing import Optional, List, Tuple
+from typing import List, Tuple
 from uuid import UUID
 
 from elasticsearch import AsyncElasticsearch
@@ -10,8 +11,8 @@ from src.db.elastic import get_elastic
 from src.db.redis import get_redis
 from src.models.film import Film
 from src.models.genre import Genre
-from src.services.film import FilmService, get_film_service
 from src.services.cache import CacheService
+from src.services.film import FilmService, get_film_service
 
 
 class GenreService(CacheService):
@@ -24,7 +25,7 @@ class GenreService(CacheService):
         self.elastic = elastic
         self.film_service = film_service
 
-    async def get_genre_by_id(self, genre_id: UUID) -> Optional[Genre]:
+    async def get_genre_by_id(self, genre_id: UUID) -> Genre | None:
         """
         Get a genre by its ID. Cache the result if found.
         """
@@ -39,13 +40,13 @@ class GenreService(CacheService):
             await self._put_to_cache_by_id(cache_key, genre)
             return genre
         except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Error occurred: {str(e)}")
+            raise HTTPException(status_code=http.HTTPStatus.INTERNAL_SERVER_ERROR, detail=f"Error occurred: {str(e)}")
 
     async def get_all_genres(
             self,
             page_size: int = 50,
             page_number: int = 1,
-            sort: Optional[str] = None
+            sort: str | None = None
     ) -> Tuple[List[Genre], int]:
         """
         Get a list of genres with pagination, sorting, and total count of genres.
@@ -57,7 +58,7 @@ class GenreService(CacheService):
             query: str,
             page_size: int = 50,
             page_number: int = 1,
-            sort: Optional[str] = None
+            sort: str | None = None
     ) -> Tuple[List[Genre], int]:
         """
         Search for genres based on a query string with pagination, sorting, and total count of results.
@@ -73,7 +74,7 @@ class GenreService(CacheService):
                                         search_body=search_body)
 
     async def get_genre_films(self, genre_id: UUID, page_size: int = 50, page_number: int = 1,
-                              sort: Optional[str] = "-imdb_rating") -> tuple[list[Film], int]:
+                              sort: str | None = "-imdb_rating") -> tuple[list[Film], int]:
         """
         Get all films associated with a genre by genre ID, with pagination and sorting.
         """
@@ -93,8 +94,8 @@ class GenreService(CacheService):
             self,
             page_size: int,
             page_number: int,
-            sort: Optional[str] = None,
-            search_body: Optional[dict] = None
+            sort: str | None = None,
+            search_body: dict | None = None
     ) -> Tuple[List[Genre], int]:
         """
         Helper method to fetch genres from Elasticsearch with pagination, sorting, total count, and caching.
@@ -133,7 +134,8 @@ class GenreService(CacheService):
 
             return genres, total_items
         except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Elasticsearch error: {str(e)}")
+            raise HTTPException(status_code=http.HTTPStatus.INTERNAL_SERVER_ERROR,
+                                detail=f"Elasticsearch error: {str(e)}")
 
 
 @lru_cache()

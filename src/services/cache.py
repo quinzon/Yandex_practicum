@@ -1,5 +1,5 @@
 import json
-from typing import Optional, Tuple, List, Type, Union
+from typing import Tuple, List, Type, Union
 
 from redis.asyncio import Redis
 
@@ -18,7 +18,7 @@ class CacheService:
             self,
             cache_key: str,
             model: Type[Union[Film, Genre, Person]]
-    ) -> Optional[Tuple[List[Union[Film, FilmDetail, Genre, Person, PersonFilmsParticipant]], int]]:
+    ) -> Tuple[List[Union[Film, FilmDetail, Genre, Person, PersonFilmsParticipant]], int] | None:
         """
         Retrieve list of data and total_items from Redis cache.
         """
@@ -49,7 +49,7 @@ class CacheService:
             self,
             cache_key: str,
             model: Type[Union[Film, FilmDetail, Genre, Person]]
-    ) -> Optional[Union[Film, FilmDetail, Genre, Person, PersonFilmsParticipant]]:
+    ) -> Union[Film, FilmDetail, Genre, Person, PersonFilmsParticipant] | None:
         """
         Retrieve data by id from Redis cache.
         """

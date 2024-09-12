@@ -1,5 +1,6 @@
+import http
 from functools import lru_cache
-from typing import Optional, List, Tuple
+from typing import List, Tuple
 from uuid import UUID
 
 from elasticsearch import AsyncElasticsearch
@@ -10,8 +11,8 @@ from src.db.elastic import get_elastic
 from src.db.redis import get_redis
 from src.models.film import Film
 from src.models.person import PersonFilmsParticipant, Person, PersonFilm, Roles
-from src.services.film import FilmService, get_film_service
 from src.services.cache import CacheService
+from src.services.film import FilmService, get_film_service
 
 
 class PersonService(CacheService):
@@ -24,7 +25,7 @@ class PersonService(CacheService):
         self.elastic = elastic
         self.film_service = film_service
 
-    async def get_person_by_id(self, person_id: UUID) -> Optional[PersonFilmsParticipant]:
+    async def get_person_by_id(self, person_id: UUID) -> PersonFilmsParticipant | None:
         """
         Get a person by their ID, including their films and roles.
         """
@@ -44,13 +45,14 @@ class PersonService(CacheService):
             await self._put_to_cache_by_id(cache_key, person)
             return person
         except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Exception occurred: {str(e)}")
+            raise HTTPException(status_code=http.HTTPStatus.INTERNAL_SERVER_ERROR,
+                                detail=f"Exception occurred: {str(e)}")
 
     async def get_all_persons(
             self,
             page_size: int = 10,
             page_number: int = 1,
-            sort: Optional[str] = None
+            sort: str | None = None
     ) -> Tuple[List[Person], int]:
         """
         Get a list of persons with pagination, sorting, and total count.
@@ -62,7 +64,7 @@ class PersonService(CacheService):
             query: str,
             page_size: int = 50,
             page_number: int = 1,
-            sort: Optional[str] = None
+            sort: str | None = None
     ) -> Tuple[List[Person], int]:
         """
         Search for persons based on a query string with pagination, sorting, and total count.
@@ -78,7 +80,7 @@ class PersonService(CacheService):
                                          search_body=search_body)
 
     async def get_person_films(self, person_id: UUID, page_size: int = 50, page_number: int = 1,
-                               sort: Optional[str] = "-imdb_rating") -> tuple[list[Film], int]:
+                               sort: str | None = "-imdb_rating") -> tuple[list[Film], int]:
         """
         Get all films associated with a person by their ID, with pagination and sorting.
         """
@@ -122,8 +124,8 @@ class PersonService(CacheService):
             self,
             page_size: int,
             page_number: int,
-            sort: Optional[str] = None,
-            search_body: Optional[dict] = None
+            sort: str | None = None,
+            search_body: dict | None = None
     ) -> Tuple[List[Person], int]:
         """
         Helper method to fetch persons from Elasticsearch with pagination, sorting, total count, and caching.
@@ -162,7 +164,8 @@ class PersonService(CacheService):
 
             return persons, total_items
         except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Elasticsearch error: {str(e)}")
+            raise HTTPException(status_code=http.HTTPStatus.INTERNAL_SERVER_ERROR,
+                                detail=f"Elasticsearch error: {str(e)}")
 
 
 @lru_cache()

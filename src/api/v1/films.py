@@ -1,6 +1,5 @@
 from http import HTTPStatus
 from fastapi import APIRouter, Depends, HTTPException, Query
-from typing import Optional
 
 from src.models.film import FilmDetail
 from src.services.film import FilmService, get_film_service
@@ -24,7 +23,7 @@ async def film_details(film_id: str, film_service: FilmService = Depends(get_fil
 async def list_films(
     page_size: int = Query(50, gt=0, description="Number of items per page"),
     page_number: int = Query(1, gt=0, description="The page number to retrieve"),
-    sort: Optional[str] = Query(None, description="Field to sort by"),
+    sort: str | None = Query(None, description="Field to sort by"),
     genre_service: FilmService = Depends(get_film_service),
 ):
     """
@@ -39,7 +38,7 @@ async def search_genres(
     query: str = Query(..., description="Search films"),
     page_size: int = Query(50, gt=0, description="Number of items per page"),
     page_number: int = Query(1, gt=0, description="The page number to retrieve"),
-    sort: Optional[str] = Query(None, description="Field to sort by"),
+    sort: str | None = Query(None, description="Field to sort by"),
     film_service: FilmService = Depends(get_film_service),
 ):
     """

@@ -1,6 +1,5 @@
 from pydantic import BaseModel
 from uuid import UUID
-from typing import Optional
 
 
 class GenreFilm(BaseModel):
@@ -10,7 +9,7 @@ class GenreFilm(BaseModel):
 class Genre(BaseModel):
     id: UUID
     name: str
-    description: Optional[str] = None
+    description: str | None = None
 
 
 class GenreFilmsOverlap(Genre):

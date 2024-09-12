@@ -2,11 +2,10 @@ import os
 from functools import lru_cache
 from logging import config as logging_config
 
-from pydantic import Extra, Field
-from pydantic_settings import BaseSettings
+from pydantic import Field
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from src.core.logger import LOGGING
-
 
 logging_config.dictConfig(LOGGING)
 
@@ -19,22 +18,24 @@ class RedisSettings(BaseSettings):
     host: str = Field(..., alias='REDIS_HOST')
     port: int = Field(..., alias='REDIS_PORT')
 
-    class Config:
-        env_file = ".env"
-        env_file_encoding = 'utf-8'
-        env_prefix = "redis_"
-        extra = Extra.ignore
+    model_config = SettingsConfigDict(
+        env_file='.env',
+        env_prefix='redis_',
+        extra='ignore',
+        env_file_encoding='utf-8'
+    )
 
 
 class ElasticSearchSettings(BaseSettings):
     host: str = Field(..., alias='ES_HOST')
     port: int = Field(..., alias='ES_PORT')
 
-    class Config:
-        env_file = ".env"
-        env_file_encoding = 'utf-8'
-        env_prefix = "es_"
-        extra = Extra.ignore
+    model_config = SettingsConfigDict(
+        env_file='.env',
+        env_prefix='es_',
+        extra='ignore',
+        env_file_encoding='utf-8'
+    )
 
 
 @lru_cache()
