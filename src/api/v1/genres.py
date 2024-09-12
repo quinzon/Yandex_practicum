@@ -1,6 +1,6 @@
+import http
 from uuid import UUID
 from fastapi import APIRouter, Depends, Query, HTTPException
-from typing import Optional
 from src.models.film import Film
 from src.services.genre import GenreService, get_genre_service
 from src.models.genre import Genre
@@ -16,7 +16,7 @@ async def get_genre_by_id(genre_id: UUID, genre_service: GenreService = Depends(
     """
     genre = await genre_service.get_genre_by_id(genre_id)
     if not genre:
-        raise HTTPException(status_code=404, detail="Genre not found")
+        raise HTTPException(status_code=http.HTTPStatus.NOT_FOUND, detail="Genre not found")
     return genre
 
 
@@ -25,7 +25,7 @@ async def get_genre_by_id(genre_id: UUID, genre_service: GenreService = Depends(
 async def list_genres(
     page_size: int = Query(50, gt=0, description="Number of items per page"),
     page_number: int = Query(1, gt=0, description="The page number to retrieve"),
-    sort: Optional[str] = Query(None, description="Field to sort by"),
+    sort: str | None = Query(None, description="Field to sort by"),
     genre_service: GenreService = Depends(get_genre_service),
 ):
     """
@@ -40,7 +40,7 @@ async def search_genres(
     query: str = Query(..., description="Search query"),
     page_size: int = Query(50, gt=0, description="Number of items per page"),
     page_number: int = Query(1, gt=0, description="The page number to retrieve"),
-    sort: Optional[str] = Query(None, description="Field to sort by"),
+    sort: str | None = Query(None, description="Field to sort by"),
     genre_service: GenreService = Depends(get_genre_service),
 ):
     """
@@ -55,7 +55,7 @@ async def get_genre_films(
     genre_id: UUID,
     page_size: int = Query(50, gt=0),
     page_number: int = Query(1, gt=0),
-    sort: Optional[str] = Query("-imdb_rating", description="Sort by field"),
+    sort: str | None = Query("-imdb_rating", description="Sort by field"),
     genre_service: GenreService = Depends(get_genre_service)
 ):
     """

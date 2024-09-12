@@ -1,4 +1,3 @@
-from typing import Optional
 from uuid import UUID
 
 from pydantic import BaseModel
@@ -14,7 +13,7 @@ class Film(BaseModel):
 
 
 class FilmDetail(Film):
-    description: Optional[str] = None
+    description: str | None = None
     genres: list[Genre] = []
     directors: list[Person] = []
     actors: list[Person] = []

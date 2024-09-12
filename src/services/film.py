@@ -1,5 +1,6 @@
+import http
 from functools import lru_cache
-from typing import Optional, List, Tuple
+from typing import List, Tuple
 from uuid import UUID
 
 from elasticsearch import AsyncElasticsearch
@@ -22,7 +23,7 @@ class FilmService(CacheService):
         super().__init__(redis)
         self.elastic = elastic
 
-    async def get_film_by_id(self, film_id: str) -> Optional[FilmDetail]:
+    async def get_film_by_id(self, film_id: str) -> FilmDetail | None:
         """
         Retrieve a film by its unique ID.
         """
@@ -36,10 +37,10 @@ class FilmService(CacheService):
             await self._put_to_cache_by_id(cache_key, film)
             return film
         except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Error occurred: {str(e)}")
+            raise HTTPException(status_code=http.HTTPStatus.INTERNAL_SERVER_ERROR, detail=f"Error occurred: {str(e)}")
 
     async def get_films_by_person_id(self, person_id: UUID, from_: int = 0, size: int = 50,
-                                     sort: Optional[str] = "-imdb_rating") -> Tuple[List[dict], int]:
+                                     sort: str | None = "-imdb_rating") -> Tuple[List[dict], int]:
         """
         Fetch all films where a person (by person_id) appears in any role: actor, writer, or director.
         Support pagination and sorting.
@@ -86,10 +87,11 @@ class FilmService(CacheService):
             total_items = response['hits']['total']['value']
             return response['hits']['hits'], total_items
         except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Error fetching films for person: {str(e)}")
+            raise HTTPException(status_code=http.HTTPStatus.INTERNAL_SERVER_ERROR,
+                                detail=f"Error fetching films for person: {str(e)}")
 
     async def get_films_by_genre_id(self, genre_id: UUID, from_: int = 0, size: int = 50,
-                                    sort: Optional[str] = "-imdb_rating") -> Tuple[List[dict], int]:
+                                    sort: str | None = "-imdb_rating") -> Tuple[List[dict], int]:
         """
         Fetch all films where the genre matches genre_id.
         Support pagination and sorting.
@@ -120,13 +122,14 @@ class FilmService(CacheService):
             total_items = response['hits']['total']['value']
             return response['hits']['hits'], total_items
         except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Error fetching films for genre: {str(e)}")
+            raise HTTPException(status_code=http.HTTPStatus.INTERNAL_SERVER_ERROR,
+                                detail=f"Error fetching films for genre: {str(e)}")
 
     async def get_all_films(
             self,
             page_size: int = 50,
             page_number: int = 1,
-            sort: Optional[str] = None
+            sort: str | None = None
     ) -> Tuple[List[FilmDetail], int]:
         """
         Get a list of films with pagination, sorting, and total count of genres.
@@ -138,7 +141,7 @@ class FilmService(CacheService):
             query: str,
             page_size: int = 50,
             page_number: int = 1,
-            sort: Optional[str] = None
+            sort: str | None = None
     ) -> Tuple[List[FilmDetail], int]:
         """
         Search for films based on a query string with pagination, sorting, and total count of results.
@@ -157,8 +160,8 @@ class FilmService(CacheService):
             self,
             page_size: int,
             page_number: int,
-            sort: Optional[str] = None,
-            search_body: Optional[dict] = None
+            sort: str | None = None,
+            search_body: dict | None = None
     ) -> Tuple[List[FilmDetail], int]:
         """
         Helper method to fetch films from Elasticsearch with pagination, sorting, total count, and caching.
@@ -197,7 +200,8 @@ class FilmService(CacheService):
 
             return films, total_items
         except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Elasticsearch error: {str(e)}")
+            raise HTTPException(status_code=http.HTTPStatus.INTERNAL_SERVER_ERROR,
+                                detail=f"Elasticsearch error: {str(e)}")
 
 
 @lru_cache()
