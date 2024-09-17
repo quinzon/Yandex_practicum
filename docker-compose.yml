@@ -63,6 +63,7 @@ services:
   api:
     build:
       dockerfile: Dockerfile
+    image: fastapi
     command: ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000"]
     depends_on:
       redis:
