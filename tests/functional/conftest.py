@@ -27,12 +27,19 @@ def es_write_data(es_client):
     async def inner(data: list[dict], index: str, mapping: dict):
         if await es_client.indices.exists(index=index):
             await es_client.indices.delete(index=index)
+
         await es_client.indices.create(index=index, **mapping)
 
-        if not await es_client.ping():
-            raise Exception("Elasticsearch is not responding")
+        bulk_data = []
+        for doc in data:
+            bulk_data.append({
+                '_index': index,
+                '_id': doc['id'],
+                '_source': doc
+            })
+        updated, errors = await async_bulk(client=es_client, actions=bulk_data)
 
-        updated, errors = await async_bulk(client=es_client, actions=data)
+        await es_client.indices.refresh(index=index)
 
         if errors:
             raise Exception('Error occurred while writing data to Elasticsearch')
@@ -42,7 +49,8 @@ def es_write_data(es_client):
 
 @pytest_asyncio.fixture(scope='session')
 async def client_session():
-    session = aiohttp.ClientSession()
+    timeout = aiohttp.ClientTimeout(total=60)
+    session = aiohttp.ClientSession(timeout=timeout)
     yield session
     await session.close()
 
@@ -52,5 +60,6 @@ def make_get_request(client_session):
     async def inner(endpoint: str, params: dict):
         url = f'{test_settings.service_url}{endpoint}'
         async with client_session.get(url, params=params) as response:
-            return response
+            return await response.json(), response.headers, response.status
+
     return inner

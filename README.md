@@ -157,6 +157,14 @@ Here are some of the main API endpoints:
 
 For a full list of available endpoints, visit the Swagger UI at [http://localhost:8000/api/openapi](http://localhost:8000/api/openapi).
 
+
+## Tests
+
+1. Build API image:
+   `docker-compose build api`
+2. Build Tests:
+   `docker-compose -f tests/functional/docker-compose.test.yml up --build`
+
 ## Contributing
 
 If you want to contribute to this project, please follow these steps:

@@ -1,4 +1,3 @@
-import datetime
 import uuid
 
 es_movies_data = [{
@@ -22,7 +21,5 @@ es_movies_data = [{
     'writers': [
         {'id': str(uuid.uuid4()), 'full_name': 'Ben'},
         {'id': str(uuid.uuid4()), 'full_name': 'Howard'}
-    ],
-    'created_at': datetime.datetime.now().isoformat(),
-    'updated_at': datetime.datetime.now().isoformat(),
+    ]
 } for _ in range(60)]
