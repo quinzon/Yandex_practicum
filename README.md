@@ -160,10 +160,10 @@ For a full list of available endpoints, visit the Swagger UI at [http://localhos
 
 ## Tests
 
-1. Build API image:
-   `docker-compose build api`
-2. Build Tests:
-   `docker-compose -f tests/functional/docker-compose.test.yml up --build`
+1. Run tests:
+   `make run_tests`
+2. Cleanup:
+   `make clean`
 
 ## Contributing
 

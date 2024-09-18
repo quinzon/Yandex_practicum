@@ -11,7 +11,8 @@ from src.models.person import Person, PersonFilmsParticipant
 class ElasticsearchService:
     SORTABLE_FIELDS = {
         "imdb_rating": "imdb_rating",
-        "title": "title.raw"
+        "title": "title.raw",
+        "full_name": "full_name.raw"
     }
 
     def __init__(self, elastic: AsyncElasticsearch):

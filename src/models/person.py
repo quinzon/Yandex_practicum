@@ -20,4 +20,9 @@ class Person(BaseModel):
 
 
 class PersonFilmsParticipant(Person):
-    films: list[PersonFilm]
+    films: list[PersonFilm] | None = None
+
+    def __init__(self, **data):
+        super().__init__(**data)
+        if self.films is None:
+            self.films = []
