@@ -12,20 +12,18 @@ from src.db.redis import get_redis
 from src.models.film import Film
 from src.models.genre import Genre
 from src.services.cache import CacheService
+from src.services.elasticsearch import ElasticsearchService
 from src.services.film import FilmService, get_film_service
 
 
-class GenreService(CacheService):
-    SORTABLE_FIELDS = {
-        "name": "name.keyword"
-    }
+class GenreService(CacheService, ElasticsearchService):
 
     def __init__(self, redis: Redis, elastic: AsyncElasticsearch, film_service: FilmService):
-        super().__init__(redis)
-        self.elastic = elastic
+        CacheService.__init__(self, redis)
+        ElasticsearchService.__init__(self, elastic)
         self.film_service = film_service
 
-    async def get_genre_by_id(self, genre_id: UUID) -> Genre | None:
+    async def get_by_id(self, genre_id: UUID) -> Genre | None:
         """
         Get a genre by its ID. Cache the result if found.
         """
@@ -35,14 +33,13 @@ class GenreService(CacheService):
             return cached_data
 
         try:
-            response = await self.elastic.get(index='genres', id=str(genre_id))
-            genre = Genre(**response['_source'])
+            genre = await self._response_by_id('genres', genre_id, Genre)
             await self._put_to_cache_by_id(cache_key, genre)
             return genre
         except Exception as e:
             raise HTTPException(status_code=http.HTTPStatus.INTERNAL_SERVER_ERROR, detail=f"Error occurred: {str(e)}")
 
-    async def get_all_genres(
+    async def get_all(
             self,
             page_size: int = 50,
             page_number: int = 1,
@@ -51,9 +48,9 @@ class GenreService(CacheService):
         """
         Get a list of genres with pagination, sorting, and total count of genres.
         """
-        return await self._fetch_genres(page_size=page_size, page_number=page_number, sort=sort)
+        return await self._fetch_genres(page_size, page_number, sort)
 
-    async def search_genres(
+    async def search(
             self,
             query: str,
             page_size: int = 50,
@@ -70,55 +67,34 @@ class GenreService(CacheService):
                 "fuzziness": "AUTO"
             }
         }
-        return await self._fetch_genres(page_size=page_size, page_number=page_number, sort=sort,
-                                        search_body=search_body)
+        return await self._fetch_genres(page_size, page_number, sort, search_body)
 
-    async def get_genre_films(self, genre_id: UUID, page_size: int = 50, page_number: int = 1,
-                              sort: str | None = "-imdb_rating") -> tuple[list[Film], int]:
+    async def get_genre_films(
+            self,
+            genre_id: UUID,
+            page_size: int = 50,
+            page_number: int = 1,
+            sort: str | None = None
+    ) -> tuple[List[Film], int]:
         """
         Get all films associated with a genre by genre ID, with pagination and sorting.
         """
-        from_ = (page_number - 1) * page_size
-        films_data, total_items = await self.film_service.get_films_by_genre_id(genre_id, from_=from_, size=page_size,
-                                                                                sort=sort)
-
-        films = []
-        for film_data in films_data:
-            film = await self.film_service.get_film_by_id(str(film_data['_id']))
-            if film:
-                films.append(film)
-
-        return films, total_items
+        return await self.film_service.get_films_by_genre_id(genre_id, page_size, page_number, sort)
 
     async def _fetch_genres(
             self,
             page_size: int,
             page_number: int,
             sort: str | None = None,
-            search_body: dict | None = None
+            query: dict | None = None
     ) -> Tuple[List[Genre], int]:
         """
         Helper method to fetch genres from Elasticsearch with pagination, sorting, total count, and caching.
         """
-        from_ = (page_number - 1) * page_size
-
-        sort_order = "asc"
-        if sort and sort.startswith('-'):
-            sort_order = "desc"
-            sort = sort[1:]
-
-        sort_field = self.SORTABLE_FIELDS.get(sort, sort)
-
-        body = {
-            "from": from_,
-            "size": page_size,
-            "query": search_body if search_body else {"match_all": {}},
-            "sort": [{sort_field: {"order": sort_order}}] if sort_field else []
-        }
 
         cache_key_parts = [f"genres:list:{page_number}:{page_size}:{sort}"]
-        if search_body:
-            cache_key_parts.append(str(search_body))
+        if query:
+            cache_key_parts.append(str(query))
         cache_key = ":".join(cache_key_parts)
 
         cached_data = await self._get_list_from_cache(cache_key, Genre)
@@ -126,10 +102,7 @@ class GenreService(CacheService):
             return cached_data
 
         try:
-            response = await self.elastic.search(index='genres', body=body)
-            genres = [Genre(**doc['_source']) for doc in response['hits']['hits']]
-            total_items = response['hits']['total']['value']
-
+            genres, total_items = await self._response_list('genres', Genre, page_size, page_number, sort, query)
             await self._put_list_to_cache(cache_key, genres, total_items)
 
             return genres, total_items

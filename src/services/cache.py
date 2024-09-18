@@ -23,12 +23,13 @@ class CacheService:
         Retrieve list of data and total_items from Redis cache.
         """
         cached_data = await self.redis.get(cache_key)
-        if cached_data:
-            cached_dict = json.loads(cached_data)
-            data = [model.parse_raw(item) for item in cached_dict['items']]
-            total_items = cached_dict['total_items']
-            return data, total_items
-        return None
+        if not cached_data:
+            return None
+
+        cached_dict = json.loads(cached_data)
+        data = [model.parse_raw(item) for item in cached_dict['items']]
+        total_items = cached_dict['total_items']
+        return data, total_items
 
     async def _put_list_to_cache(
             self,

@@ -14,7 +14,7 @@ async def get_genre_by_id(genre_id: UUID, genre_service: GenreService = Depends(
     """
     Retrieve a genre by its unique ID.
     """
-    genre = await genre_service.get_genre_by_id(genre_id)
+    genre = await genre_service.get_by_id(genre_id)
     if not genre:
         raise HTTPException(status_code=http.HTTPStatus.NOT_FOUND, detail="Genre not found")
     return genre
@@ -31,7 +31,7 @@ async def list_genres(
     """
     Retrieve a list of genres with pagination and optional sorting.
     """
-    return await genre_service.get_all_genres(page_size=page_size, page_number=page_number, sort=sort)
+    return await genre_service.get_all(page_size=page_size, page_number=page_number, sort=sort)
 
 
 @router.get("/search/", response_model=Pagination[Genre], summary="Search Genres with Pagination and Sorting")
@@ -46,7 +46,7 @@ async def search_genres(
     """
     Search for genres by query string with pagination and optional sorting.
     """
-    return await genre_service.search_genres(query=query, page_size=page_size, page_number=page_number, sort=sort)
+    return await genre_service.search(query=query, page_size=page_size, page_number=page_number, sort=sort)
 
 
 @router.get("/{genre_id}/film/", response_model=Pagination[Film], summary="Get Films by Genre ID")

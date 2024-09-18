@@ -16,7 +16,7 @@ async def get_person_by_id(person_id: UUID, person_service: PersonService = Depe
     """
     Retrieve a person by their unique ID, including their films and roles.
     """
-    person = await person_service.get_person_by_id(person_id)
+    person = await person_service.get_by_id(person_id)
     if not person:
         raise HTTPException(status_code=http.HTTPStatus.NOT_FOUND, detail="Person not found")
     return person
@@ -33,7 +33,7 @@ async def list_persons(
     """
     Retrieve a list of persons with pagination and optional sorting.
     """
-    return await person_service.get_all_persons(page_size=page_size, page_number=page_number, sort=sort)
+    return await person_service.get_all(page_size=page_size, page_number=page_number, sort=sort)
 
 
 @router.get("/search/", response_model=Pagination[Person], summary="Search Persons")
@@ -48,7 +48,7 @@ async def search_persons(
     """
     Search for persons by query string with pagination and optional sorting.
     """
-    return await person_service.search_persons(query=query, page_size=page_size, page_number=page_number, sort=sort)
+    return await person_service.search(query=query, page_size=page_size, page_number=page_number, sort=sort)
 
 
 @router.get("/{person_id}/film/", response_model=Pagination[Film], summary="Get Films by Person ID")
