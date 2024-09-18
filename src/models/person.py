@@ -10,7 +10,7 @@ class Roles(str, Enum):
 
 
 class PersonFilm(BaseModel):
-    film_id: UUID
+    id: UUID
     roles: list[Roles]
 
 
