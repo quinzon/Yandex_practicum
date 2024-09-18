@@ -1,0 +1,52 @@
+version: '3.8'
+
+services:
+  api:
+    build: ../../
+    image: fastapi
+    container_name: api_container
+    networks:
+      - test-network
+    env_file:
+      - .env
+    entrypoint: ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000"]
+
+  tests:
+    image: fastapi
+    env_file:
+      - .env
+    networks:
+      - test-network
+    entrypoint: >
+      sh -c "export PYTHONPATH=/opt/app
+      && pip install -r /opt/app/tests/functional/requirements.txt
+      && python3 /opt/app/tests/functional/utils/wait_for_es.py
+      && python3 /opt/app/tests/functional/utils/wait_for_redis.py
+      && pytest /opt/app/tests/functional/src"
+
+  redis:
+    image: redis:latest
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - test-network
+
+  elasticsearch:
+    image: elasticsearch:8.6.2
+    environment:
+      ES_JAVA_OPTS: "-Xms512m -Xmx512m"
+      discovery.type: "single-node"
+      xpack.security.enabled: "false"
+    healthcheck:
+      test: [ "CMD-SHELL", "curl --silent --fail localhost:9200/_cluster/health || exit 1" ]
+      interval: 10s
+      retries: 5
+    networks:
+      - test-network
+
+networks:
+  test-network:
+    driver: bridge

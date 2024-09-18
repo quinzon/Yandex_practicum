@@ -22,6 +22,8 @@ venv
 docs.zip
 archive.zip
 docker-compose.override.yml
+docker-compose.test.override.yml
+
 # vim temporary files
 *~
 .*.sw?
