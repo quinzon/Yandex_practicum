@@ -1,25 +1,49 @@
 import uuid
 
-es_movies_data = [{
+
+es_film_data = {
     'id': str(uuid.uuid4()),
-    'imdb_rating': 8.5,
-    'genres': [
-        {'id': str(uuid.uuid4()), 'name': 'Action'},
-        {'id': str(uuid.uuid4()), 'name': 'Sci-Fi'}
-    ],
     'title': 'The Star',
+    'imdb_rating': 8.5,
     'description': 'New World',
-    'directors': [
-        {'id': str(uuid.uuid4()), 'full_name': 'Stan'}
+    'genres': [
+        {
+            'id': str(uuid.uuid4()),
+            'name': str(uuid.uuid4()),
+            'description': str(uuid.uuid4())
+        },
+        {
+            'id': str(uuid.uuid4()),
+            'name': 'Sci-Fi',
+            'description': str(uuid.uuid4())
+        }
     ],
-    'actors_names': ['Ann', 'Bob'],
-    'writers_names': ['Ben', 'Howard'],
+    'directors': [
+        {
+            'id': str(uuid.uuid4()),
+            'full_name': 'Stan'
+        }
+    ],
     'actors': [
-        {'id': str(uuid.uuid4()), 'full_name': 'Ann'},
-        {'id': str(uuid.uuid4()), 'full_name': 'Bob'}
+        {
+            'id': str(uuid.uuid4()),
+            'full_name': 'Ann'
+        },
+        {
+            'id': str(uuid.uuid4()),
+            'full_name': 'Bob'
+        }
     ],
     'writers': [
-        {'id': str(uuid.uuid4()), 'full_name': 'Ben'},
-        {'id': str(uuid.uuid4()), 'full_name': 'Howard'}
+        {
+            'id': str(uuid.uuid4()),
+            'full_name': 'Ben'
+        },
+        {
+            'id': str(uuid.uuid4()),
+            'full_name': 'Howard'
+        }
     ]
-} for _ in range(60)]
+}
+
+es_films_data = [es_film_data for _ in range(60)]
