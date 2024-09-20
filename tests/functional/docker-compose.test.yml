@@ -13,14 +13,14 @@ services:
     image: fastapi
     container_name: api_container
     env_file:
-      - ../../.env
+      - .env.tests
     entrypoint: ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000"]
     <<: *common-variables
 
   tests:
     image: fastapi
     env_file:
-      - .env
+      - .env.tests
     <<: *common-variables
     entrypoint: >
       sh -c "export PYTHONPATH=/opt/app

@@ -19,7 +19,7 @@ class TestSettings(BaseSettings):
     service_url: str = Field('http://api:8000', alias='SERVICE_URL')
 
     model_config = SettingsConfigDict(
-        env_file='.env',
+        env_file='.env.tests',
         extra='ignore',
         env_file_encoding='utf-8'
     )

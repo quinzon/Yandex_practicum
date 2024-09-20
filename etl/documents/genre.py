@@ -15,7 +15,12 @@ from psycopg.rows import dict_row
 
 class Genre(Document):
     id = Keyword()
-    name = Text(analyzer='ru_en')
+    name = Text(
+        analyzer='ru_en',
+        fields={
+            "raw": Keyword()
+        }
+    )
     description = Text(analyzer='ru_en')
     last_change_date = Keyword(index=False)
 

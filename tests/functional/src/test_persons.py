@@ -232,7 +232,7 @@ async def test_search_persons(make_get_request, es_write_data, query, expected_r
 
     # Perform the search
     params = {'query': query, 'page_size': 10, 'page_number': 1}
-    response, _, status = await make_get_request(f"{ENDPOINT}search/", params=params)
+    response, _, status = await make_get_request(f"{ENDPOINT}search", params=params)
     assert status == expected_status
 
     if status == HTTPStatus.OK:
@@ -260,7 +260,7 @@ async def test_search_persons_pagination(make_get_request, es_write_data, person
 
     # Perform search with pagination
     params = {'query': search_query, 'page_size': page_size, 'page_number': page_number}
-    response, _, status = await make_get_request(f"{ENDPOINT}search/", params=params)
+    response, _, status = await make_get_request(f"{ENDPOINT}search", params=params)
     assert status == HTTPStatus.OK
 
     # Verify pagination structure
@@ -293,7 +293,7 @@ async def test_search_persons_sort_ascending(make_get_request, es_write_data, pe
 
     # Perform search with sorting by full_name in ascending order
     params = {'query': 'Joh', 'page_size': 10, 'page_number': 1, 'sort': 'full_name'}
-    response, _, status = await make_get_request(f"{ENDPOINT}search/", params=params)
+    response, _, status = await make_get_request(f"{ENDPOINT}search", params=params)
     assert status == HTTPStatus.OK
 
     # Verify sorting results
@@ -320,7 +320,7 @@ async def test_search_persons_sort_descending(make_get_request, es_write_data, p
 
     # Perform search with sorting by full_name in descending order
     params = {'query': 'John', 'page_size': 10, 'page_number': 1, 'sort': '-full_name'}
-    response, _, status = await make_get_request(f"{ENDPOINT}search/", params=params)
+    response, _, status = await make_get_request(f"{ENDPOINT}search", params=params)
     assert status == HTTPStatus.OK
 
     # Verify sorting results
@@ -342,14 +342,14 @@ async def test_search_persons_cache(make_get_request, es_write_data, es_client, 
 
     # Perform initial search to cache the result
     params = {'query': search_query, 'page_size': 10, 'page_number': 1}
-    response, _, status = await make_get_request(f"{ENDPOINT}search/", params=params)
+    response, _, status = await make_get_request(f"{ENDPOINT}search", params=params)
     assert status == HTTPStatus.OK
 
     # Delete person data from Elasticsearch to check cache
     await es_client.delete(index=test_settings.es_persons_index, id=person_data['id'])
 
     # Perform search again and expect results from cache
-    response, _, status = await make_get_request(f"{ENDPOINT}search/", params=params)
+    response, _, status = await make_get_request(f"{ENDPOINT}search", params=params)
     assert status == HTTPStatus.OK
     assert len(response['items']) == 1  # Cached result
     assert response['items'][0]['id'] == person_data['id']
