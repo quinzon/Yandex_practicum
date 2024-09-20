@@ -15,7 +15,12 @@ class Film(InnerDoc):
 
 class Person(Document):
     id = Keyword()
-    full_name = Text(analyzer='ru_en')
+    full_name = Text(
+        analyzer='ru_en',
+        fields={
+            "raw": Keyword()
+        }
+    )
     films = Nested(Film)
     last_change_date = Keyword(index=False)
 
@@ -26,12 +31,20 @@ class Person(Document):
             "analysis": {
                 "filter": {
                     "russian_stop": {"type": "stop", "stopwords": "_russian_"},
-                    "russian_stemmer": {"type": "stemmer", "language": "russian"}
+                    "russian_stemmer": {"type": "stemmer", "language": "russian"},
+                    "english_stop": {"type": "stop", "stopwords": "_english_"},
+                    "english_stemmer": {"type": "stemmer", "language": "english"}
                 },
                 "analyzer": {
                     "ru_en": {
                         "tokenizer": "standard",
-                        "filter": ["lowercase", "russian_stop", "russian_stemmer"]
+                        "filter": [
+                            "lowercase",
+                            "russian_stop",
+                            "russian_stemmer",
+                            "english_stop",
+                            "english_stemmer"
+                        ]
                     }
                 }
             }

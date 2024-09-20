@@ -11,6 +11,21 @@ from src.services.person import PersonService, get_person_service
 router = APIRouter()
 
 
+@router.get("/search", response_model=Pagination[Person], summary="Search Persons")
+@paginated_response()
+async def search_persons(
+        query: str = Query(..., description="Search query"),
+        page_size: int = Query(50, gt=0, description="Number of items per page"),
+        page_number: int = Query(1, gt=0, description="The page number to retrieve"),
+        sort: str | None = Query(None, description="Field to sort by"),
+        person_service: PersonService = Depends(get_person_service),
+):
+    """
+    Search for persons by query string with pagination and optional sorting.
+    """
+    return await person_service.search(query=query, page_size=page_size, page_number=page_number, sort=sort)
+
+
 @router.get("/{person_id}", response_model=PersonFilmsParticipant, summary="Get Person by ID")
 async def get_person_by_id(person_id: UUID, person_service: PersonService = Depends(get_person_service)):
     """
@@ -34,21 +49,6 @@ async def list_persons(
     Retrieve a list of persons with pagination and optional sorting.
     """
     return await person_service.get_all(page_size=page_size, page_number=page_number, sort=sort)
-
-
-@router.get("/search/", response_model=Pagination[Person], summary="Search Persons")
-@paginated_response()
-async def search_persons(
-        query: str = Query(..., description="Search query"),
-        page_size: int = Query(50, gt=0, description="Number of items per page"),
-        page_number: int = Query(1, gt=0, description="The page number to retrieve"),
-        sort: str | None = Query(None, description="Field to sort by"),
-        person_service: PersonService = Depends(get_person_service),
-):
-    """
-    Search for persons by query string with pagination and optional sorting.
-    """
-    return await person_service.search(query=query, page_size=page_size, page_number=page_number, sort=sort)
 
 
 @router.get("/{person_id}/film/", response_model=Pagination[Film], summary="Get Films by Person ID")
