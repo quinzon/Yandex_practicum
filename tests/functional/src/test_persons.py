@@ -31,7 +31,8 @@ async def test_person_id_validation(make_get_request, person_id, expected_status
     ]
 )
 async def test_person_list_pagination_validation(make_get_request, page_size, page_number, expected_status):
-    _, _, status = await make_get_request(f"{ENDPOINT}?page_size={page_size}&page_number={page_number}")
+    params = {'page_size': page_size, 'page_number': page_number}
+    _, _, status = await make_get_request(f"{ENDPOINT}", params=params)
     assert status == expected_status
 
 
@@ -145,7 +146,8 @@ async def test_persons_list_response_structure(make_get_request, es_write_data):
     await es_write_data([person_data], test_settings.es_persons_index, test_settings.es_persons_index_mapping)
 
     # Request the list of persons
-    response, _, status = await make_get_request(f"{ENDPOINT}?page_size=1&page_number=1")
+    params = {'page_size': 1, 'page_number': 1}
+    response, _, status = await make_get_request(f"{ENDPOINT}", params=params)
     assert status == HTTPStatus.OK
 
     # Check the response structure
@@ -223,13 +225,14 @@ async def test_person_films_response_structure(make_get_request, es_write_data, 
         ("Jane", 0, HTTPStatus.OK)  # No results found
     ]
 )
-async def test_search_persons(make_get_request, es_write_data, query, expected_results, expected_status, es_client):
+async def test_search_persons(make_get_request, es_write_data, query, expected_results, expected_status):
     # Seed Elasticsearch with person data
     person_data = {'id': str(uuid.uuid4()), 'full_name': 'John Doe'}
     await es_write_data([person_data], test_settings.es_persons_index, test_settings.es_persons_index_mapping)
 
     # Perform the search
-    response, _, status = await make_get_request(f"{ENDPOINT}search/?query={query}&page_size=10&page_number=1")
+    params = {'query': query, 'page_size': 10, 'page_number': 1}
+    response, _, status = await make_get_request(f"{ENDPOINT}search/", params=params)
     assert status == expected_status
 
     if status == HTTPStatus.OK:
@@ -256,8 +259,8 @@ async def test_search_persons_pagination(make_get_request, es_write_data, person
     await es_write_data(persons_data, test_settings.es_persons_index, test_settings.es_persons_index_mapping)
 
     # Perform search with pagination
-    response, _, status = await make_get_request(
-        f"{ENDPOINT}search/?query={search_query}&page_size={page_size}&page_number={page_number}")
+    params = {'query': search_query, 'page_size': page_size, 'page_number': page_number}
+    response, _, status = await make_get_request(f"{ENDPOINT}search/", params=params)
     assert status == HTTPStatus.OK
 
     # Verify pagination structure
@@ -289,7 +292,8 @@ async def test_search_persons_sort_ascending(make_get_request, es_write_data, pe
     await es_write_data(persons_data, test_settings.es_persons_index, test_settings.es_persons_index_mapping)
 
     # Perform search with sorting by full_name in ascending order
-    response, _, status = await make_get_request(f"{ENDPOINT}search/?query=Joh&page_size=10&page_number=1&sort=full_name")
+    params = {'query': 'Joh', 'page_size': 10, 'page_number': 1, 'sort': 'full_name'}
+    response, _, status = await make_get_request(f"{ENDPOINT}search/", params=params)
     assert status == HTTPStatus.OK
 
     # Verify sorting results
@@ -315,7 +319,8 @@ async def test_search_persons_sort_descending(make_get_request, es_write_data, p
     await es_write_data(persons_data, test_settings.es_persons_index, test_settings.es_persons_index_mapping)
 
     # Perform search with sorting by full_name in descending order
-    response, _, status = await make_get_request(f"{ENDPOINT}search/?query=John&page_size=10&page_number=1&sort=-full_name")
+    params = {'query': 'John', 'page_size': 10, 'page_number': 1, 'sort': '-full_name'}
+    response, _, status = await make_get_request(f"{ENDPOINT}search/", params=params)
     assert status == HTTPStatus.OK
 
     # Verify sorting results
@@ -334,15 +339,17 @@ async def test_search_persons_sort_descending(make_get_request, es_write_data, p
 async def test_search_persons_cache(make_get_request, es_write_data, es_client, person_data, search_query):
     # Insert data into Elasticsearch
     await es_write_data([person_data], test_settings.es_persons_index, test_settings.es_persons_index_mapping)
+
     # Perform initial search to cache the result
-    response, _, status = await make_get_request(f"{ENDPOINT}search/?query={search_query}&page_size=10&page_number=1")
+    params = {'query': search_query, 'page_size': 10, 'page_number': 1}
+    response, _, status = await make_get_request(f"{ENDPOINT}search/", params=params)
     assert status == HTTPStatus.OK
 
     # Delete person data from Elasticsearch to check cache
     await es_client.delete(index=test_settings.es_persons_index, id=person_data['id'])
 
     # Perform search again and expect results from cache
-    response, _, status = await make_get_request(f"{ENDPOINT}search/?query={search_query}&page_size=10&page_number=1")
+    response, _, status = await make_get_request(f"{ENDPOINT}search/", params=params)
     assert status == HTTPStatus.OK
     assert len(response['items']) == 1  # Cached result
     assert response['items'][0]['id'] == person_data['id']
