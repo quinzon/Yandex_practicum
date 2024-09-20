@@ -58,7 +58,7 @@ async def client_session():
 
 @pytest_asyncio.fixture(name="make_get_request")
 def make_get_request(client_session):
-    async def inner(endpoint: str, params: dict):
+    async def inner(endpoint: str, params: dict = None):
         url = f'{test_settings.service_url}{endpoint}'
         async with client_session.get(url, params=params) as response:
             return await response.json(), response.headers, response.status

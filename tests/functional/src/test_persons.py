@@ -80,7 +80,7 @@ async def test_get_person_films(make_get_request, es_write_data, person_data, fi
         # Load the person's data and their films into Elasticsearch
         await es_write_data([person_data], test_settings.es_persons_index, test_settings.es_persons_index_mapping)
         film_data['actors'] = [{'id': person_data['id'], 'full_name': person_data['full_name']}]
-        await es_write_data([film_data], test_settings.es_movies_index, test_settings.es_movies_index_mapping)
+        await es_write_data([film_data], test_settings.es_movie_index, test_settings.es_movies_index_mapping)
 
     response, _, status = await make_get_request(f"{ENDPOINT}{person_data['id']}/film")
     assert status == expected_status
@@ -186,7 +186,7 @@ async def test_person_films_response_structure(make_get_request, es_write_data, 
     # Load the person's data and their films into Elasticsearch
     await es_write_data([person_data], test_settings.es_persons_index, test_settings.es_persons_index_mapping)
     film_data['actors'] = [{'id': person_data['id'], 'full_name': person_data['full_name']}]
-    await es_write_data([film_data], test_settings.es_movies_index, test_settings.es_movies_index_mapping)
+    await es_write_data([film_data], test_settings.es_movie_index, test_settings.es_movies_index_mapping)
 
     # Request the person's films
     response, _, status = await make_get_request(f"{ENDPOINT}{person_data['id']}/film")

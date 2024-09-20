@@ -2,6 +2,7 @@ from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from tests.functional.testdata.movies_index import MOVIES_INDEX
+from tests.functional.testdata.persons_index import PERSONS_INDEX
 
 
 class TestSettings(BaseSettings):
@@ -9,8 +10,9 @@ class TestSettings(BaseSettings):
     es_port: str = Field('9200', alias='ES_PORT')
     es_genre_index: str = Field('genres', alias='ES_GENRE_INDEX')
     es_movie_index: str = Field('movies', alias='ES_MOVIE_INDEX')
-    es_person_index: str = Field('persons', alias='ES_PERSON_INDEX')
+    es_persons_index: str = Field('persons', alias='ES_PERSON_INDEX')
     es_movies_index_mapping: dict = MOVIES_INDEX
+    es_persons_index_mapping: dict = PERSONS_INDEX
 
     redis_host: str = Field('127.0.0.1', alias='REDIS_HOST')
     redis_port: int = Field("6379", alias='REDIS_PORT')
