@@ -6,10 +6,10 @@ import pytest
 from tests.functional.settings import test_settings
 
 ENDPOINT = '/api/v1/persons/'
+pytestmark = pytest.mark.asyncio
 
 
 # Tests for edge cases in UUID validation
-@pytest.mark.asyncio
 @pytest.mark.parametrize(
     "person_id, expected_status", [
         ("invalid-uuid", HTTPStatus.UNPROCESSABLE_ENTITY),
@@ -22,7 +22,6 @@ async def test_person_id_validation(make_get_request, person_id, expected_status
 
 
 # Tests for edge cases in pagination
-@pytest.mark.asyncio
 @pytest.mark.parametrize(
     "page_size, page_number, expected_status", [
         (0, 1, HTTPStatus.UNPROCESSABLE_ENTITY),  # Page size of zero
@@ -36,64 +35,82 @@ async def test_person_list_pagination_validation(make_get_request, page_size, pa
     assert status == expected_status
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize(
-    "person_data, expected_status", [
-        ({'id': str(uuid.uuid4()), 'full_name': 'Test Person'}, HTTPStatus.OK),
-        ({'id': str(uuid.uuid4()), 'full_name': 'Non-existent Person'}, HTTPStatus.INTERNAL_SERVER_ERROR)
+    "person_data", [
+        {'id': str(uuid.uuid4()), 'full_name': 'Test Person'}
     ]
 )
-async def test_get_person_by_id(make_get_request, es_write_data, person_data, expected_status):
-    # If success is expected, load the data into Elasticsearch
-    if expected_status == HTTPStatus.OK:
-        await es_write_data([person_data], test_settings.es_persons_index, test_settings.es_persons_index_mapping)
+async def test_get_existing_person_by_id(make_get_request, es_write_data, person_data):
+    # Load the data into Elasticsearch
+    await es_write_data([person_data], test_settings.es_persons_index, test_settings.es_persons_index_mapping)
 
+    # Make request to get the person by ID
     response, _, status = await make_get_request(f"{ENDPOINT}{person_data['id']}")
-    assert status == expected_status
 
-    if expected_status == HTTPStatus.OK:
-        # Validate the successful response
-        assert response['id'] == person_data['id']
-        assert response['full_name'] == person_data['full_name']
-    else:
-        # Check the error message
-        assert 'detail' in response
-        assert 'NotFoundError' in response['detail']
+    # Assert the response is OK
+    assert status == HTTPStatus.OK
+
+    # Validate the successful response
+    assert response['id'] == person_data['id']
+    assert response['full_name'] == person_data['full_name']
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize(
-    "person_data, film_data, expected_status", [
+    "person_data", [
+        {'id': str(uuid.uuid4()), 'full_name': 'Non-existent Person'}
+    ]
+)
+async def test_get_non_existent_person_by_id(make_get_request, person_data):
+    # Make request to get a non-existent person by ID
+    response, _, status = await make_get_request(f"{ENDPOINT}{person_data['id']}")
+
+    # Assert the response status is internal server error (500)
+    assert status == HTTPStatus.INTERNAL_SERVER_ERROR
+
+    # Validate the error message
+    assert 'detail' in response
+    assert 'NotFoundError' in response['detail']
+
+
+# Get existing person films
+@pytest.mark.parametrize(
+    "person_data, film_data", [
         (
                 {'id': str(uuid.uuid4()), 'full_name': 'Test Person'},
-                {'id': str(uuid.uuid4()), 'title': 'Test Film', 'imdb_rating': 8.0},
-                HTTPStatus.OK
-        ),
-        (
-                {'id': str(uuid.uuid4()), 'full_name': 'Non-existent Person'},
-                None,
-                HTTPStatus.OK
+                {'id': str(uuid.uuid4()), 'title': 'Test Film', 'imdb_rating': 8.0}
         )
     ]
 )
-async def test_get_person_films(make_get_request, es_write_data, person_data, film_data, expected_status):
-    if expected_status == HTTPStatus.OK and film_data:
-        # Load the person's data and their films into Elasticsearch
-        await es_write_data([person_data], test_settings.es_persons_index, test_settings.es_persons_index_mapping)
-        film_data['actors'] = [{'id': person_data['id'], 'full_name': person_data['full_name']}]
-        await es_write_data([film_data], test_settings.es_movie_index, test_settings.es_movies_index_mapping)
+async def test_get_existing_person_films(make_get_request, es_write_data, person_data, film_data):
+    # Load the person's data and their films into Elasticsearch
+    await es_write_data([person_data], test_settings.es_persons_index, test_settings.es_persons_index_mapping)
+    film_data['actors'] = [{'id': person_data['id'], 'full_name': person_data['full_name']}]
+    await es_write_data([film_data], test_settings.es_movie_index, test_settings.es_movies_index_mapping)
 
+    # Make request to get the films of the person by ID
     response, _, status = await make_get_request(f"{ENDPOINT}{person_data['id']}/film")
-    assert status == expected_status
+    assert status == HTTPStatus.OK
 
-    if film_data:
-        assert len(response['items']) > 0
-        assert response['items'][0]['title'] == film_data['title']
-    else:
-        assert len(response['items']) == 0
+    # Assert that the film is correctly returned
+    assert len(response['items']) > 0
+    assert response['items'][0]['title'] == film_data['title']
 
 
-@pytest.mark.asyncio
+# Get non-existing person films
+@pytest.mark.parametrize(
+    "person_data", [
+        {'id': str(uuid.uuid4()), 'full_name': 'Non-existent Person'}
+    ]
+)
+async def test_get_non_existent_person_films(make_get_request, person_data):
+    # Make request to get the films of a non-existent person by ID
+    response, _, status = await make_get_request(f"{ENDPOINT}{person_data['id']}/film")
+
+    # Assert the response is OK but no films are found
+    assert status == HTTPStatus.OK
+    assert len(response['items']) == 0
+
+
 @pytest.mark.parametrize(
     "person_data", [
         ({'id': str(uuid.uuid4()), 'full_name': 'Test Person'})
@@ -118,7 +135,6 @@ async def test_person_cache(make_get_request, es_write_data, es_client, person_d
 
 
 # Tests for the structure of the response for getting a person by ID
-@pytest.mark.asyncio
 @pytest.mark.parametrize(
     "person_data, expected_status", [
         ({'id': str(uuid.uuid4()), 'full_name': 'Test Person'}, HTTPStatus.OK),
@@ -140,7 +156,6 @@ async def test_person_by_id_response_structure(make_get_request, es_write_data, 
 
 
 # Tests for the structure of the response for the list of persons with pagination
-@pytest.mark.asyncio
 async def test_persons_list_response_structure(make_get_request, es_write_data):
     person_data = {'id': str(uuid.uuid4()), 'full_name': 'Test Person'}
     await es_write_data([person_data], test_settings.es_persons_index, test_settings.es_persons_index_mapping)
@@ -173,7 +188,6 @@ async def test_persons_list_response_structure(make_get_request, es_write_data):
 
 
 # Tests for the structure of the response for getting a person's films with pagination
-@pytest.mark.asyncio
 @pytest.mark.parametrize(
     "person_data, film_data, expected_status", [
         (
@@ -217,15 +231,13 @@ async def test_person_films_response_structure(make_get_request, es_write_data, 
         assert 'imdb_rating' in film
 
 
-# Test basic search functionality
-@pytest.mark.asyncio
+# Test successful search with results
 @pytest.mark.parametrize(
-    "query, expected_results, expected_status", [
-        ("John", 1, HTTPStatus.OK),
-        ("Jane", 0, HTTPStatus.OK)  # No results found
+    "query, expected_results", [
+        ("John", 1),  # Should return 1 result
     ]
 )
-async def test_search_persons(make_get_request, es_write_data, query, expected_results, expected_status):
+async def test_search_persons_with_results(make_get_request, es_write_data, query, expected_results):
     # Seed Elasticsearch with person data
     person_data = {'id': str(uuid.uuid4()), 'full_name': 'John Doe'}
     await es_write_data([person_data], test_settings.es_persons_index, test_settings.es_persons_index_mapping)
@@ -233,16 +245,37 @@ async def test_search_persons(make_get_request, es_write_data, query, expected_r
     # Perform the search
     params = {'query': query, 'page_size': 10, 'page_number': 1}
     response, _, status = await make_get_request(f"{ENDPOINT}search", params=params)
-    assert status == expected_status
 
-    if status == HTTPStatus.OK:
-        assert 'meta' in response
-        assert 'items' in response
-        assert len(response['items']) == expected_results
+    # Assert status and results
+    assert status == HTTPStatus.OK
+    assert 'meta' in response
+    assert 'items' in response
+    assert len(response['items']) == expected_results
+
+
+# Test search with no results found
+@pytest.mark.parametrize(
+    "query, expected_results", [
+        ("Jane", 0),  # No results should be found
+    ]
+)
+async def test_search_persons_no_results(make_get_request, es_write_data, query, expected_results):
+    # Seed Elasticsearch with person data
+    person_data = {'id': str(uuid.uuid4()), 'full_name': 'John Doe'}
+    await es_write_data([person_data], test_settings.es_persons_index, test_settings.es_persons_index_mapping)
+
+    # Perform the search
+    params = {'query': query, 'page_size': 10, 'page_number': 1}
+    response, _, status = await make_get_request(f"{ENDPOINT}search", params=params)
+
+    # Assert status and empty results
+    assert status == HTTPStatus.OK
+    assert 'meta' in response
+    assert 'items' in response
+    assert len(response['items']) == expected_results
 
 
 # Test search with pagination
-@pytest.mark.asyncio
 @pytest.mark.parametrize(
     "persons_data, search_query, page_size, page_number, expected_total_items, expected_total_pages, expected_items_count",
     [
@@ -276,7 +309,6 @@ async def test_search_persons_pagination(make_get_request, es_write_data, person
 
 
 # Test search with sorting asc
-@pytest.mark.asyncio
 @pytest.mark.parametrize(
     "persons_data, expected_names", [
         ([
@@ -303,7 +335,6 @@ async def test_search_persons_sort_ascending(make_get_request, es_write_data, pe
 
 
 # Test search with sorting desc
-@pytest.mark.asyncio
 @pytest.mark.parametrize(
     "persons_data, expected_names", [
         ([
@@ -330,7 +361,6 @@ async def test_search_persons_sort_descending(make_get_request, es_write_data, p
 
 
 # Test search with cache validation
-@pytest.mark.asyncio
 @pytest.mark.parametrize(
     "person_data, search_query", [
         ({'id': str(uuid.uuid4()), 'full_name': 'John Doe'}, 'John')

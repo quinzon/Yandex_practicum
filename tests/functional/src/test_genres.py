@@ -6,10 +6,10 @@ import pytest
 from tests.functional.settings import test_settings
 
 ENDPOINT = '/api/v1/genres/'
+pytestmark = pytest.mark.asyncio
 
 
 # Tests for edge cases in UUID validation
-@pytest.mark.asyncio
 @pytest.mark.parametrize(
     "genre_id, expected_status", [
         ("invalid-uuid", HTTPStatus.UNPROCESSABLE_ENTITY),
@@ -22,7 +22,6 @@ async def test_genre_id_validation(make_get_request, genre_id, expected_status):
 
 
 # Tests for edge cases in pagination
-@pytest.mark.asyncio
 @pytest.mark.parametrize(
     "page_size, page_number, expected_status", [
         (0, 1, HTTPStatus.UNPROCESSABLE_ENTITY),  # Page size of zero
@@ -36,32 +35,40 @@ async def test_genre_list_pagination_validation(make_get_request, page_size, pag
     assert status == expected_status
 
 
-@pytest.mark.asyncio
+# Test successful genre retrieval by ID
 @pytest.mark.parametrize(
-    "genre_data, expected_status", [
-        ({'id': str(uuid.uuid4()), 'name': 'Action'}, HTTPStatus.OK),
-        ({'id': str(uuid.uuid4()), 'name': 'Non-existent Genre'}, HTTPStatus.INTERNAL_SERVER_ERROR)
+    "genre_data", [
+        ({'id': str(uuid.uuid4()), 'name': 'Action'}),
     ]
 )
-async def test_get_genre_by_id(make_get_request, es_write_data, genre_data, expected_status):
-    # If success is expected, load the data into Elasticsearch
-    if expected_status == HTTPStatus.OK:
-        await es_write_data([genre_data], test_settings.es_genre_index, test_settings.es_genres_index_mapping)
+async def test_get_genre_by_id_success(make_get_request, es_write_data, genre_data):
+    # Load the genre data into Elasticsearch
+    await es_write_data([genre_data], test_settings.es_genre_index, test_settings.es_genres_index_mapping)
 
     response, _, status = await make_get_request(f"{ENDPOINT}{genre_data['id']}")
-    assert status == expected_status
+    assert status == HTTPStatus.OK
 
-    if expected_status == HTTPStatus.OK:
-        # Validate the successful response
-        assert response['id'] == genre_data['id']
-        assert response['name'] == genre_data['name']
-    else:
-        # Check the error message
-        assert 'detail' in response
-        assert 'NotFoundError' in response['detail']
+    # Validate the successful response
+    assert response['id'] == genre_data['id']
+    assert response['name'] == genre_data['name']
 
 
-@pytest.mark.asyncio
+# Test genre not found
+@pytest.mark.parametrize(
+    "genre_data", [
+        ({'id': str(uuid.uuid4()), 'name': 'Non-existent Genre'}),
+    ]
+)
+async def test_get_genre_by_id_not_found(make_get_request, genre_data):
+    # Perform the request for a non-existent genre
+    response, _, status = await make_get_request(f"{ENDPOINT}{genre_data['id']}")
+    assert status == HTTPStatus.INTERNAL_SERVER_ERROR
+
+    # Validate the error message
+    assert 'detail' in response
+    assert 'NotFoundError' in response['detail']
+
+
 @pytest.mark.parametrize(
     "genre_data", [
         ({'id': str(uuid.uuid4()), 'name': 'Action'})
@@ -86,7 +93,6 @@ async def test_genre_cache(make_get_request, es_write_data, es_client, genre_dat
 
 
 # Tests for the structure of the response for getting a genre by ID
-@pytest.mark.asyncio
 @pytest.mark.parametrize(
     "genre_data, expected_status", [
         ({'id': str(uuid.uuid4()), 'name': 'Action'}, HTTPStatus.OK),
@@ -106,7 +112,6 @@ async def test_genre_by_id_response_structure(make_get_request, es_write_data, g
 
 
 # Tests for the structure of the response for the list of genres with pagination
-@pytest.mark.asyncio
 async def test_genres_list_response_structure(make_get_request, es_write_data):
     genre_data = {'id': str(uuid.uuid4()), 'name': 'Action'}
     await es_write_data([genre_data], test_settings.es_genre_index, test_settings.es_genres_index_mapping)
@@ -138,15 +143,13 @@ async def test_genres_list_response_structure(make_get_request, es_write_data):
         assert 'name' in genre
 
 
-# Test basic search functionality
-@pytest.mark.asyncio
+# Test successful genre search with results
 @pytest.mark.parametrize(
-    "query, expected_results, expected_status", [
-        ("Action", 1, HTTPStatus.OK),
-        ("Comedy", 0, HTTPStatus.OK)  # No results found
+    "query, expected_results", [
+        ("Action", 1),  # Should return 1 result
     ]
 )
-async def test_search_genres(make_get_request, es_write_data, query, expected_results, expected_status):
+async def test_search_genres_with_results(make_get_request, es_write_data, query, expected_results):
     # Seed Elasticsearch with genre data
     genre_data = {'id': str(uuid.uuid4()), 'name': 'Action'}
     await es_write_data([genre_data], test_settings.es_genre_index, test_settings.es_genres_index_mapping)
@@ -154,16 +157,37 @@ async def test_search_genres(make_get_request, es_write_data, query, expected_re
     # Perform the search
     params = {'query': query, 'page_size': 10, 'page_number': 1}
     response, _, status = await make_get_request(f"{ENDPOINT}search", params=params)
-    assert status == expected_status
 
-    if status == HTTPStatus.OK:
-        assert 'meta' in response
-        assert 'items' in response
-        assert len(response['items']) == expected_results
+    # Assert status and results
+    assert status == HTTPStatus.OK
+    assert 'meta' in response
+    assert 'items' in response
+    assert len(response['items']) == expected_results
+
+
+# Test genre search with no results
+@pytest.mark.parametrize(
+    "query, expected_results", [
+        ("Comedy", 0),  # No results should be found
+    ]
+)
+async def test_search_genres_no_results(make_get_request, es_write_data, query, expected_results):
+    # Seed Elasticsearch with genre data
+    genre_data = {'id': str(uuid.uuid4()), 'name': 'Action'}
+    await es_write_data([genre_data], test_settings.es_genre_index, test_settings.es_genres_index_mapping)
+
+    # Perform the search
+    params = {'query': query, 'page_size': 10, 'page_number': 1}
+    response, _, status = await make_get_request(f"{ENDPOINT}search", params=params)
+
+    # Assert status and no results
+    assert status == HTTPStatus.OK
+    assert 'meta' in response
+    assert 'items' in response
+    assert len(response['items']) == expected_results
 
 
 # Test search with pagination
-@pytest.mark.asyncio
 @pytest.mark.parametrize(
     "genres_data, search_query, page_size, page_number, expected_total_items, expected_total_pages, expected_items_count",
     [
@@ -198,7 +222,6 @@ async def test_search_genres_pagination(make_get_request, es_write_data, genres_
 
 
 # Test search with sorting asc
-@pytest.mark.asyncio
 @pytest.mark.parametrize(
     "genres_data, expected_names", [
         ([
@@ -225,7 +248,6 @@ async def test_search_genres_sort_ascending(make_get_request, es_write_data, gen
 
 
 # Test search with sorting desc
-@pytest.mark.asyncio
 @pytest.mark.parametrize(
     "genres_data, expected_names", [
         ([
@@ -252,7 +274,6 @@ async def test_search_genres_sort_descending(make_get_request, es_write_data, ge
 
 
 # Test search with cache validation
-@pytest.mark.asyncio
 @pytest.mark.parametrize(
     "genre_data, search_query", [
         ({'id': str(uuid.uuid4()), 'name': 'Action'}, 'Action')
@@ -277,7 +298,6 @@ async def test_search_genres_cache(make_get_request, es_write_data, es_client, g
     assert response['items'][0]['id'] == genre_data['id']
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize(
     "genre_data, films_data, expected_status, expected_films", [
         (
@@ -320,7 +340,6 @@ async def test_get_genre_films_success(make_get_request, es_write_data, genre_da
 
 
 # Test for case when genre exists but there are no films
-@pytest.mark.asyncio
 @pytest.mark.parametrize(
     "genre_data, expected_status", [
         (
@@ -352,7 +371,6 @@ async def test_get_genre_films_no_films(make_get_request, es_write_data, genre_d
 
 
 # Test for invalid UUID genre ID
-@pytest.mark.asyncio
 @pytest.mark.parametrize(
     "invalid_genre_id, expected_status", [
         ('invalid-uuid', HTTPStatus.UNPROCESSABLE_ENTITY),
