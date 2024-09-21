@@ -7,10 +7,10 @@ from tests.functional.settings import test_settings
 from tests.functional.testdata.movies_data import es_film_data, es_films_data
 
 ENDPOINT = '/api/v1/films/'
+pytestmark = pytest.mark.asyncio
 
 
 # Tests for edge cases in UUID validation
-@pytest.mark.asyncio
 @pytest.mark.parametrize(
     "film_id, expected_status", [
         ("invalid-uuid", HTTPStatus.UNPROCESSABLE_ENTITY),
@@ -23,7 +23,6 @@ async def test_film_id_validation(make_get_request, film_id, expected_status):
 
 
 # Tests for edge cases in pagination
-@pytest.mark.asyncio
 @pytest.mark.parametrize(
     "page_size, page_number, expected_status", [
         (0, 1, HTTPStatus.UNPROCESSABLE_ENTITY),  # Page size of zero
@@ -37,33 +36,41 @@ async def test_film_list_pagination_validation(make_get_request, page_size, page
     assert status == expected_status
 
 
-@pytest.mark.asyncio
+# Test successful film retrieval by ID
 @pytest.mark.parametrize(
-    "film_data, expected_status", [
-        ({'id': str(uuid.uuid4()), 'title': 'Test Film title', 'imdb_rating': 5}, HTTPStatus.OK),
-        ({'id': str(uuid.uuid4())}, HTTPStatus.INTERNAL_SERVER_ERROR)
+    "film_data", [
+        {'id': str(uuid.uuid4()), 'title': 'Test Film title', 'imdb_rating': 5}
     ]
 )
-async def test_get_film_by_id(make_get_request, es_write_data, film_data, expected_status):
-    # If success is expected, load the data into Elasticsearch
-    if expected_status == HTTPStatus.OK:
-        await es_write_data([film_data], test_settings.es_movie_index, test_settings.es_movies_index_mapping)
+async def test_get_film_by_id_success(make_get_request, es_write_data, film_data):
+    # Load the film data into Elasticsearch
+    await es_write_data([film_data], test_settings.es_movie_index, test_settings.es_movies_index_mapping)
 
     response, _, status = await make_get_request(f"{ENDPOINT}{film_data['id']}")
-    assert status == expected_status
+    assert status == HTTPStatus.OK
 
-    if expected_status == HTTPStatus.OK:
-        # Validate the successful response
-        assert response['id'] == film_data['id']
-        assert response['title'] == film_data['title']
-        assert response['imdb_rating'] == film_data['imdb_rating']
-    else:
-        # Check the error message
-        assert 'detail' in response
-        assert 'NotFoundError' in response['detail']
+    # Validate the successful response
+    assert response['id'] == film_data['id']
+    assert response['title'] == film_data['title']
+    assert response['imdb_rating'] == film_data['imdb_rating']
 
 
-@pytest.mark.asyncio
+# Test film not found
+@pytest.mark.parametrize(
+    "film_data", [
+        {'id': str(uuid.uuid4())}  # Film with missing title and imdb_rating
+    ]
+)
+async def test_get_film_by_id_not_found(make_get_request, film_data):
+    # Perform the request for a non-existent or incomplete film data
+    response, _, status = await make_get_request(f"{ENDPOINT}{film_data['id']}")
+    assert status == HTTPStatus.INTERNAL_SERVER_ERROR
+
+    # Validate the error message
+    assert 'detail' in response
+    assert 'NotFoundError' in response['detail']
+
+
 @pytest.mark.parametrize(
     "film_data", [
         ({'id': es_film_data['id']})
@@ -88,7 +95,6 @@ async def test_film_cache(make_get_request, es_write_data, es_client, film_data)
 
 
 # Tests for the structure of the response for getting a film by ID
-@pytest.mark.asyncio
 async def test_film_by_id_response_structure(make_get_request, es_write_data):
     # Add data to Elasticsearch
     await es_write_data([es_film_data], test_settings.es_movie_index, test_settings.es_movies_index_mapping)
@@ -102,7 +108,6 @@ async def test_film_by_id_response_structure(make_get_request, es_write_data):
 
 
 # Tests for the structure of the response for the list of films with pagination
-@pytest.mark.asyncio
 async def test_films_list_response_structure(make_get_request, es_write_data):
     await es_write_data(es_films_data, test_settings.es_movie_index, test_settings.es_movies_index_mapping)
 
@@ -133,7 +138,6 @@ async def test_films_list_response_structure(make_get_request, es_write_data):
 
 
 # Test basic search functionality
-@pytest.mark.asyncio
 @pytest.mark.parametrize(
     "query, expected_results", [
         ("Man", 1),
@@ -156,7 +160,6 @@ async def test_search_films(make_get_request, es_write_data, query, expected_res
 
 
 # Test search with pagination
-@pytest.mark.asyncio
 @pytest.mark.parametrize(
     "films_data, search_query, page_size, page_number, expected_total_items, expected_total_pages, expected_items_count",
     [
@@ -192,7 +195,6 @@ async def test_search_films_pagination_validation(make_get_request, es_write_dat
 
 
 # Test search with sorting asc
-@pytest.mark.asyncio
 @pytest.mark.parametrize(
     "films_data, expected_titles", [
         ([
@@ -219,7 +221,6 @@ async def test_search_films_sort_ascending(make_get_request, es_write_data, film
 
 
 # Test search with sorting desc
-@pytest.mark.asyncio
 @pytest.mark.parametrize(
     "films_data, expected_titles", [
         ([
@@ -246,7 +247,6 @@ async def test_search_films_sort_descending(make_get_request, es_write_data, fil
 
 
 # Test search with cache validation
-@pytest.mark.asyncio
 @pytest.mark.parametrize(
     "film_data, search_query", [
         ({'id': str(uuid.uuid4()), 'title': 'Main', 'imdb_rating': 5}, 'Man')
