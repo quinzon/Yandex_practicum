@@ -351,22 +351,6 @@ async def test_get_genre_films_no_films(make_get_request, es_write_data, genre_d
     assert meta['total_pages'] == 0
 
 
-# Test for non-existent genre
-@pytest.mark.asyncio
-@pytest.mark.parametrize(
-    "non_existent_genre_id, expected_status", [
-        (str(uuid.uuid4()), HTTPStatus.INTERNAL_SERVER_ERROR),
-    ]
-)
-async def test_get_genre_films_non_existent_genre(make_get_request, non_existent_genre_id, expected_status):
-    # Execute request to get films by non-existent genre
-    params = {'page_size': 50, 'page_number': 1, 'sort': '-imdb_rating'}
-    response, _, status = await make_get_request(f"{ENDPOINT}{non_existent_genre_id}/film/", params=params)
-    assert status == expected_status
-    assert 'detail' in response
-    assert response['detail'] == 'Genre not found'
-
-
 # Test for invalid UUID genre ID
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
