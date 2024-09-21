@@ -1,8 +1,11 @@
 import json
+from functools import lru_cache
 from typing import Tuple, List, Type, Union
 
 from redis.asyncio import Redis
+from fastapi import Depends
 
+from src.db.redis import get_redis
 from src.models.film import Film, FilmDetail
 from src.models.genre import Genre
 from src.models.person import Person, PersonFilmsParticipant
@@ -14,7 +17,7 @@ class CacheService:
     def __init__(self, redis: Redis):
         self.redis = redis
 
-    async def _get_list_from_cache(
+    async def get_list_from_cache(
             self,
             cache_key: str,
             model: Type[Union[Film, Genre, Person]]
@@ -31,7 +34,7 @@ class CacheService:
         total_items = cached_dict['total_items']
         return data, total_items
 
-    async def _put_list_to_cache(
+    async def put_list_to_cache(
             self,
             cache_key: str,
             films: List[Union[Film, FilmDetail, Genre, Person, PersonFilmsParticipant]],
@@ -46,7 +49,7 @@ class CacheService:
         })
         await self.redis.set(cache_key, serialized_data, ex=self.CACHE_EXPIRE_IN_SECONDS)
 
-    async def _get_from_cache_by_id(
+    async def get_from_cache_by_id(
             self,
             cache_key: str,
             model: Type[Union[Film, FilmDetail, Genre, Person]]
@@ -59,7 +62,7 @@ class CacheService:
             return None
         return model.parse_raw(data)
 
-    async def _put_to_cache_by_id(
+    async def put_to_cache_by_id(
             self,
             cache_key: str,
             data: Film | FilmDetail | Genre | Person | PersonFilmsParticipant
@@ -68,3 +71,10 @@ class CacheService:
         Store data by id in Redis cache.
         """
         await self.redis.set(cache_key, data.json(), self.CACHE_EXPIRE_IN_SECONDS)
+
+
+@lru_cache()
+def get_cache_service(
+        redis: Redis = Depends(get_redis)
+) -> CacheService:
+    return CacheService(redis)

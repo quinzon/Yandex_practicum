@@ -3,24 +3,21 @@ from functools import lru_cache
 from typing import List, Tuple
 from uuid import UUID
 
-from elasticsearch import AsyncElasticsearch
 from fastapi import HTTPException, Depends
-from redis.asyncio import Redis
 
-from src.db.elastic import get_elastic
-from src.db.redis import get_redis
 from src.models.film import Film
 from src.models.person import PersonFilmsParticipant, Person
-from src.services.cache import CacheService
-from src.services.elasticsearch import ElasticsearchService
+from src.services.base import SearchableApiServiceInterface
+from src.services.cache import CacheService, get_cache_service
 from src.services.film import FilmService, get_film_service
+from src.services.request import RequestService, get_request_service
 
 
-class PersonService(CacheService, ElasticsearchService):
+class PersonService(SearchableApiServiceInterface):
 
-    def __init__(self, redis: Redis, elastic: AsyncElasticsearch, film_service: FilmService):
-        CacheService.__init__(self, redis)
-        ElasticsearchService.__init__(self, elastic)
+    def __init__(self, cache_service: CacheService, request_service: RequestService, film_service: FilmService):
+        self.cache_service = cache_service
+        self.request_service = request_service
         self.film_service = film_service
 
     async def get_by_id(self, person_id: UUID) -> PersonFilmsParticipant | None:
@@ -28,13 +25,13 @@ class PersonService(CacheService, ElasticsearchService):
         Get a person by their ID, including their films and roles.
         """
         cache_key = f"person:{person_id}"
-        cached_data = await self._get_from_cache_by_id(cache_key, PersonFilmsParticipant)
+        cached_data = await self.cache_service.get_from_cache_by_id(cache_key, PersonFilmsParticipant)
         if cached_data:
             return cached_data
 
         try:
-            person = await self._response_by_id('persons', person_id, PersonFilmsParticipant)
-            await self._put_to_cache_by_id(cache_key, person)
+            person = await self.request_service.response_by_id('persons', person_id, PersonFilmsParticipant)
+            await self.cache_service.put_to_cache_by_id(cache_key, person)
             return person
         except Exception as e:
             raise HTTPException(status_code=http.HTTPStatus.INTERNAL_SERVER_ERROR, detail=f"Error occurred: {str(e)}")
@@ -89,7 +86,7 @@ class PersonService(CacheService, ElasticsearchService):
             query: dict | None = None
     ) -> Tuple[List[Person], int]:
         """
-        Helper method to fetch persons from Elasticsearch with pagination, sorting, total count, and caching.
+        Helper method to fetch list of films with pagination, sorting, total count, and caching.
         """
 
         cache_key_parts = [f"persons:list:{page_number}:{page_size}:{sort}"]
@@ -97,24 +94,24 @@ class PersonService(CacheService, ElasticsearchService):
             cache_key_parts.append(str(query))
         cache_key = ":".join(cache_key_parts)
 
-        cached_data = await self._get_list_from_cache(cache_key, Person)
+        cached_data = await self.cache_service.get_list_from_cache(cache_key, Person)
         if cached_data:
             return cached_data
 
         try:
-            persons, total_items = await self._response_list('persons', Person, page_size, page_number, sort, query)
-            await self._put_list_to_cache(cache_key, persons, total_items)
+            persons, total_items = await self.request_service.response_list('persons', Person, page_size, page_number, sort, query)
+            await self.cache_service.put_list_to_cache(cache_key, persons, total_items)
 
             return persons, total_items
         except Exception as e:
             raise HTTPException(status_code=http.HTTPStatus.INTERNAL_SERVER_ERROR,
-                                detail=f"Elasticsearch error: {str(e)}")
+                                detail=f"Error: {str(e)}")
 
 
 @lru_cache()
 def get_person_service(
-        redis: Redis = Depends(get_redis),
-        elastic: AsyncElasticsearch = Depends(get_elastic),
+        cache_service: CacheService = Depends(get_cache_service),
+        request_service: RequestService = Depends(get_request_service),
         film_service: FilmService = Depends(get_film_service)
 ) -> PersonService:
-    return PersonService(redis, elastic, film_service)
+    return PersonService(cache_service, request_service, film_service)

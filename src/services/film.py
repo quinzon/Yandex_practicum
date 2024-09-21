@@ -3,40 +3,32 @@ from functools import lru_cache
 from typing import List, Tuple
 from uuid import UUID
 
-from elasticsearch import AsyncElasticsearch
 from fastapi import Depends, HTTPException
-from redis.asyncio import Redis
 
-from src.db.elastic import get_elastic
-from src.db.redis import get_redis
 from src.models.film import FilmDetail, Film
 from src.services.base import SearchableApiServiceInterface
-from src.services.cache import CacheService
-from src.services.elasticsearch import ElasticsearchService
+from src.services.cache import CacheService, get_cache_service
+from src.services.request import RequestService, get_request_service
 
 
-class FilmService(CacheService, ElasticsearchService, SearchableApiServiceInterface):
-    SORTABLE_FIELDS = {
-        "imdb_rating": "imdb_rating",
-        "title": "title.raw"
-    }
+class FilmService(SearchableApiServiceInterface):
 
-    def __init__(self, redis: Redis, elastic: AsyncElasticsearch):
-        CacheService.__init__(self, redis)
-        ElasticsearchService.__init__(self, elastic)
+    def __init__(self, cache_service: CacheService, request_service: RequestService):
+        self.cache_service = cache_service
+        self.request_service = request_service
 
     async def get_by_id(self, film_id: UUID) -> FilmDetail | None:
         """
         Retrieve a film by its unique ID.
         """
         cache_key = f"film:{film_id}"
-        cached_data = await self._get_from_cache_by_id(cache_key, FilmDetail)
+        cached_data = await self.cache_service.get_from_cache_by_id(cache_key, FilmDetail)
         if cached_data:
             return cached_data
 
         try:
-            film = await self._response_by_id('movies', film_id, FilmDetail)
-            await self._put_to_cache_by_id(cache_key, film)
+            film = await self.request_service.response_by_id('movies', film_id, FilmDetail)
+            await self.cache_service.put_to_cache_by_id(cache_key, film)
             return film
         except Exception as e:
             raise HTTPException(status_code=http.HTTPStatus.INTERNAL_SERVER_ERROR, detail=f"Error occurred: {str(e)}")
@@ -78,7 +70,7 @@ class FilmService(CacheService, ElasticsearchService, SearchableApiServiceInterf
         }
 
         try:
-            films, total_items = await self._response_list('movies', Film, page_size, page_number, sort, query)
+            films, total_items = await self.request_service.response_list('movies', Film, page_size, page_number, sort, query)
             return films, total_items
         except Exception as e:
             raise HTTPException(status_code=http.HTTPStatus.INTERNAL_SERVER_ERROR,
@@ -143,7 +135,7 @@ class FilmService(CacheService, ElasticsearchService, SearchableApiServiceInterf
             query: dict | None = None
     ) -> Tuple[List[FilmDetail], int]:
         """
-        Helper method to fetch films from Elasticsearch with pagination, sorting, total count, and caching.
+        Helper method to fetch list of films with pagination, sorting, total count, and caching.
         """
 
         cache_key_parts = [f"films:list:{page_number}:{page_size}:{sort}"]
@@ -151,23 +143,23 @@ class FilmService(CacheService, ElasticsearchService, SearchableApiServiceInterf
             cache_key_parts.append(str(query))
         cache_key = ":".join(cache_key_parts)
 
-        cached_data = await self._get_list_from_cache(cache_key, FilmDetail)
+        cached_data = await self.cache_service.get_list_from_cache(cache_key, FilmDetail)
         if cached_data:
             return cached_data
 
         try:
-            films, total_items = await self._response_list('movies', FilmDetail, page_size, page_number, sort, query)
-            await self._put_list_to_cache(cache_key, films, total_items)
+            films, total_items = await self.request_service.response_list('movies', FilmDetail, page_size, page_number, sort, query)
+            await self.cache_service.put_list_to_cache(cache_key, films, total_items)
 
             return films, total_items
         except Exception as e:
             raise HTTPException(status_code=http.HTTPStatus.INTERNAL_SERVER_ERROR,
-                                detail=f"Elasticsearch error: {str(e)}")
+                                detail=f"Error: {str(e)}")
 
 
 @lru_cache()
 def get_film_service(
-        redis: Redis = Depends(get_redis),
-        elastic: AsyncElasticsearch = Depends(get_elastic),
+        cache_service: CacheService = Depends(get_cache_service),
+        request_service: RequestService = Depends(get_request_service)
 ) -> FilmService:
-    return FilmService(redis, elastic)
+    return FilmService(cache_service, request_service)
