@@ -12,7 +12,8 @@ class ElasticsearchService:
     SORTABLE_FIELDS = {
         "imdb_rating": "imdb_rating",
         "title": "title.raw",
-        "full_name": "full_name.raw"
+        "full_name": "full_name.raw",
+        "name": "name.raw"
     }
 
     def __init__(self, elastic: AsyncElasticsearch):
