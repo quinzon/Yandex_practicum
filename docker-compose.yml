@@ -2,7 +2,7 @@ version: '3.8'
 
 x-common-variables: &common-variables
   networks:
-    - app-network
+    - movie_service_network
 
 x-common-healthcheck: &common-healthcheck
   interval: 10s
@@ -60,11 +60,14 @@ services:
       test: ["CMD", "redis-cli", "ping"]
     <<: [*common-variables, *common-env]
 
-  api:
+  movie_service:
     build:
+      context: ./movie_service
       dockerfile: Dockerfile
-    image: fastapi
+    image: movie_service
     command: ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000"]
+    env_file:
+      - movie_service/.env
     depends_on:
       redis:
         condition: service_healthy
@@ -74,7 +77,7 @@ services:
         condition: service_healthy
       etl:
         condition: service_started
-    <<: [*common-variables, *common-env]
+    <<: [*common-variables]
 
   nginx:
     image: nginx:latest
@@ -84,7 +87,7 @@ services:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./nginx/site.conf:/etc/nginx/conf.d/default.conf:ro
     depends_on:
-      api:
+      movie_service:
         condition: service_started
     <<: *common-variables
 
@@ -94,5 +97,5 @@ volumes:
   redis-data:
 
 networks:
-  app-network:
+  movie_service_network:
     driver: bridge

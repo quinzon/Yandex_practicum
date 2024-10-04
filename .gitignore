@@ -1,4 +1,4 @@
-.idea
+*.idea
 .ipynb_checkpoints
 .mypy_cache
 .vscode
@@ -15,7 +15,7 @@ log.txt
 Pipfile.lock
 env3.*
 env
-.env
+movie_service/.env
 .env.tests
 docs_build
 site_build
@@ -24,7 +24,6 @@ docs.zip
 archive.zip
 docker-compose.override.yml
 docker-compose.test.override.yml
-
 # vim temporary files
 *~
 .*.sw?
