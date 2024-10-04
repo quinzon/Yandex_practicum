@@ -3,7 +3,7 @@
 # Шаг 1: Build API Docker image
 build_api:
 	@echo "Building API Docker image..."
-	docker build -t fastapi .
+	docker build -t movie_service .
 
 # Step 2: Run functional tests
 run_tests: build_api

@@ -1,7 +1,7 @@
 from elasticsearch import Elasticsearch
 from movie_service.tests.functional.settings import test_settings
 from movie_service.tests.functional.utils.backoff import backoff
-from movie_service.tests.functional.utils import logger
+from movie_service.tests.functional.utils.logger import logger
 
 
 @backoff(start_sleep_time=0.5, factor=2, border_sleep_time=10)

@@ -4,7 +4,7 @@ from http import HTTPStatus
 import pytest
 
 from movie_service.tests.functional.settings import test_settings
-from tests.functional.testdata.movies_data import es_film_data, es_films_data
+from movie_service.tests.functional.testdata.movies_data import es_film_data, es_films_data
 
 ENDPOINT = '/api/v1/films/'
 pytestmark = pytest.mark.asyncio

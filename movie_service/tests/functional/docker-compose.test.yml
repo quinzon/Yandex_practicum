@@ -9,7 +9,7 @@ x-common-variables: &common-variables
 
 services:
   api:
-    build: ../../..
+    build: ../../
     image: movie_service
     container_name: movie_service
     env_file:
@@ -23,11 +23,11 @@ services:
       - .env.tests
     <<: *common-variables
     entrypoint: >
-      sh -c "export PYTHONPATH=/opt/app
-      && pip install -r /opt/app/tests/functional/requirements.txt
-      && python3 /opt/app/tests/functional/utils/wait_for_es.py
-      && python3 /opt/app/tests/functional/utils/wait_for_redis.py
-      && pytest /opt/app/tests/functional/src"
+      sh -c "export PYTHONPATH=/opt
+      && pip install -r /opt/movie_service/tests/functional/requirements.txt
+      && python3 /opt/movie_service/tests/functional/utils/wait_for_es.py
+      && python3 /opt/movie_service/tests/functional/utils/wait_for_redis.py
+      && pytest /opt/movie_service/tests/functional/src"
 
 
   redis:

@@ -5,10 +5,10 @@ from fastapi import FastAPI
 from fastapi.responses import ORJSONResponse
 from redis.asyncio import Redis
 
-from .api.v1 import films, genres, persons
-from .core.config import (PROJECT_NAME,
+from movie_service.src.api.v1 import films, genres, persons
+from movie_service.src.core.config import (PROJECT_NAME,
                           get_redis_settings, get_elastic_settings)
-from .db import elastic, redis
+from movie_service.src.db import elastic, redis
 
 
 @asynccontextmanager

@@ -1,9 +1,9 @@
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-from tests.functional.testdata.genres_index import GENRES_INDEX
-from tests.functional.testdata.movies_index import MOVIES_INDEX
-from tests.functional.testdata.persons_index import PERSONS_INDEX
+from movie_service.tests.functional.testdata.genres_index import GENRES_INDEX
+from movie_service.tests.functional.testdata.movies_index import MOVIES_INDEX
+from movie_service.tests.functional.testdata.persons_index import PERSONS_INDEX
 
 
 class TestSettings(BaseSettings):

@@ -2,7 +2,7 @@ version: '3.8'
 
 x-common-variables: &common-variables
   networks:
-    - movie_service_network
+    - backend_network
 
 x-common-healthcheck: &common-healthcheck
   interval: 10s
@@ -79,6 +79,21 @@ services:
         condition: service_started
     <<: [*common-variables]
 
+  auth_service:
+    build:
+      context: ./auth_service
+      dockerfile: Dockerfile
+    image: auth_service
+    command: ["sh", "-c", "alembic upgrade head && uvicorn src.main:app --host 0.0.0.0 --port 8001"]
+    env_file:
+      - auth_service/.env
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    <<: [ *common-variables ]
+
   nginx:
     image: nginx:latest
     ports:
@@ -97,5 +112,5 @@ volumes:
   redis-data:
 
 networks:
-  movie_service_network:
+  backend_network:
     driver: bridge
