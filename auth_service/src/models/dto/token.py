@@ -1,18 +1,27 @@
 from typing import Optional
 
-from pydantic import BaseModel
 from uuid import UUID
 
+from pydantic import BaseModel
 
-class RefreshToken(BaseModel):
+from auth_service.src.models.dto.common import BaseDto
+
+
+class RefreshToken(BaseDto):
     user_id: UUID
     token_value: str
 
-    class Config:
-        orm_mode = True
 
-
-class TokenResponse(BaseModel):
+class TokenResponse(BaseDto):
     access_token: str
-    token_type: str
     refresh_token: Optional[str] = None
+
+
+class TokenData(BaseDto):
+    user_id: str
+    email: str
+    roles: list[str]
+
+
+class RefreshTokenRequest(BaseModel):
+    token_value: str

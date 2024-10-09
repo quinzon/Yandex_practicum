@@ -1,4 +1,6 @@
+import uuid
 from functools import lru_cache
+from typing import Type
 
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -10,19 +12,17 @@ from auth_service.src.repository.base import BaseRepository
 
 
 class TokenRepository(BaseRepository[RefreshToken]):
-    async def get_token_by_value(self, token_value: str) -> RefreshToken:
-        query = select(RefreshToken).filter(RefreshToken.token_value == token_value)
+    def get_model(self) -> Type[RefreshToken]:
+        return RefreshToken
+
+    async def get_by_user_id(self, user_id: uuid.UUID) -> RefreshToken | None:
+        query = select(RefreshToken).filter(RefreshToken.user_id == user_id)
         result = await self.session.execute(query)
         return result.scalars().first()
 
-    async def revoke_token(self, token_value: str) -> None:
-        token = await self.get_token_by_value(token_value)
-        if token:
-            await self.delete(token)
-
 
 @lru_cache()
-def get_subscription_repository(
+def get_token_repository(
     session: AsyncSession = Depends(get_session)
 ) -> TokenRepository:
     return TokenRepository(session)

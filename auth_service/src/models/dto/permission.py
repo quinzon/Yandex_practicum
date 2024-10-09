@@ -1,8 +1,9 @@
-from pydantic import BaseModel
 from uuid import UUID
 
+from auth_service.src.models.dto.common import BaseDto
 
-class PermissionResponse(BaseModel):
+
+class PermissionResponse(BaseDto):
     id: UUID
     name: str
 

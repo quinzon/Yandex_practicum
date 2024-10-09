@@ -22,6 +22,17 @@ class CommonSettings(BaseSettings):
     )
 
 
+class JWTSettings(CommonSettings):
+    secret_key: str
+    algorithm: str
+    access_token_expire_minutes: int
+    refresh_token_expire_minutes: int
+
+    def __hash__(self):
+        return hash(
+            (self.secret_key, self.algorithm, self.access_token_expire_minutes, self.refresh_token_expire_minutes))
+
+
 class RedisSettings(CommonSettings):
     host: str = Field(..., alias='REDIS_HOST')
     port: int = Field(..., alias='REDIS_PORT')
@@ -45,7 +56,7 @@ class PostgresSettings(CommonSettings):
 
     @property
     def database_url(self) -> str:
-        return f"postgresql+asyncpg://{self.user}:{self.password}@{self.host}:{self.port}/{self.db}"
+        return f'postgresql+asyncpg://{self.user}:{self.password}@{self.host}:{self.port}/{self.db}'
 
 
 @lru_cache()
@@ -58,6 +69,12 @@ def get_postgres_settings() -> PostgresSettings:
     return PostgresSettings()
 
 
+@lru_cache()
 def get_postgres_url() -> str:
     settings = get_postgres_settings()
     return settings.database_url
+
+
+@lru_cache()
+def get_jwt_settings() -> JWTSettings:
+    return JWTSettings()

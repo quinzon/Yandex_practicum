@@ -10,3 +10,5 @@ python-dotenv==1.0.1
 redis==5.0.8
 orjson==3.10.7
 psycopg2[binary]==2.9.3
+python-jose==3.3.0
+passlib==1.7.2

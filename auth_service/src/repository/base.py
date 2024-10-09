@@ -1,5 +1,6 @@
 import uuid
-from typing import TypeVar, Generic, List
+from abc import abstractmethod
+from typing import TypeVar, Generic, List, Type
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.exc import SQLAlchemyError
@@ -13,6 +14,10 @@ class BaseRepository(Generic[T]):
     def __init__(self, session: AsyncSession):
         self.session = session
 
+    @abstractmethod
+    def get_model(self) -> Type[T]:
+        pass
+
     async def get_all(
         self, page: int = 1, page_size: int = 10
     ) -> List[T]:
@@ -21,7 +26,7 @@ class BaseRepository(Generic[T]):
         return result.scalars().all()
 
     async def get_by_id(self, entity_id: uuid) -> T | None:
-        return await self.session.get(T, entity_id)
+        return await self.session.get(self.get_model(), entity_id)
 
     async def create(self, entity: T) -> T:
         self.session.add(entity)

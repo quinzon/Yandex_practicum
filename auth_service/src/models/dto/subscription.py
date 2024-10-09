@@ -1,8 +1,9 @@
-from pydantic import BaseModel
 from uuid import UUID
 
+from auth_service.src.models.dto.common import BaseDto
 
-class SubscriptionResponse(BaseModel):
+
+class SubscriptionResponse(BaseDto):
     id: UUID
     name: str
     price: float

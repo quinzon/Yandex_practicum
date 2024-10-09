@@ -1,7 +1,10 @@
 import re
+from uuid import UUID
+
 from pydantic import BaseModel, EmailStr, Field, SecretStr, field_validator
 from typing import List
-from uuid import UUID
+
+from auth_service.src.models.dto.common import BaseDto
 
 
 class UserCreate(BaseModel):
@@ -11,36 +14,40 @@ class UserCreate(BaseModel):
     last_name: str | None = Field(None, max_length=50)
 
     @field_validator('password')
-    def validate_password(cls, password):
+    def validate_password(cls, password: SecretStr) -> SecretStr:
         """
         Сheck password for having letters, numbers and special characters
         """
-        if not re.search(r"[A-Za-z]", password):
-            raise ValueError("Password must contain at least one letter.")
+        str_pass = password.get_secret_value()
+        if not re.search(r'[A-Za-z]', str_pass):
+            raise ValueError('Password must contain at least one letter.')
 
-        if not re.search(r"\d", password):
-            raise ValueError("Password must contain at least one number.")
+        if not re.search(r'\d', str_pass):
+            raise ValueError('Password must contain at least one number.')
 
-        if not re.search(r"[!@#$%^&*(),.?\":{}|<>]", password):
-            raise ValueError("Password must contain at least one special character.")
+        if not re.search(r'[!@#$%^&*(),.?\":{}|<>]', str_pass):
+            raise ValueError('Password must contain at least one special character.')
 
-        if re.search(r"\s", password):
-            raise ValueError("Password cannot contain spaces.")
+        if re.search(r'\s', str_pass):
+            raise ValueError('Password cannot contain spaces.')
 
         return password
 
 
-class UserResponse(BaseModel):
-    id: UUID
+class UserResponse(BaseDto):
+    id: str
     email: EmailStr
     first_name: str | None
     last_name: str | None
-    roles: List[str]
+    roles: List[str] | None
 
-    class Config:
-        orm_mode = True
+    @field_validator('id', mode='before')
+    def convert_uuid_to_str(cls, value):
+        if isinstance(value, UUID):
+            return str(value)
+        return value
 
 
-class LoginRequest(BaseModel):
+class LoginRequest(BaseDto):
     email: EmailStr
     password: str

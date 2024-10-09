@@ -1,7 +1,8 @@
 from functools import lru_cache
-from typing import List, Optional
+from typing import List
 
 from fastapi import Depends
+from sqlalchemy.exc import IntegrityError
 
 from auth_service.src.models.dto.user import UserCreate, UserResponse, LoginRequest
 from auth_service.src.repository.user import UserRepository, get_user_repository
@@ -9,22 +10,19 @@ from auth_service.src.models.entities.user import User
 from auth_service.src.services.base import BaseService
 from passlib.context import CryptContext
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+pwd_context = CryptContext(schemes=['bcrypt'], deprecated='auto')
 
 
 class UserService(BaseService[User]):
-    def __init__(self, repository: UserRepository):
-        super().__init__(repository)
-
     async def register_user(self, user_create: UserCreate) -> UserResponse:
         user = User.create(user_create)
         user = await self.repository.create(user)
         return UserResponse.from_orm(user)
 
-    async def authenticate_user(self, login_data: LoginRequest) -> Optional[User]:
+    async def authenticate_user(self, login_data: LoginRequest) -> UserResponse | None:
         user = await self.repository.get_user_by_email(login_data.email)
         if user and self.verify_password(login_data.password, user.password_hash):
-            return user
+            return UserResponse.from_orm(user)
         return None
 
     async def get_user_roles(self, user_id: str) -> List[str]:
@@ -34,7 +32,7 @@ class UserService(BaseService[User]):
     async def assign_role_to_user(self, user_id: str, role_id: str) -> None:
         await self.repository.assign_role(user_id, role_id)
 
-    async def get_user_by_id(self, user_id: str) -> Optional[User]:
+    async def get_user_by_id(self, user_id: str) -> User | None:
         return await self.repository.get_by_id(user_id)
 
     @staticmethod

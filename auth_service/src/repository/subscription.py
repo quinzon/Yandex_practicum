@@ -1,4 +1,5 @@
 from functools import lru_cache
+from typing import Type
 
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -10,6 +11,9 @@ from auth_service.src.repository.base import BaseRepository
 
 
 class SubscriptionRepository(BaseRepository[Subscription]):
+    def get_model(self) -> Type[Subscription]:
+        return Subscription
+
     async def get_active_subscriptions(self) -> list[Subscription]:
         query = select(Subscription).filter(Subscription.is_active == True)
         result = await self.session.execute(query)
