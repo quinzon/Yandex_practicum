@@ -28,9 +28,12 @@ def run_migrations_online():
 
     with connectable.connect() as connection:
         context.configure(connection=connection, target_metadata=target_metadata, include_schemas=True,
-                          version_table_schema='auth',
+                          # version_table_schema='auth',
+                          version_table_schema='public',
                           include_object=lambda object, name, type_, reflected, compare_to:
-                          type_ == "table" and object.schema == 'auth')
+                          # type_ == "table" and object.schema == 'auth'
+                          type_ == "table" and object.schema == 'public'
+                          )
 
         with context.begin_transaction():
             context.run_migrations()

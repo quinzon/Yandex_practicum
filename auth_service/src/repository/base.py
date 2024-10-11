@@ -1,6 +1,6 @@
 import uuid
 from abc import abstractmethod
-from typing import TypeVar, Generic, List, Type
+from typing import TypeVar, Generic, List, Type, Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.exc import SQLAlchemyError
@@ -46,3 +46,9 @@ class BaseRepository(Generic[T]):
     async def delete(self, entity: T) -> None:
         await self.session.delete(entity)
         await self.session.commit()
+
+    async def get_id_by_name(self, name: str) -> Optional[uuid.UUID]:
+        model=self.get_model()
+        result = await self.session.execute(select(model).filter(model.name == name))
+        entity = result.scalars().first()
+        return entity.id if entity else None

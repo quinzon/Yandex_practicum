@@ -1,6 +1,8 @@
 import uuid
 
-from sqlalchemy import Column, UUID, String
+from sqlalchemy import Column, String
+# from sqlalchemy import UUID
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 
 from auth_service.src.db.postgres import Base

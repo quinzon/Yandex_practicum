@@ -66,7 +66,9 @@ def get_redis_settings() -> RedisSettings:
 
 @lru_cache()
 def get_postgres_settings() -> PostgresSettings:
-    return PostgresSettings()
+    s=PostgresSettings()
+    print(70,s)
+    return s
 
 
 @lru_cache()

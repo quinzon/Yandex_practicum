@@ -4,7 +4,7 @@ from sqlalchemy import UUID, Column, String, Table, ForeignKey
 from sqlalchemy.orm import relationship
 
 from auth_service.src.db.postgres import Base
-
+from auth_service.src.models.dto.role import RoleCreate
 
 class Role(Base):
     __tablename__ = 'role'
@@ -17,6 +17,12 @@ class Role(Base):
     users = relationship('User', secondary='auth.user_role', back_populates='roles',
                          lazy="selectin")
 
+    @classmethod
+    def create(cls, role_create: RoleCreate) -> 'Role':
+        role = cls(
+            name=role_create.name,
+        )
+        return role
 
 role_permission = Table(
     'role_permission',

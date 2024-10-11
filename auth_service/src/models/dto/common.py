@@ -14,6 +14,7 @@ class ErrorMessages:
     INVALID_ACCESS_TOKEN = 'Invalid access token'
     TOKEN_IS_MISSING = "Authorization header missing or malformed"
     USER_ALREADY_EXISTS = "User already exists"
+    ROLE_ALREADY_EXISTS = "Role already exists"
 
 
 class Messages:

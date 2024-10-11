@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, List
 
 from uuid import UUID
 
@@ -20,7 +20,7 @@ class TokenResponse(BaseDto):
 class TokenData(BaseDto):
     user_id: str
     email: str
-    roles: list[str]
+    roles: List[str]
 
 
 class RefreshTokenRequest(BaseModel):
