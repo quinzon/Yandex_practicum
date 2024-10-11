@@ -1,0 +1,116 @@
+version: '3.8'
+
+x-common-variables: &common-variables
+  networks:
+    - backend_network
+
+x-common-healthcheck: &common-healthcheck
+  interval: 10s
+  timeout: 10s
+  retries: 5
+
+x-common-env: &common-env
+  env_file:
+    - .env
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    ports:
+      - "9432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./database_dump.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      <<: *common-healthcheck
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} || exit 1"]
+    <<: [*common-variables,*common-env]
+
+  # elasticsearch:
+    # image: elasticsearch:8.6.2
+    # environment:
+      # ES_JAVA_OPTS: "${ES_JAVA_OPTS}"
+      # discovery.type: "${DISCOVERY_TYPE}"
+      # xpack.security.enabled: "${XPACK_SECURITY_ENABLED}"
+    # volumes:
+      # - es-data:/usr/share/elasticsearch/data
+    # healthcheck:
+      # <<: *common-healthcheck
+      # test: ["CMD-SHELL", "curl --silent --fail localhost:9200/_cluster/health || exit 1"]
+    # <<: [*common-variables,*common-env]
+
+  # etl:
+    # build:
+      # context: ./etl
+      # dockerfile: Dockerfile
+    # env_file:
+      # - etl/.env.etl
+    # command: ["python", "/opt/app/etl/main.py"]
+    # depends_on:
+      # elasticsearch:
+        # condition: service_healthy
+      # postgres:
+        # condition: service_healthy
+    # <<: [*common-variables,*common-env]
+
+  redis:
+    image: redis:latest
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      <<: *common-healthcheck
+      test: ["CMD", "redis-cli", "ping"]
+    <<: [*common-variables,*common-env]
+
+  movie_service:
+    build:
+      context: ./movie_service
+      dockerfile: Dockerfile
+    image: movie_service
+    command: ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000"]
+    env_file:
+      - movie_service/.env
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    <<: *common-variables
+
+  # auth_service:
+    # build:
+      # context: ./auth_service
+      # dockerfile: Dockerfile
+    # image: auth_service
+    # ports:
+      # - "8001:8001"
+    # command: ["sh", "-c", "alembic upgrade head && uvicorn src.main:app --host 0.0.0.0 --port 8001"]
+    # env_file:
+      # - auth_service/.env
+    # depends_on:
+      # redis:
+        # condition: service_healthy
+      # postgres:
+        # condition: service_healthy
+    # <<: *common-variables
+
+  # nginx:
+    # image: nginx:latest
+    # ports:
+      # - "80:80"
+    # volumes:
+      # - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      # - ./nginx/site.conf:/etc/nginx/conf.d/default.conf:ro
+    # depends_on:
+      # movie_service:
+        # condition: service_started
+    # <<: *common-variables
+
+volumes:
+  postgres-data:
+  es-data:
+  redis-data:
+
+networks:
+  backend_network:
+    driver: bridge
