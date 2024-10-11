@@ -4,7 +4,6 @@ from typing import TypeVar, Generic, List, Type
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy import update, delete
 
 
 T = TypeVar('T')

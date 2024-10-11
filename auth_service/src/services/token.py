@@ -1,15 +1,16 @@
 import hashlib
 from http import HTTPStatus
 
-import bcrypt
 import uuid
 from datetime import timedelta, datetime
 from functools import lru_cache
 
+from redis.asyncio import Redis
 from fastapi import HTTPException, Depends
 from jose import JWTError, jwt
 
 from auth_service.src.core.config import JWTSettings, get_jwt_settings
+from auth_service.src.db.redis import get_redis
 from auth_service.src.models.dto.common import ErrorMessages
 from auth_service.src.models.dto.token import TokenData, TokenResponse
 from auth_service.src.models.entities.token import RefreshToken
@@ -17,14 +18,23 @@ from auth_service.src.repository.token import TokenRepository, get_token_reposit
 
 
 class TokenService:
-    def __init__(self, settings: JWTSettings, token_repository: TokenRepository):
+    def __init__(self, settings: JWTSettings, token_repository: TokenRepository, redis: Redis):
         self.settings = settings
         self.token_repository = token_repository
+        self.redis = redis
 
-    def _hash_token(self, token: str) -> str:
+    @staticmethod
+    def _hash_token(token: str) -> str:
         sha256 = hashlib.sha256()
         sha256.update(token.encode('utf-8'))
         return sha256.hexdigest()
+
+    @staticmethod
+    def _get_ttl(payload: dict) -> float:
+        exp: float = payload.get('exp')
+        expire_datetime = datetime.utcfromtimestamp(exp)
+        now = datetime.utcnow()
+        return (expire_datetime - now).total_seconds()
 
     def create_access_token(self, token_data: TokenData) -> str:
         expire = datetime.utcnow() + timedelta(minutes=self.settings.access_token_expire_minutes)
@@ -75,56 +85,60 @@ class TokenService:
         refresh_token = await self.create_refresh_token(token_data)
         return TokenResponse(access_token=access_token, refresh_token=refresh_token)
 
-    async def verify_token(self, token: str) -> TokenData | None:
-        try:
-            payload = jwt.decode(token, self.settings.secret_key, algorithms=[self.settings.algorithm])
-            user_id: str = payload.get('sub')
-            email: str = payload.get('email')
-            roles: list = payload.get('roles', [])
+    async def is_token_blacklisted(self, access_token: str) -> bool:
+        blacklist_key = f"blacklist:{access_token}"
+        return await self.redis.exists(blacklist_key)
 
-            if user_id is None or email is None:
-                raise HTTPException(status_code=HTTPStatus.UNAUTHORIZED, detail=ErrorMessages.INVALID_ACCESS_TOKEN)
+    async def check_access_token(self, access_token: str) -> TokenData:
+        token_data = await self.get_token_data(access_token)
+        if self.is_token_blacklisted(access_token):
+            raise HTTPException(status_code=HTTPStatus.UNAUTHORIZED, detail=ErrorMessages.TOKEN_REVOKED)
+        return token_data
 
-            return TokenData(user_id=user_id, email=email, roles=roles)
-        except JWTError as e:
-            raise HTTPException(
-                status_code=HTTPStatus.UNAUTHORIZED,
-                detail=ErrorMessages.INVALID_ACCESS_TOKEN
-            )
-
-    async def refresh_tokens(self, refresh_token: str) -> TokenResponse:
-        token_data = await self.verify_token(refresh_token)
-
-        if not token_data:
-            raise HTTPException(status_code=HTTPStatus.UNAUTHORIZED, detail=ErrorMessages.INVALID_REFRESH_TOKEN)
-
+    async def check_refresh_token(self, refresh_token: str) -> (TokenData, RefreshToken):
+        token_data = await self.get_token_data(refresh_token)
         db_token = await self.token_repository.get_by_user_id(uuid.UUID(token_data.user_id))
-
         if not db_token or self._hash_token(refresh_token) != db_token.token_value:
             raise HTTPException(status_code=HTTPStatus.UNAUTHORIZED, detail=ErrorMessages.INVALID_REFRESH_TOKEN)
+        return token_data, db_token
 
+    async def get_token_data(self, token: str) -> TokenData | None:
+        payload = self._verify_token(token)
+        user_id: str = payload.get('sub')
+        email: str = payload.get('email')
+        roles: list = payload.get('roles', [])
+
+        return TokenData(user_id=user_id, email=email, roles=roles)
+
+    def _verify_token(self, token: str) -> dict | None:
+        try:
+            payload = jwt.decode(token, self.settings.secret_key, algorithms=[self.settings.algorithm])
+        except JWTError:
+            raise HTTPException(status_code=HTTPStatus.UNAUTHORIZED, detail=ErrorMessages.INVALID_TOKEN)
+        if self._get_ttl(payload) <= 0:
+            raise HTTPException(status_code=HTTPStatus.UNAUTHORIZED, detail=ErrorMessages.TOKEN_EXPIRED)
+        return payload
+
+    async def refresh_tokens(self, token_data: TokenData, db_token: RefreshToken) -> TokenResponse:
         await self.token_repository.delete(db_token)
-
         return await self.create_tokens(token_data)
 
-    async def revoke_token(self, refresh_token: str) -> None:
-        token_data = await self.verify_token(refresh_token)
-        if not token_data:
-            raise HTTPException(status_code=HTTPStatus.UNAUTHORIZED, detail=ErrorMessages.INVALID_REFRESH_TOKEN)
-
-        db_token = await self.token_repository.get_by_user_id(uuid.UUID(token_data.user_id))
-        if not db_token:
-            raise HTTPException(status_code=HTTPStatus.UNAUTHORIZED, detail=ErrorMessages.INVALID_REFRESH_TOKEN)
-
-        if self._hash_token(refresh_token) != db_token.token_value:
-            raise HTTPException(status_code=HTTPStatus.UNAUTHORIZED, detail=ErrorMessages.INVALID_REFRESH_TOKEN)
-
+    async def revoke_token(self, access_token: str, refresh_token: str) -> None:
+        refresh_token_data, db_token = await self.check_refresh_token(refresh_token)
         await self.token_repository.delete(db_token)
+        await self.add_blacklist(access_token)
+
+    async def add_blacklist(self, access_token: str) -> None:
+        payload = self._verify_token(access_token)
+        blacklist_key = f"blacklist:{access_token}"
+        ttl = self._get_ttl(payload)
+        await self.redis.set(blacklist_key, "true", ex=int(ttl if ttl > 0 else 0))
 
 
 @lru_cache()
 def get_token_service(
     jwt_settings: JWTSettings = Depends(get_jwt_settings),
-    token_repository: TokenRepository = Depends(get_token_repository)
+    token_repository: TokenRepository = Depends(get_token_repository),
+    redis: Redis = Depends(get_redis)
 ) -> TokenService:
-    return TokenService(jwt_settings, token_repository)
+    return TokenService(jwt_settings, token_repository, redis)
