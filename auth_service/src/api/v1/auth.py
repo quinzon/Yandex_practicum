@@ -4,9 +4,8 @@ from http import HTTPStatus
 from sqlalchemy.exc import IntegrityError
 from starlette.responses import JSONResponse
 
-from auth_service.src.core.security import require_token
 from auth_service.src.models.dto.common import ErrorMessages, Messages
-from auth_service.src.models.dto.token import TokenResponse, TokenData, RefreshTokenRequest
+from auth_service.src.models.dto.token import TokenResponse, TokenData, RefreshTokenRequest, AccessTokenRequest
 from auth_service.src.models.dto.user import UserCreate, UserResponse, LoginRequest
 from auth_service.src.services.user import UserService, get_user_service
 from auth_service.src.services.token import TokenService, get_token_service
@@ -52,10 +51,21 @@ async def login_user(
 @router.post('/refresh', response_model=TokenResponse)
 async def refresh_token(
         refresh_token_request: RefreshTokenRequest,
+        user_service: UserService = Depends(get_user_service),
         token_service: TokenService = Depends(get_token_service),
-        token_data: TokenData = Depends(require_token)
 ) -> TokenResponse:
-    new_tokens = await token_service.refresh_tokens(refresh_token_request.token_value)
+    token_data, db_token = await token_service.check_refresh_token(refresh_token_request.refresh_token)
+
+    user = await user_service.get_user_by_id(token_data.user_id)
+
+    if not user:
+        raise HTTPException(
+            status_code=HTTPStatus.UNAUTHORIZED,
+            detail=ErrorMessages.INVALID_CREDENTIALS
+        )
+
+    actual_token_data = TokenData(user_id=str(user.id), email=user.email, roles=user.roles)
+    new_tokens = await token_service.refresh_tokens(actual_token_data, db_token)
 
     if not new_tokens:
         raise HTTPException(
@@ -68,10 +78,10 @@ async def refresh_token(
 
 @router.post('/logout')
 async def logout_user(
+    access_token_request: AccessTokenRequest,
     refresh_token_request: RefreshTokenRequest,
     token_service: TokenService = Depends(get_token_service),
-    token_data: TokenData = Depends(require_token)
 ):
-    await token_service.revoke_token(refresh_token_request.token_value)
+    await token_service.revoke_token(access_token_request.access_token, refresh_token_request.refresh_token)
 
     return JSONResponse(status_code=HTTPStatus.OK, content={"message": Messages.SUCCESSFUL_LOGOUT})
