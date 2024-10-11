@@ -23,5 +23,9 @@ class TokenData(BaseDto):
     roles: list[str]
 
 
+class AccessTokenRequest(BaseModel):
+    access_token: str
+
+
 class RefreshTokenRequest(BaseModel):
-    token_value: str
+    refresh_token: str

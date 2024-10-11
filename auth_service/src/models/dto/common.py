@@ -10,8 +10,11 @@ class BaseDto(BaseModel):
 
 class ErrorMessages:
     INVALID_CREDENTIALS = 'Invalid credentials'
+    INVALID_TOKEN = 'Invalid token'
     INVALID_REFRESH_TOKEN = 'Invalid refresh token'
     INVALID_ACCESS_TOKEN = 'Invalid access token'
+    TOKEN_EXPIRED = 'Token expired'
+    TOKEN_REVOKED = 'Token has been revoked'
     TOKEN_IS_MISSING = "Authorization header missing or malformed"
     USER_ALREADY_EXISTS = "User already exists"
 

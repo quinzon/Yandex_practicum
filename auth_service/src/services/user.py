@@ -2,7 +2,6 @@ from functools import lru_cache
 from typing import List
 
 from fastapi import Depends
-from sqlalchemy.exc import IntegrityError
 
 from auth_service.src.models.dto.user import UserCreate, UserResponse, LoginRequest
 from auth_service.src.repository.user import UserRepository, get_user_repository
