@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from http import HTTPStatus
 
+from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.exc import IntegrityError
 from starlette.responses import JSONResponse
 
@@ -11,6 +12,8 @@ from auth_service.src.services.user import UserService, get_user_service
 from auth_service.src.services.token import TokenService, get_token_service
 
 router = APIRouter()
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
 
 @router.post('/register', response_model=UserResponse)
@@ -78,10 +81,10 @@ async def refresh_token(
 
 @router.post('/logout')
 async def logout_user(
-    access_token_request: AccessTokenRequest,
+    access_token: Depends(oauth2_scheme),
     refresh_token_request: RefreshTokenRequest,
     token_service: TokenService = Depends(get_token_service),
 ):
-    await token_service.revoke_token(access_token_request.access_token, refresh_token_request.refresh_token)
+    await token_service.revoke_token(access_token, refresh_token_request.refresh_token)
 
     return JSONResponse(status_code=HTTPStatus.OK, content={"message": Messages.SUCCESSFUL_LOGOUT})
