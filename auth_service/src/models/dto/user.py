@@ -51,3 +51,10 @@ class UserResponse(BaseDto):
 class LoginRequest(BaseDto):
     email: EmailStr
     password: str
+
+
+class UpdateProfileRequest(BaseModel):
+    email: EmailStr | None = Field(None, description='Updated email address')
+    first_name: str | None = Field(None, max_length=50, description='Updated first name')
+    last_name: str | None = Field(None, max_length=50, description='Updated last name')
+    password: SecretStr | None = Field(None, min_length=8, description='New password')
