@@ -1,18 +1,33 @@
 import pytest_asyncio
-from sqlalchemy.ext.asyncio import create_async_engine
-from sqlalchemy.orm import  declarative_base
-from auth_service.tests.functional.settings import database_url
+import psycopg2
+from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
+from auth_service.tests.functional.settings import test_settings
 
 
-engine = create_async_engine(database_url, future=True, echo=True)
-Base = declarative_base()
+@pytest_asyncio.fixture(scope='function', autouse=True)
+async def clear_db():
+    """
+    Clean database before each test.
+    """
+    conn = psycopg2.connect(
+        dbname=test_settings.postgres_db,
+        user=test_settings.postgres_user,
+        password=test_settings.postgres_password,
+        host=test_settings.postgres_host,
+        port=test_settings.postgres_port
+    )
+    conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
+    cur = conn.cursor()
 
+    # getting all tables
+    cur.execute("""
+        SELECT tablename FROM pg_tables
+        WHERE schemaname = 'auth';
+    """)
+    tables = cur.fetchall()
 
-@pytest_asyncio.fixture(scope='session', autouse=True)
-async def test_db():
-    print('hi')
+    for table in tables:
+        cur.execute(f'TRUNCATE TABLE "auth"."{table[0]}" RESTART IDENTITY CASCADE')
 
-    yield
-
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
+    cur.close()
+    conn.close()
