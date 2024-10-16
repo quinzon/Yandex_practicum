@@ -56,6 +56,7 @@ class TokenService:
             'sub': token_data.user_id,
             'exp': expire,
             'email': token_data.email,
+            'jti': str(uuid.uuid4()),
         }
 
         refresh_token = jwt.encode(to_encode, self.settings.secret_key, algorithm=self.settings.algorithm)

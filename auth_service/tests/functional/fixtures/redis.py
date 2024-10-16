@@ -6,7 +6,8 @@ from auth_service.tests.functional.settings import test_settings
 
 @pytest_asyncio.fixture(scope='session')
 async def redis_client():
-    redis = Redis(host=test_settings.redis_host, port=test_settings.redis_port, db=0)
+    redis = Redis(host=test_settings.redis_host, port=test_settings.redis_port,
+                  db=test_settings.redis_db)
     yield redis
     await redis.close()
 

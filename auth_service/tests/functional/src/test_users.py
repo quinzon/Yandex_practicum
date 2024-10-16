@@ -24,6 +24,21 @@ async def test_get_profile(make_get_request, get_tokens):
     assert response_body['last_name'] == valid_user['last_name']
 
 
+# Test for getting login history
+async def test_get_login_history(make_get_request, get_tokens):
+    # Get valid tokens
+    access_token, _ = await get_tokens(valid_login['email'], valid_login['password'])
+
+    # Send a request to get login history
+    response_body, headers, status = await make_get_request(
+        f'{ENDPOINT}/profile/login-history',
+        headers={'Authorization': f'Bearer {access_token}'}
+    )
+
+    assert status == HTTPStatus.OK
+    assert len(response_body) > 0  # Ensure there is at least one entry in login history
+
+
 # Test for updating user profile
 async def test_update_profile(make_put_request, get_tokens):
     # Get valid tokens
@@ -46,21 +61,6 @@ async def test_update_profile(make_put_request, get_tokens):
     assert status == HTTPStatus.OK
     assert response_body['first_name'] == 'UpdatedName'
     assert response_body['last_name'] == 'UpdatedLastName'
-
-
-# Test for getting login history
-async def test_get_login_history(make_get_request, get_tokens):
-    # Get valid tokens
-    access_token, _ = await get_tokens(valid_login['email'], valid_login['password'])
-
-    # Send a request to get login history
-    response_body, headers, status = await make_get_request(
-        f'{ENDPOINT}/profile/login-history',
-        headers={'Authorization': f'Bearer {access_token}'}
-    )
-
-    assert status == HTTPStatus.OK
-    assert len(response_body) > 0  # Ensure there is at least one entry in login history
 
 
 # Test for invalid access token

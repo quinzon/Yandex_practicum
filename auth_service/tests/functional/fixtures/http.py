@@ -26,8 +26,8 @@ async def make_post_request(client_session):
     async def inner(endpoint: str, json: dict = None, headers: dict = None):
         url = f'{test_settings.service_url}{endpoint}'
         async with client_session.post(url, json=json, headers=headers) as response:
-            return await response.json(), response.headers, response.status
-
+            response_body = await response.json()
+            return response_body, response.headers, response.status
     return inner
 
 

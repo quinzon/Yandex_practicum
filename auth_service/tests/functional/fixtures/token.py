@@ -2,9 +2,18 @@ from http import HTTPStatus
 
 import pytest_asyncio
 
+from auth_service.tests.functional.testdata.authentication import valid_user
+
 
 @pytest_asyncio.fixture(scope='function')
-async def get_tokens(make_post_request):
+async def create_user(make_post_request):
+    response_body, _, status = await make_post_request('/api/v1/auth/register', json=valid_user)
+    assert status == HTTPStatus.OK
+    return response_body
+
+
+@pytest_asyncio.fixture(scope='function')
+async def get_tokens(create_user, make_post_request):
     async def _get_tokens(email: str, password: str):
         login_data = {
             'email': email,
