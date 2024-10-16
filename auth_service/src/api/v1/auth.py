@@ -12,7 +12,6 @@ from auth_service.src.services.token import TokenService, get_token_service
 
 router = APIRouter()
 
-
 @router.post('/register', response_model=UserResponse)
 async def register_user(
         user_data: UserCreate,
@@ -85,3 +84,4 @@ async def logout_user(
     await token_service.revoke_token(access_token_request.access_token, refresh_token_request.refresh_token)
 
     return JSONResponse(status_code=HTTPStatus.OK, content={"message": Messages.SUCCESSFUL_LOGOUT})
+

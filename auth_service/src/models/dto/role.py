@@ -9,6 +9,9 @@ from auth_service.src.models.dto.permission import PermissionResponse
 class RoleCreate(BaseModel):
     name: str
 
+class Role(BaseModel):
+    name: str
+
 class RoleResponse(BaseDto):
     id: UUID
     name: str

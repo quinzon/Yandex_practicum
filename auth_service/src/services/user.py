@@ -34,6 +34,13 @@ class UserService(BaseService[User]):
     async def get_user_by_id(self, user_id: str) -> User | None:
         return await self.repository.get_by_id(user_id)
 
+    async def assign_roles(self, user_id: str, roles: List) -> None:
+        if await self.client.has_permission('assign_role'):
+            for role in roles:
+                role_name=role.name
+                role_id=await self.role_service.get_id_by_name(role_name)
+                await self.assign_role_to_user(user_id, role_id)
+    
     @staticmethod
     def hash_password(password: str) -> str:
         return pwd_context.hash(password)

@@ -9,7 +9,7 @@ pydantic-settings==2.4.0
 python-dotenv==1.0.1
 redis==5.0.8
 orjson==3.10.7
-psycopg2-binary
+psycopg2-binary==2.9.9
 python-jose==3.3.0
 passlib==1.7.2
 httptools==0.6.*

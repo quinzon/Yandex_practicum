@@ -18,8 +18,8 @@ from auth_service.src.repository.token import TokenRepository, get_token_reposit
 
 
 class TokenService:
-    def __init__(self, settings: JWTSettings, token_repository: TokenRepository, redis: Redis):
-        self.settings = settings
+    def __init__(self, jwt_settings: JWTSettings, token_repository: TokenRepository, redis: Redis):
+        self.settings = jwt_settings
         self.token_repository = token_repository
         self.redis = redis
 
@@ -112,6 +112,7 @@ class TokenService:
 
     def _verify_token(self, token: str) -> dict | None:
         try:
+            print(115,token,self.settings)
             payload = jwt.decode(token, self.settings.secret_key, algorithms=[self.settings.algorithm])
         except JWTError:
             raise HTTPException(status_code=HTTPStatus.UNAUTHORIZED, detail=ErrorMessages.INVALID_TOKEN)
@@ -141,4 +142,5 @@ def get_token_service(
     token_repository: TokenRepository = Depends(get_token_repository),
     redis: Redis = Depends(get_redis)
 ) -> TokenService:
+    print(145,jwt_settings)
     return TokenService(jwt_settings, token_repository, redis)

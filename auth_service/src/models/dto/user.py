@@ -10,7 +10,6 @@ from auth_service.src.models.dto.common import BaseDto
 class UserCreate(BaseModel):
     email: EmailStr
     password: SecretStr = Field(..., min_length=8, max_length=128)
-    # first_name: str | None = Field(None, max_length=50)
     first_name: Optional[str] = Field(None, max_length=50)
     last_name: Optional[str] = Field(None, max_length=50)
 
@@ -40,7 +39,6 @@ class UserResponse(BaseDto):
     email: EmailStr
     first_name: Optional[str]
     last_name: Optional[str]
-    # roles: List[str] | None
     roles: Optional[List[str]] = None
 
     @field_validator('id', mode='before')
