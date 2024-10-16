@@ -15,8 +15,9 @@ class ErrorMessages:
     INVALID_ACCESS_TOKEN = 'Invalid access token'
     TOKEN_EXPIRED = 'Token expired'
     TOKEN_REVOKED = 'Token has been revoked'
-    TOKEN_IS_MISSING = "Authorization header missing or malformed"
-    USER_ALREADY_EXISTS = "User already exists"
+    TOKEN_IS_MISSING = 'Authorization header missing or malformed'
+    USER_ALREADY_EXISTS = 'User already exists'
+    USER_NOT_FOUND = 'User not found'
 
 
 class Messages:

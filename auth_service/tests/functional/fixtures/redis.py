@@ -1,7 +1,7 @@
 import pytest_asyncio
 from redis.asyncio import Redis
 
-from movie_service.tests.functional.settings import test_settings
+from auth_service.tests.functional.settings import test_settings
 
 
 @pytest_asyncio.fixture(scope='session')
