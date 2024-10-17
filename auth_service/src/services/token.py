@@ -142,5 +142,4 @@ def get_token_service(
     token_repository: TokenRepository = Depends(get_token_repository),
     redis: Redis = Depends(get_redis)
 ) -> TokenService:
-    print(145,jwt_settings)
     return TokenService(jwt_settings, token_repository, redis)

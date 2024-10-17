@@ -81,6 +81,20 @@ async def assign_permissions_to_role(role_id: UUID,
         )'''
     return role
 
+@router.get("/users/{user_id}", response_model=UserResponse)
+async def get_user(user_id: UUID,
+ user_service: UserService = Depends(get_user_service)
+):
+    '''Просмотр пользователя'''
+    try:
+        user = await user_service.get_user_by_id(user_id)
+    except IntegrityError:
+        raise HTTPException(
+            status_code=HTTPStatus.NOT_FOUND,
+            detail=ErrorMessages.USER_NOT_FOUND
+        )
+    return user
+
 @router.put("/users/{user_id}", response_model=UserResponse)
 async def assign_role_to_user(user_id: UUID,
  roles: List[Role],

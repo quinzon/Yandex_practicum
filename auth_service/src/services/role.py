@@ -1,5 +1,5 @@
 from functools import lru_cache
-from typing import List
+from typing import List, Optional
 from http import HTTPStatus
 
 from fastapi import Depends, HTTPException
@@ -9,10 +9,16 @@ from auth_service.src.repository.role import RoleRepository, get_role_repository
 from auth_service.src.models.entities.role import Role
 from auth_service.src.services.base import BaseService
 from auth_service.src.services.permission import get_permission_service
-from auth_service.src.services.client import get_client_service
+from auth_service.src.services.client import get_client_service,ClientService
+from auth_service.src.repository.base import BaseRepository
 
 
 class RoleService(BaseService[Role]):
+    #2
+    def __init__(self, repository: BaseRepository[Role], client_service: ClientService):
+        super().__init__(repository)
+        self.client_service = client_service
+    
     async def create_role(self, role_create: RoleCreate) -> RoleResponse:
         role = Role.create(role_create)
         role = await self.repository.create(role)
@@ -30,9 +36,8 @@ class RoleService(BaseService[Role]):
 
     async def assign_permissions(self, role_id: str, permissions: List, token: str) -> None:
         permission_service = get_permission_service()
-        client = get_client_service(token)
-        #role_service = get_role_service()
-        if await client.has_permission('edit_role'):
+        self.client_service.set_token(token)
+        if await self.client_service.has_permission('edit_role'):
             for permission in permissions:
                 permission_name=permission.name
                 print(32,permission_name)
@@ -54,6 +59,7 @@ class RoleService(BaseService[Role]):
 
 @lru_cache()
 def get_role_service(
-    role_repository: RoleRepository = Depends(get_role_repository)
+    role_repository: RoleRepository = Depends(get_role_repository),
+    client_service: ClientService = Depends(get_client_service)
 ) -> RoleService:
-    return RoleService(role_repository)
+    return RoleService(role_repository, client_service)
