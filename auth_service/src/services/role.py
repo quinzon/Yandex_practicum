@@ -25,7 +25,7 @@ class RoleService(BaseService[Role]):
         return RoleResponse.from_orm(role)
 
     async def get_role_permissions(self, role_id: str) -> List[str]:
-        role = await self.repository.get_by_id(role_id)
+        role = await self.get_role_by_id(role_id)
         return [perm.name for perm in role.permissions] if role else []
 
     async def assign_permission_to_role(self, role_id: str, perm_id: str) -> None:
@@ -56,6 +56,9 @@ class RoleService(BaseService[Role]):
                 status_code=HTTPStatus.NOT_FOUND,
                 detail=f"Role '{role_name}' not found."
             )
+    async def get_role_by_name(self, role_name: str) -> Role | None:
+        role_id = await self.get_id_by_name(role_name)
+        return await self.get_role_by_id(role_id)
 
 @lru_cache()
 def get_role_service(

@@ -12,7 +12,8 @@ from auth_service.src.services.token import TokenService, get_token_service
 from auth_service.src.services.user import UserService, get_user_service
 
 router = APIRouter()
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl='/auth/login')
+# oauth2_scheme = OAuth2PasswordBearer(tokenUrl='/api/v1/auth/login')
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/token")
 
 
 @router.get('/profile', response_model=UserResponse)

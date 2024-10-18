@@ -15,7 +15,8 @@ from auth_service.src.services.token import TokenService, get_token_service
 
 router = APIRouter()
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl='/auth/login')
+# oauth2_scheme = OAuth2PasswordBearer(tokenUrl='/api/v1/auth/login')
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/token")
 
 
 @router.post('/register', response_model=UserResponse)
@@ -49,9 +50,10 @@ async def login_user(
             detail=ErrorMessages.INVALID_CREDENTIALS
         )
 
-    user_agent = request.headers.get('user-agent', 'Unknown')
-    client_address = request.headers.get('host')
-    await login_history_service.add_login_history(user.id, user_agent, client_address)
+    if request:
+        user_agent = request.headers.get('user-agent', 'Unknown')
+        client_address = request.headers.get('host')
+        await login_history_service.add_login_history(user.id, user_agent, client_address)
 
     token_data = TokenData(user_id=user.id, email=user.email, roles=user.roles)
     token_response = await token_service.create_tokens(token_data)

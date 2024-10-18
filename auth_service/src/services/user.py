@@ -21,7 +21,14 @@ class UserService(BaseService[User]):
     async def authenticate_user(self, login_data: LoginRequest) -> UserResponse | None:
         user = await self.repository.get_user_by_email(login_data.email)
         if user and self.verify_password(login_data.password, user.password_hash):
-            return UserResponse.from_orm(user)
+            # print(2444444,user.roles[0].__dict__)
+            # return UserResponse.from_orm(user)
+            roles = [role.name for role in user.roles]
+            return UserResponse(id=user.id,
+                                email=user.email, 
+                                first_name=user.first_name, 
+                                last_name=user.last_name, 
+                                roles=roles)
         return None
 
     async def get_user_roles(self, user_id: str) -> List[str]:
@@ -34,8 +41,9 @@ class UserService(BaseService[User]):
     async def get_user_by_id(self, user_id: str) -> User | None:
         return await self.repository.get_by_id(user_id)
 
-    async def assign_roles(self, user_id: str, roles: List) -> None:
-        if await self.client.has_permission('assign_role'):
+    async def assign_roles(self, user_id: str, roles: List, token: str) -> None:
+        self.client_service.set_token(token)
+        if await self.client_service.has_permission('assign_role'):
             for role in roles:
                 role_name=role.name
                 role_id=await self.role_service.get_id_by_name(role_name)

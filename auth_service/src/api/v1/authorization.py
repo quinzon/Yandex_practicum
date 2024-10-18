@@ -28,7 +28,8 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(),
     '''Для авторизации в Swagger'''
     login_data= LoginRequest(email = form_data.username,
                             password = form_data.password)
-    token_response = await login_user(login_data, user_service, token_service)
+    # token_response = await login_user(login_data, user_service, token_service)
+    token_response = await login_user(login_data, request=None,user_service=user_service, token_service=token_service)
     return TokenBearer(access_token=token_response.access_token)
 
 @router.post("/roles/create")
