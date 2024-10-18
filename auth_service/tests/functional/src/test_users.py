@@ -25,18 +25,39 @@ async def test_get_profile(make_get_request, get_tokens):
 
 
 # Test for getting login history
-async def test_get_login_history(make_get_request, get_tokens):
-    # Get valid tokens
+async def test_get_login_history_with_pagination(make_get_request, get_tokens):
     access_token, _ = await get_tokens(valid_login['email'], valid_login['password'])
 
-    # Send a request to get login history
+    page_size = 10
+    page_number = 1
+
     response_body, headers, status = await make_get_request(
         f'{ENDPOINT}/profile/login-history',
-        headers={'Authorization': f'Bearer {access_token}'}
+        headers={'Authorization': f'Bearer {access_token}'},
+        params={'page_size': page_size, 'page_number': page_number}
     )
 
     assert status == HTTPStatus.OK
-    assert len(response_body) > 0  # Ensure there is at least one entry in login history
+
+    # check response structure
+    assert 'meta' in response_body
+    assert 'items' in response_body
+
+    meta = response_body['meta']
+    items = response_body['items']
+
+    # check paging attributes
+    assert meta['page_size'] == page_size
+    assert meta['page_number'] == page_number
+    assert meta['total_items'] >= 0
+    assert meta['total_pages'] >= 1
+
+    # check items len
+    assert isinstance(items, list)
+    assert len(items) <= page_size
+
+    # check we have entries
+    assert len(items) > 0
 
 
 # Test for updating user profile

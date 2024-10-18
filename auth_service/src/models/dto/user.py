@@ -1,4 +1,5 @@
 import re
+from datetime import datetime
 from uuid import UUID
 
 from pydantic import BaseModel, EmailStr, Field, SecretStr, field_validator
@@ -58,3 +59,17 @@ class UpdateProfileRequest(BaseModel):
     first_name: str | None = Field(None, max_length=50, description='Updated first name')
     last_name: str | None = Field(None, max_length=50, description='Updated last name')
     password: SecretStr | None = Field(None, min_length=8, description='New password')
+
+
+class LoginHistoryResponse(BaseDto):
+    id: str
+    user_id: str
+    user_agent: str
+    ip_address: str
+    timestamp: datetime
+
+    @field_validator('id', 'user_id', mode='before')
+    def convert_uuid_to_str(cls, value):
+        if isinstance(value, UUID):
+            return str(value)
+        return value

@@ -1,5 +1,5 @@
 from functools import lru_cache
-from typing import List
+from typing import List, Tuple
 
 from fastapi import Depends
 
@@ -19,8 +19,13 @@ class LoginHistoryService(BaseService[LoginHistory]):
         )
         return await self.create(login_history)
 
-    async def get_login_history(self, user_id: str) -> List[LoginHistory]:
-        return await self.repository.get_login_history(user_id)
+    async def get_login_history(
+        self,
+        user_id: str,
+        page_size: int = 10,
+        page_number: int = 1
+    ) -> Tuple[List[LoginHistory], int]:
+        return await self.repository.get_login_history(user_id, page_size, page_number)
 
 
 @lru_cache()
