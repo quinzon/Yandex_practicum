@@ -1,0 +1,41 @@
+version: '3.8'
+
+
+x-common-variables: &common-variables
+  networks:
+    - auth_test_network
+  labels:
+    com.example.project: "functional-auth-tests"
+  env_file:
+    - .env.tests
+
+services:
+  api:
+    build: ../../
+    image: auth_service
+    container_name: auth_service
+    entrypoint: ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8001"]
+    <<: *common-variables
+
+  tests:
+    image: auth_service
+    <<: *common-variables
+    entrypoint: >
+      sh -c "export PYTHONPATH=/opt
+      && pip install -r /opt/auth_service/tests/functional/requirements.txt
+      && python3 /opt/auth_service/tests/functional/utils/wait_for_db.py
+      && python3 /opt/auth_service/tests/functional/utils/wait_for_redis.py
+      && python3 /opt/auth_service/tests/functional/utils/wait_for_migration.py
+      && pytest /opt/auth_service/tests/functional/src"
+
+  redis_test:
+    image: redis:latest
+    <<: *common-variables
+
+  postgres_test:
+    image: postgres:16-alpine
+    <<: *common-variables
+
+networks:
+  auth_test_network:
+    driver: bridge

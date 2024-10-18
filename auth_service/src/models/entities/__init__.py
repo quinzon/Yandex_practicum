@@ -7,12 +7,12 @@ MODELS_DIR = os.path.dirname(__file__)
 
 def import_all_models():
     """
-    Функция для динамического импорта всех моделей из директории.
+    Import all models dynamically.
     """
     package_name = __name__
 
     for _, module_name, _ in pkgutil.iter_modules([MODELS_DIR]):
-        full_module_name = f"{package_name}.{module_name}"
+        full_module_name = f'{package_name}.{module_name}'
         importlib.import_module(full_module_name)
 
 

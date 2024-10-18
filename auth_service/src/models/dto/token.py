@@ -1,4 +1,4 @@
-from typing import Optional, List
+from typing import List
 
 from uuid import UUID
 
@@ -14,7 +14,7 @@ class RefreshToken(BaseDto):
 
 class TokenResponse(BaseDto):
     access_token: str
-    refresh_token: Optional[str] = None
+    refresh_token: str | None = None
 
 
 class TokenData(BaseDto):

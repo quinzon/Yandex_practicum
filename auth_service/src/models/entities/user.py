@@ -22,7 +22,7 @@ class User(Base):
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
     roles = relationship('Role', secondary='auth.user_role', back_populates='users',
-                         lazy="selectin")
+                         lazy='selectin')
 
     def set_password(self, password: str) -> None:
         salt = bcrypt.gensalt()
@@ -48,7 +48,7 @@ class User(Base):
 user_role = Table(
     'user_role',
     Base.metadata,
-    Column('user_id', UUID(as_uuid=True), ForeignKey('auth.user.id', ondelete="CASCADE"), primary_key=True),
-    Column('role_id', UUID(as_uuid=True), ForeignKey('auth.role.id', ondelete="CASCADE"), primary_key=True),
+    Column('user_id', UUID(as_uuid=True), ForeignKey('auth.user.id', ondelete='CASCADE'), primary_key=True),
+    Column('role_id', UUID(as_uuid=True), ForeignKey('auth.role.id', ondelete='CASCADE'), primary_key=True),
     schema='auth'
 )

@@ -1,0 +1,59 @@
+from http import HTTPStatus
+from typing import List
+from uuid import UUID
+
+from fastapi import APIRouter, Depends, HTTPException
+from fastapi.security import OAuth2PasswordBearer
+
+from auth_service.src.models.dto.common import ErrorMessages
+from auth_service.src.models.dto.user import UserResponse, UpdateProfileRequest
+from auth_service.src.services.login_history import LoginHistoryService, get_login_history_service
+from auth_service.src.services.token import TokenService, get_token_service
+from auth_service.src.services.user import UserService, get_user_service
+
+router = APIRouter()
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl='/auth/login')
+
+
+@router.get('/profile', response_model=UserResponse)
+async def get_profile(
+        token: str = Depends(oauth2_scheme),
+        token_service: TokenService = Depends(get_token_service),
+        user_service: UserService = Depends(get_user_service)
+):
+    token_data = await token_service.check_access_token(token)
+    user = await user_service.get_user_by_id(token_data.user_id)
+    if not user:
+        raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail=ErrorMessages.USER_NOT_FOUND)
+    return UserResponse.from_orm(user)
+
+
+@router.put('/profile', response_model=UserResponse)
+async def update_profile(
+        update_data: UpdateProfileRequest,
+        token: str = Depends(oauth2_scheme),
+        token_service: TokenService = Depends(get_token_service),
+        user_service: UserService = Depends(get_user_service)
+):
+    token_data = await token_service.check_access_token(token)
+    user = await user_service.get_user_by_id(token_data.user_id)
+    if not user:
+        raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail=ErrorMessages.USER_NOT_FOUND)
+
+    user.first_name = update_data.first_name
+    user.last_name = update_data.last_name
+    if update_data.password:
+        user.password_hash = user_service.hash_password(update_data.password.get_secret_value())
+
+    updated_user = await user_service.update(user)
+    return UserResponse.from_orm(updated_user)
+
+
+@router.get('/profile/login-history')
+async def get_login_history(
+        token: str = Depends(oauth2_scheme),
+        token_service: TokenService = Depends(get_token_service),
+        login_history_service: LoginHistoryService = Depends(get_login_history_service)
+):
+    token_data = await token_service.check_access_token(token)
+    return await login_history_service.get_login_history(token_data.user_id)

@@ -17,4 +17,4 @@ class Permission(Base):
     resource = Column(String(50), nullable=False)
 
     roles = relationship('Role', secondary='auth.role_permission', back_populates='permissions',
-                         lazy="selectin")
+                         lazy='selectin')

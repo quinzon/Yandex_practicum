@@ -56,6 +56,7 @@ class TokenService:
             'sub': token_data.user_id,
             'exp': expire,
             'email': token_data.email,
+            'jti': str(uuid.uuid4()),
         }
 
         refresh_token = jwt.encode(to_encode, self.settings.secret_key, algorithm=self.settings.algorithm)
@@ -86,12 +87,12 @@ class TokenService:
         return TokenResponse(access_token=access_token, refresh_token=refresh_token)
 
     async def is_token_blacklisted(self, access_token: str) -> bool:
-        blacklist_key = f"blacklist:{access_token}"
+        blacklist_key = f'blacklist:{access_token}'
         return await self.redis.exists(blacklist_key)
 
     async def check_access_token(self, access_token: str) -> TokenData:
         token_data = await self.get_token_data(access_token)
-        if self.is_token_blacklisted(access_token):
+        if await self.is_token_blacklisted(access_token):
             raise HTTPException(status_code=HTTPStatus.UNAUTHORIZED, detail=ErrorMessages.TOKEN_REVOKED)
         return token_data
 
@@ -131,9 +132,9 @@ class TokenService:
 
     async def add_blacklist(self, access_token: str) -> None:
         payload = self._verify_token(access_token)
-        blacklist_key = f"blacklist:{access_token}"
+        blacklist_key = f'blacklist:{access_token}'
         ttl = self._get_ttl(payload)
-        await self.redis.set(blacklist_key, "true", ex=int(ttl if ttl > 0 else 0))
+        await self.redis.set(blacklist_key, 'true', ex=int(ttl if ttl > 0 else 0))
 
 
 @lru_cache()

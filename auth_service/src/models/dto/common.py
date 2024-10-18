@@ -18,6 +18,7 @@ class ErrorMessages:
     TOKEN_IS_MISSING = "Authorization header missing or malformed"
     USER_ALREADY_EXISTS = "User already exists"
     ROLE_ALREADY_EXISTS = "Role already exists"
+    USER_NOT_FOUND = 'User not found'
 
 
 class Messages:
