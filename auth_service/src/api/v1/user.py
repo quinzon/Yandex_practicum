@@ -1,12 +1,11 @@
 from http import HTTPStatus
-from typing import List
-from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.security import OAuth2PasswordBearer
 
-from auth_service.src.models.dto.common import ErrorMessages
-from auth_service.src.models.dto.user import UserResponse, UpdateProfileRequest
+from auth_service.src.models.dto.common import ErrorMessages, paginated_response, Pagination
+from auth_service.src.models.dto.user import UserResponse, UpdateProfileRequest, \
+    LoginHistoryResponse
 from auth_service.src.services.login_history import LoginHistoryService, get_login_history_service
 from auth_service.src.services.token import TokenService, get_token_service
 from auth_service.src.services.user import UserService, get_user_service
@@ -49,11 +48,19 @@ async def update_profile(
     return UserResponse.from_orm(updated_user)
 
 
-@router.get('/profile/login-history')
+@router.get('/profile/login-history', response_model=Pagination[LoginHistoryResponse])
+@paginated_response()
 async def get_login_history(
         token: str = Depends(oauth2_scheme),
         token_service: TokenService = Depends(get_token_service),
-        login_history_service: LoginHistoryService = Depends(get_login_history_service)
+        login_history_service: LoginHistoryService = Depends(get_login_history_service),
+        page_size: int = Query(10, gt=0, description="Number of items per page"),
+        page_number: int = Query(1, gt=0, description="The page number to retrieve"),
 ):
     token_data = await token_service.check_access_token(token)
-    return await login_history_service.get_login_history(token_data.user_id)
+    items, total_items = await login_history_service.get_login_history(
+        token_data.user_id,
+        page_size,
+        page_number
+    )
+    return items, total_items
