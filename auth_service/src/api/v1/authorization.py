@@ -8,9 +8,8 @@ from fastapi.security import OAuth2PasswordBearer,OAuth2PasswordRequestForm
 
 from auth_service.src.models.dto.common import ErrorMessages, Messages
 from auth_service.src.models.dto.token import TokenBearer
-from auth_service.src.models.dto.role import RoleCreate, RoleResponse, Role
-from auth_service.src.models.dto.permission import Permission
-from auth_service.src.models.dto.user import UserCreate, UserResponse, LoginRequest
+from auth_service.src.models.dto.role import RoleCreate, RoleResponse, RoleNestedResponse
+from auth_service.src.models.dto.user import UserResponse, LoginRequest, UserNestedResponse
 from auth_service.src.services.role import RoleService, get_role_service
 from auth_service.src.services.user import UserService, get_user_service
 from auth_service.src.services.token import TokenService, get_token_service
@@ -28,7 +27,6 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(),
     '''Для авторизации в Swagger'''
     login_data= LoginRequest(email = form_data.username,
                             password = form_data.password)
-    # token_response = await login_user(login_data, user_service, token_service)
     token_response = await login_user(login_data, request=None,user_service=user_service, token_service=token_service)
     return TokenBearer(access_token=token_response.access_token)
 
@@ -46,7 +44,7 @@ async def create_role(role_data: RoleCreate,
         )
     return role
 
-@router.get("/roles/{role_id}", response_model=RoleResponse,
+@router.get("/roles/{role_id}", response_model=RoleNestedResponse,
     summary='Get Role Permissions')
 async def get_role(role_id: UUID,
  role_service: RoleService = Depends(get_role_service)
@@ -61,28 +59,49 @@ async def get_role(role_id: UUID,
         )
     return role
 
-@router.put("/roles/{role_id}", response_model=RoleResponse)
+@router.put("/roles/{role_id}/assign_permissions", response_model=RoleNestedResponse)
 async def assign_permissions_to_role(role_id: UUID,
- permissions: List[Permission],
+ permission_names: List[str],
  role_service: RoleService = Depends(get_role_service),
  token: str = Depends(oauth2_scheme)
 ):
     '''Назначение разрешений роли'''
-    if not permissions: 
+    if not permission_names: 
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
             detail='No permissions set'
         )
-    #try:
-    role = await role_service.assign_permissions(role_id, permissions, token)
-    '''except IntegrityError:
+    try:
+        role = await role_service.assign_permissions(role_id, permission_names, token)
+    except IntegrityError:
         raise HTTPException(
             status_code=HTTPStatus.NOT_FOUND,
             detail=ErrorMessages.ROLE_NOT_FOUND
-        )'''
+        )
     return role
 
-@router.get("/users/{user_id}", response_model=UserResponse)
+@router.put("/roles/{role_id}/revoke_permissions", response_model=RoleNestedResponse)
+async def revoke_permissions_from_role(role_id: UUID,
+ permission_names: List[str],
+ role_service: RoleService = Depends(get_role_service),
+ token: str = Depends(oauth2_scheme)
+):
+    '''Отзыв разрешений роли'''
+    if not permission_names: 
+        raise HTTPException(
+            status_code=HTTPStatus.BAD_REQUEST,
+            detail='No permissions set'
+        )
+    try:
+        role = await role_service.revoke_permissions(role_id, permission_names, token)
+    except IntegrityError:
+        raise HTTPException(
+            status_code=HTTPStatus.NOT_FOUND,
+            detail=ErrorMessages.ROLE_NOT_FOUND
+        )
+    return role
+
+@router.get("/users/{user_id}", response_model=UserNestedResponse)
 async def get_user(user_id: UUID,
  user_service: UserService = Depends(get_user_service)
 ):
@@ -96,10 +115,11 @@ async def get_user(user_id: UUID,
         )
     return user
 
-@router.put("/users/{user_id}", response_model=UserResponse)
+@router.put("/users/{user_id}/assign_roles", response_model=UserNestedResponse)
 async def assign_role_to_user(user_id: UUID,
- roles: List[Role],
+ roles: List[str],
  user_service: UserService = Depends(get_user_service),
+ token: str = Depends(oauth2_scheme)
 ):
     '''Назначение роли пользователю'''
     if not roles: 
@@ -108,10 +128,31 @@ async def assign_role_to_user(user_id: UUID,
             detail='No roles set'
         )
     try:
-        user = await user_service.assign_roles(user_id, roles)
+        user = await user_service.assign_roles(user_id, roles, token)
     except IntegrityError:
         raise HTTPException(
             status_code=HTTPStatus.NOT_FOUND,
-            detail=ErrorMessages.ROLE_NOT_FOUND
+            detail=ErrorMessages.USER_NOT_FOUND
+        )
+    return user
+
+@router.put("/users/{user_id}/revoke_roles", response_model=UserResponse)
+async def revoke_role_from_user(user_id: UUID,
+ roles: List[str],
+ user_service: UserService = Depends(get_user_service),
+ token: str = Depends(oauth2_scheme)
+):
+    '''Отзыв роли пользователя'''
+    if not roles: 
+        raise HTTPException(
+            status_code=HTTPStatus.BAD_REQUEST,
+            detail='No roles set'
+        )
+    try:
+        user = await user_service.revoke_roles(user_id, roles, token)
+    except IntegrityError:
+        raise HTTPException(
+            status_code=HTTPStatus.NOT_FOUND,
+            detail=ErrorMessages.USER_NOT_FOUND
         )
     return user

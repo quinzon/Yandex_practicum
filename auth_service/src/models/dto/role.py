@@ -15,6 +15,14 @@ class Role(BaseModel):
 class RoleResponse(BaseDto):
     id: UUID
     name: str
+    permissions: List[str]
+
+    class Config:
+        orm_mode = True
+
+class RoleNestedResponse(BaseDto):
+    id: UUID
+    name: str
     permissions: List[PermissionResponse]
 
     class Config:

@@ -30,21 +30,13 @@ def upgrade():
     )
 
     # Вставка разрешений
-    '''op.execute(
-        f"""
-        INSERT INTO auth.permission (id, name) VALUES
-        ('{uuid.uuid4()}', 'view_free_content'),
-        ('{uuid.uuid4()}', 'view_premium_content'),
-        ('{uuid.uuid4()}', 'edit_role');
-        """
-    )'''
     op.execute(
         f"""
         INSERT INTO auth.permission (id, http_method, resource, name) VALUES
         ('{uuid.uuid4()}', 'GET', 'content', 'view_free_content'),
         ('{uuid.uuid4()}', 'GET', 'content', 'view_premium_content'),
         ('{uuid.uuid4()}', 'PUT', 'roles', 'edit_role'),
-        ('{uuid.uuid4()}', 'PUT', 'roles', 'assign_role');
+        ('{uuid.uuid4()}', 'PUT', 'roles', 'edit_user');
         """
     )
 
@@ -55,7 +47,7 @@ def upgrade():
         ((SELECT id FROM auth.role WHERE name = 'guest'), (SELECT id FROM auth.permission WHERE name = 'view_free_content')),
         ((SELECT id FROM auth.role WHERE name = 'subscriber'), (SELECT id FROM auth.permission WHERE name = 'view_premium_content')),
         ((SELECT id FROM auth.role WHERE name = 'administrator'), (SELECT id FROM auth.permission WHERE name = 'edit_role')),
-        ((SELECT id FROM auth.role WHERE name = 'administrator'), (SELECT id FROM auth.permission WHERE name = 'assign_role'));
+        ((SELECT id FROM auth.role WHERE name = 'administrator'), (SELECT id FROM auth.permission WHERE name = 'edit_user'));
         """
     )
 
@@ -64,7 +56,7 @@ def downgrade():
     op.execute("DELETE FROM auth.role_permission WHERE role_id IN (SELECT id FROM auth.role WHERE name IN ('guest', 'subscriber', 'administrator'))")
     
     # Удаление разрешений
-    op.execute("DELETE FROM auth.permission WHERE name IN ('view_free_content', 'view_premium_content', 'edit_role', 'assign_role')")
+    op.execute("DELETE FROM auth.permission WHERE name IN ('view_free_content', 'view_premium_content', 'edit_role', 'edit_user')")
     
     # Удаление ролей
     op.execute("DELETE FROM auth.role WHERE name IN ('guest', 'subscriber', 'administrator')")

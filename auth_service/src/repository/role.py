@@ -2,9 +2,10 @@ from functools import lru_cache
 from typing import Optional, Type
 
 from fastapi import Depends
-from sqlalchemy import select, insert
+from sqlalchemy import delete, insert
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload, selectinload
+from sqlalchemy.exc import IntegrityError
 
 from auth_service.src.db.postgres import get_session
 from auth_service.src.models.entities.role import Role, role_permission
@@ -16,10 +17,23 @@ class RoleRepository(BaseRepository[Role]):
         return Role
 
     async def assign_permission(self, role_id: str, perm_id: str) -> None:
-        query = insert(role_permission).values(role_id=role_id, perm_id=perm_id)
-        await self.session.execute(query)
-        await self.session.commit()
-
+        try:
+            query = insert(role_permission).values(role_id=role_id, permission_id=perm_id)
+            await self.session.execute(query)
+            await self.session.commit()
+        except IntegrityError:
+            await self.session.rollback()
+    
+    async def remove_permission(self, role_id: str, perm_id: str) -> None:
+        try:
+            query = delete(role_permission).where(
+                role_permission.c.role_id == role_id,
+                role_permission.c.permission_id == perm_id
+            )
+            await self.session.execute(query)
+            await self.session.commit()
+        except IntegrityError:
+            await self.session.rollback()
 
 @lru_cache()
 def get_role_repository(

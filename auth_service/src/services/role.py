@@ -9,15 +9,19 @@ from auth_service.src.repository.role import RoleRepository, get_role_repository
 from auth_service.src.models.entities.role import Role
 from auth_service.src.services.base import BaseService
 from auth_service.src.services.permission import get_permission_service
-from auth_service.src.services.client import get_client_service,ClientService
+from auth_service.src.services.client import get_client,Client
 from auth_service.src.repository.base import BaseRepository
+from auth_service.src.repository.permission import PermissionRepository,get_permission_repository
 
 
 class RoleService(BaseService[Role]):
-    #2
-    def __init__(self, repository: BaseRepository[Role], client_service: ClientService):
+    def __init__(self, repository: BaseRepository[Role],
+                 client: Client,
+                 permission_repository: PermissionRepository,
+                 ):
         super().__init__(repository)
-        self.client_service = client_service
+        self.client = client
+        self.permission_repository = permission_repository
     
     async def create_role(self, role_create: RoleCreate) -> RoleResponse:
         role = Role.create(role_create)
@@ -34,20 +38,18 @@ class RoleService(BaseService[Role]):
     async def get_role_by_id(self, role_id: str) -> Role | None:
         return await self.repository.get_by_id(role_id)
 
-    async def assign_permissions(self, role_id: str, permissions: List, token: str) -> None:
-        permission_service = get_permission_service()
-        self.client_service.set_token(token)
-        if await self.client_service.has_permission('edit_role'):
-            for permission in permissions:
-                permission_name=permission.name
-                print(32,permission_name)
-                perm_id=await permission_service.get_id_by_name(permission_name)
+    async def assign_permissions(self, role_id: str, permission_names: List[str], token: str) -> Role | None:
+        self.client.set_token(token)
+        if await self.client.has_permission('edit_role'):
+            for permission_name in permission_names:
+                perm_id=await self.permission_repository.get_id_by_name(permission_name)
                 if perm_id is None:
                     raise HTTPException(
                         status_code=HTTPStatus.NOT_FOUND,
                         detail=f"Permission '{permission_name}' not found."
                     )
                 await self.assign_permission_to_role(role_id, perm_id)    
+        return await self.get_role_by_id(role_id)
     
     async def get_id_by_name(self, role_name: str):
         role_id = self.repository.get_id_by_name(role_name)
@@ -56,13 +58,29 @@ class RoleService(BaseService[Role]):
                 status_code=HTTPStatus.NOT_FOUND,
                 detail=f"Role '{role_name}' not found."
             )
-    async def get_role_by_name(self, role_name: str) -> Role | None:
-        role_id = await self.get_id_by_name(role_name)
+    async def revoke_permissions(self, role_id: str, permission_names: List[str], token: str) -> Role | None:
+        self.client.set_token(token)      
+        if await self.client.has_permission('edit_role'):
+            for permission_name in permission_names:
+                perm_id = await self.permission_repository.get_id_by_name(permission_name)
+                if perm_id is None:
+                    raise HTTPException(
+                        status_code=HTTPStatus.NOT_FOUND,
+                        detail=f"Permission '{permission_name}' not found."
+                    )
+                await self.remove_permission_from_role(role_id, perm_id)
         return await self.get_role_by_id(role_id)
+    
+    async def remove_permission_from_role(self, role_id: str, perm_id: str) -> None:
+        await self.repository.remove_permission(role_id, perm_id)
+
 
 @lru_cache()
 def get_role_service(
     role_repository: RoleRepository = Depends(get_role_repository),
-    client_service: ClientService = Depends(get_client_service)
+    client: Client = Depends(get_client),
+    permission_repository: PermissionRepository = Depends(get_permission_repository)
 ) -> RoleService:
-    return RoleService(role_repository, client_service)
+    return RoleService(role_repository,
+                       client,
+                       permission_repository)

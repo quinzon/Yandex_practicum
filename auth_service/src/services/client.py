@@ -1,40 +1,31 @@
 from functools import lru_cache
 from typing import List,Optional
 from http import HTTPStatus
-import asyncio
 
 from fastapi import Depends, HTTPException
-#from fastapi.security import OAuth2PasswordBearer
 
-from auth_service.src.models.dto.role import RoleCreate, RoleResponse
-from auth_service.src.repository.role import RoleRepository, get_role_repository
-from auth_service.src.models.entities.role import Role
+from auth_service.src.repository.role import get_role_repository
 from auth_service.src.services.token import get_token_service
-from auth_service.src.services.role import get_role_service
 
-class ClientService:
-    '''def __init__(self, token: str,token_service ):
-        self.token = token
-        self.token_service = token_service'''
-
-    def __init__(self, token_service, role_service ):
+class Client:
+    def __init__(self, token_service, role_repository ):
         self.token_service = token_service
-        self.role_service = role_service
+        self.role_repository = role_repository
 
     def set_token(self, token: str ):
         self.token = token
         
     async def populate_permissions(self):
         assert self.token
-        # print(25,self.token,self.token_service.settings)
         token_data=await self.token_service.get_token_data(self.token)
         self.roles = token_data.roles
-        roles = [self.role_service.get_role_by_name(name) for name in self.roles]
+        
+        roles = [await self.role_repository.get_by_name(name) for name in self.roles]
         # get unique permissions
-        permissions = {}
+        permissions = set()
         for role in roles:
-            # permissions.update(get_role_service.get_role_permissions())
-            permissions.update(set(role.permissions))
+            permissions_names = [perm.name for perm in role.permissions]
+            permissions.update(set(permissions_names))
         self.permissions = tuple(permissions)
 
     async def has_permission(self, required_permission: str) -> bool:
@@ -47,15 +38,9 @@ class ClientService:
                         detail=f"No {required_permission} permission."
                     )        
 
-'''@lru_cache()
-def get_client_service(token: Optional[str],
-    token_service=Depends(get_token_service)
-    ) -> ClientService:
-    return ClientService(token,token_service)'''
-
 @lru_cache()
-def get_client_service(
+def get_client(
         token_service=Depends(get_token_service),
-        role_service=Depends(get_role_service)
-    ) -> ClientService:
-    return ClientService(token_service, role_service)
+        role_repository=Depends(get_role_repository)
+    ) -> Client:
+    return Client(token_service, role_repository)
