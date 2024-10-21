@@ -2,9 +2,7 @@ from http import HTTPStatus
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException
-from starlette.requests import Request
 
-from auth_service.src.core.security import has_permission
 from auth_service.src.models.dto.common import BaseResponse, Messages, ErrorMessages
 from auth_service.src.models.dto.permission import PermissionCreate, PermissionDto
 from auth_service.src.services.permission import PermissionService, get_permission_service
@@ -21,9 +19,7 @@ async def create_permission(
 
 
 @router.get('/{permission_id}', response_model=PermissionDto)
-@has_permission()
 async def get_permission(
-        request: Request,
         permission_id: UUID,
         permission_service: PermissionService = Depends(get_permission_service)
 ):

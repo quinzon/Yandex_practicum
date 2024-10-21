@@ -3,7 +3,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException
 
-from auth_service.src.core.security import oauth2_scheme, has_permission
+from auth_service.src.core.security import oauth2_scheme
 from auth_service.src.models.dto.common import ErrorMessages, BaseResponse, Messages
 from auth_service.src.models.dto.role import RoleCreate, RoleDto
 from auth_service.src.services.access_control import AccessControlService, \
@@ -14,7 +14,6 @@ router = APIRouter()
 
 
 @router.post('/', response_model=RoleDto)
-@has_permission()
 async def create_role(
         role_create: RoleCreate,
         role_service: RoleService = Depends(get_role_service)
