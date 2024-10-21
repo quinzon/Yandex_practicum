@@ -23,7 +23,7 @@ async def get_session() -> AsyncSession:
     async with async_session() as session:
         try:
             yield session
-        except SQLAlchemyError as e:
+        except SQLAlchemyError:
             await session.rollback()
             raise
         finally:

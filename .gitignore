@@ -33,3 +33,4 @@ etl/.env.etl
 .DS_Store
 docker-compose-dev.yml
 docker-compose-test.yml
+.flake8

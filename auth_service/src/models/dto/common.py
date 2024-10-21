@@ -19,6 +19,7 @@ class ErrorMessages:
     USER_ALREADY_EXISTS = "User already exists"
     ROLE_ALREADY_EXISTS = "Role already exists"
     USER_NOT_FOUND = 'User not found'
+    ROLE_NOT_FOUND = 'Role not found'
 
 
 class Messages:

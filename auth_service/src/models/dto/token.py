@@ -1,5 +1,4 @@
 from typing import List
-
 from uuid import UUID
 
 from pydantic import BaseModel
@@ -30,7 +29,7 @@ class AccessTokenRequest(BaseModel):
 class RefreshTokenRequest(BaseModel):
     refresh_token: str
 
+
 class TokenBearer(BaseModel):
     access_token: str
     token_type: str = "bearer"
-    

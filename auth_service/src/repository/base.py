@@ -26,7 +26,7 @@ class BaseRepository(Generic[T]):
 
     async def get_by_id(self, entity_id: uuid) -> T | None:
         return await self.session.get(self.get_model(), entity_id)
-    
+
     async def create(self, entity: T) -> T:
         self.session.add(entity)
         await self.session.commit()
@@ -47,12 +47,11 @@ class BaseRepository(Generic[T]):
         await self.session.commit()
 
     async def get_id_by_name(self, name: str) -> Optional[uuid.UUID]:
-        model=self.get_model()
+        model = self.get_model()
         result = await self.session.execute(select(model).filter(model.name == name))
         entity = result.scalars().first()
         return entity.id if entity else None
-    
+
     async def get_by_name(self, name: str) -> T | None:
         id = await self.get_id_by_name(name)
         return await self.get_by_id(id)
-    

@@ -15,7 +15,6 @@ from auth_service.src.services.token import TokenService, get_token_service
 
 router = APIRouter()
 
-# oauth2_scheme = OAuth2PasswordBearer(tokenUrl='/api/v1/auth/login') # у меня это не работает
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/token")
 
 

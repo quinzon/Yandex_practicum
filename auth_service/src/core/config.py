@@ -36,13 +36,14 @@ class JWTSettings(CommonSettings):
 class RedisSettings(CommonSettings):
     host: str = Field(..., alias='REDIS_HOST')
     port: int = Field(..., alias='REDIS_PORT')
+    db: int = Field(..., alias='REDIS_DB')
 
     model_config = SettingsConfigDict(
         env_prefix='redis_',
     )
 
     def redis_url(self) -> str:
-        return f"redis://{self.host}:{self.port}"
+        return f'redis://{self.host}:{self.port}/{self.db}'
 
 
 class PostgresSettings(CommonSettings):
@@ -69,8 +70,7 @@ def get_redis_settings() -> RedisSettings:
 
 @lru_cache()
 def get_postgres_settings() -> PostgresSettings:
-    s=PostgresSettings()
-    return s
+    return PostgresSettings()
 
 
 @lru_cache()

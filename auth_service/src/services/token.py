@@ -113,7 +113,6 @@ class TokenService:
 
     def _verify_token(self, token: str) -> dict | None:
         try:
-            print(115,token,self.settings)
             payload = jwt.decode(token, self.settings.secret_key, algorithms=[self.settings.algorithm])
         except JWTError:
             raise HTTPException(status_code=HTTPStatus.UNAUTHORIZED, detail=ErrorMessages.INVALID_TOKEN)

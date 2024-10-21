@@ -6,11 +6,14 @@ from pydantic import BaseModel
 from auth_service.src.models.dto.common import BaseDto
 from auth_service.src.models.dto.permission import PermissionResponse
 
+
 class RoleCreate(BaseModel):
     name: str
 
+
 class Role(BaseModel):
     name: str
+
 
 class RoleResponse(BaseDto):
     id: UUID
@@ -20,6 +23,7 @@ class RoleResponse(BaseDto):
     class Config:
         orm_mode = True
 
+
 class RoleNestedResponse(BaseDto):
     id: UUID
     name: str
@@ -27,3 +31,8 @@ class RoleNestedResponse(BaseDto):
 
     class Config:
         orm_mode = True
+
+
+class RoleUpdateRequest(BaseModel):
+    add: List[str] = []
+    remove: List[str] = []

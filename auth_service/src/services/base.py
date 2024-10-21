@@ -5,6 +5,7 @@ from auth_service.src.repository.base import BaseRepository
 
 T = TypeVar('T')
 
+
 class BaseService(Generic[T]):
     def __init__(self, repository: BaseRepository[T]):
         self.repository = repository

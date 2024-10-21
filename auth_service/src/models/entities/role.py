@@ -6,6 +6,7 @@ from sqlalchemy.orm import relationship
 from auth_service.src.db.postgres import Base
 from auth_service.src.models.dto.role import RoleCreate
 
+
 class Role(Base):
     __tablename__ = 'role'
     __table_args__ = {'schema': 'auth'}
@@ -23,6 +24,7 @@ class Role(Base):
             name=role_create.name,
         )
         return role
+
 
 role_permission = Table(
     'role_permission',

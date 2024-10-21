@@ -24,7 +24,7 @@ class UserRepository(BaseRepository[User]):
         query = insert(user_role).values(user_id=user_id, role_id=role_id)
         await self.session.execute(query)
         await self.session.commit()
-    
+
     async def remove_role_from_user(self, user_id: str, role_id: str) -> None:
         query = delete(user_role).where(
             user_role.c.user_id == user_id,
@@ -32,6 +32,7 @@ class UserRepository(BaseRepository[User]):
         )
         await self.session.execute(query)
         await self.session.commit()
+
 
 @lru_cache()
 def get_user_repository(

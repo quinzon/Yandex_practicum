@@ -1,9 +1,7 @@
 from functools import lru_cache
 from typing import List
 
-from fastapi import Depends, HTTPException
-from sqlalchemy.exc import IntegrityError
-from sqlalchemy import delete
+from fastapi import Depends
 
 from auth_service.src.models.dto.user import UserCreate, UserResponse, LoginRequest
 from auth_service.src.repository.user import UserRepository, get_user_repository
@@ -12,7 +10,7 @@ from auth_service.src.models.entities.user import User
 from auth_service.src.models.entities.role import Role
 from auth_service.src.services.base import BaseService
 from auth_service.src.repository.base import BaseRepository
-from auth_service.src.services.client import get_client,Client
+from auth_service.src.services.client import get_client, Client
 from passlib.context import CryptContext
 
 pwd_context = CryptContext(schemes=['bcrypt'], deprecated='auto')
@@ -38,10 +36,10 @@ class UserService(BaseService[User]):
             # return UserResponse.from_orm(user) # UserResponse хочет string, а ему дают object
             roles = [role.name for role in user.roles]
             return UserResponse(id=user.id,
-                                  email=user.email, 
-                                  first_name=user.first_name, 
-                                  last_name=user.last_name, 
-                                  roles=roles)
+                                email=user.email,
+                                first_name=user.first_name,
+                                last_name=user.last_name,
+                                roles=roles)
         return None
 
     async def get_user_roles(self, user_id: str) -> List[str]:
@@ -58,7 +56,7 @@ class UserService(BaseService[User]):
         self.client.set_token(token)
         if await self.client.has_permission('edit_user'):
             for role_name in role_names:
-                role_id=await self.role_repository.get_id_by_name(role_name)
+                role_id = await self.role_repository.get_id_by_name(role_name)
                 await self.assign_role_to_user(user_id, role_id)
         return await self.get_user_by_id(user_id)
 

@@ -1,18 +1,18 @@
 import re
 from uuid import UUID
+from typing import List
 
 from pydantic import BaseModel, EmailStr, Field, SecretStr, field_validator
-from typing import List, Optional
 
 from auth_service.src.models.dto.common import BaseDto
-from auth_service.src.models.dto.role import Role, RoleResponse, RoleNestedResponse
+from auth_service.src.models.dto.role import RoleNestedResponse
 
 
 class UserCreate(BaseModel):
     email: EmailStr
     password: SecretStr = Field(..., min_length=8, max_length=128)
-    first_name: Optional[str] = Field(None, max_length=50)
-    last_name: Optional[str] = Field(None, max_length=50)
+    first_name: str | None = Field(None, max_length=50)
+    last_name: str | None = Field(None, max_length=50)
 
     @field_validator('password')
     def validate_password(cls, password: SecretStr) -> SecretStr:
@@ -38,36 +38,38 @@ class UserCreate(BaseModel):
 class UserResponse(BaseDto):
     id: str
     email: EmailStr
-    first_name: Optional[str]
-    last_name: Optional[str]
-    roles: Optional[List[str]] = None
-    
+    first_name: str | None
+    last_name: str | None
+    roles: List[str] | None = None
+
     @field_validator('id', mode='before')
     def convert_uuid_to_str(cls, value):
         if isinstance(value, UUID):
             return str(value)
         return value
-    
+
     class Config:
-            orm_mode = True
-            from_attributes = True 
+        orm_mode = True
+        from_attributes = True
+
 
 class UserNestedResponse(BaseDto):
     id: str
     email: EmailStr
-    first_name: Optional[str]
-    last_name: Optional[str]
-    roles: Optional[List[RoleNestedResponse]] = None
+    first_name: str | None
+    last_name: str | None
+    roles: List[RoleNestedResponse] | None = None
 
     @field_validator('id', mode='before')
     def convert_uuid_to_str(cls, value):
         if isinstance(value, UUID):
             return str(value)
         return value
-    
+
     class Config:
-            orm_mode = True
-            from_attributes = True 
+        orm_mode = True
+        from_attributes = True
+
 
 class LoginRequest(BaseDto):
     email: EmailStr
