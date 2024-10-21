@@ -1,11 +1,11 @@
-from uuid import UUID
-
 from auth_service.src.models.dto.common import BaseDto
 
 
-class PermissionResponse(BaseDto):
-    id: UUID
+class PermissionCreate(BaseDto):
     name: str
+    http_method: str
+    resource: str
 
-    class Config:
-        orm_mode = True
+
+class PermissionDto(PermissionCreate):
+    id: str

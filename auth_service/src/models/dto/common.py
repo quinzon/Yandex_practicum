@@ -15,6 +15,7 @@ class BaseDto(BaseModel):
 
 
 class ErrorMessages:
+    NOT_FOUND = 'Not found'
     INVALID_CREDENTIALS = 'Invalid credentials'
     INVALID_TOKEN = 'Invalid token'
     INVALID_REFRESH_TOKEN = 'Invalid refresh token'
