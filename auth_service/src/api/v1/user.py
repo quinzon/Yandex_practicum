@@ -1,8 +1,8 @@
 from http import HTTPStatus
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from fastapi.security import OAuth2PasswordBearer
 
+from auth_service.src.core.security import oauth2_scheme
 from auth_service.src.models.dto.common import ErrorMessages, paginated_response, Pagination
 from auth_service.src.models.dto.user import UserResponse, UpdateProfileRequest, \
     LoginHistoryResponse
@@ -11,7 +11,6 @@ from auth_service.src.services.token import TokenService, get_token_service
 from auth_service.src.services.user import UserService, get_user_service
 
 router = APIRouter()
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl='/auth/login')
 
 
 @router.get('/profile', response_model=UserResponse)

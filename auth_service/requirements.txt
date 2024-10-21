@@ -12,3 +12,4 @@ orjson==3.10.7
 psycopg2[binary]==2.9.3
 python-jose==3.3.0
 passlib==1.7.2
+typer==0.12.5

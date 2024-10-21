@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.responses import ORJSONResponse
 from redis.asyncio import Redis
 
-from auth_service.src.api.v1 import auth, user
+from auth_service.src.api.v1 import auth, user, role, permission
 from auth_service.src.core.config import (PROJECT_NAME,
                                           get_redis_settings)
 from auth_service.src.db import redis
@@ -30,4 +30,6 @@ app = FastAPI(
 )
 
 app.include_router(auth.router, prefix='/api/v1/auth', tags=['auth'])
-app.include_router(user.router, prefix='/api/v1/users', tags=['users'])
+app.include_router(user.router, prefix='/api/v1/auth/users', tags=['users'])
+app.include_router(role.router, prefix='/api/v1/auth/roles', tags=['roles'])
+app.include_router(permission.router, prefix='/api/v1/auth/permissions', tags=['permissions'])

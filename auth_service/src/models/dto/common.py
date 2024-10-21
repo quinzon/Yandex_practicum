@@ -14,7 +14,12 @@ class BaseDto(BaseModel):
     )
 
 
+class BaseResponse(BaseModel):
+    message: str
+
+
 class ErrorMessages:
+    PERMISSION_DENIED = 'Permission denied'
     NOT_FOUND = 'Not found'
     INVALID_CREDENTIALS = 'Invalid credentials'
     INVALID_TOKEN = 'Invalid token'
@@ -29,6 +34,9 @@ class ErrorMessages:
 
 class Messages:
     SUCCESSFUL_LOGOUT = 'Successful logout'
+    CREATED = 'Created'
+    DELETED = 'Deleted'
+    PERMISSION_GRANTED = 'Permission granted'
 
 
 class PaginationMeta(BaseModel):

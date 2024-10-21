@@ -1,11 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException
 from http import HTTPStatus
 
-from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.exc import IntegrityError
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
+from auth_service.src.core.security import oauth2_scheme
 from auth_service.src.models.dto.common import ErrorMessages, Messages
 from auth_service.src.models.dto.token import TokenResponse, TokenData, RefreshTokenRequest
 from auth_service.src.models.dto.user import UserCreate, UserResponse, LoginRequest
@@ -14,8 +14,6 @@ from auth_service.src.services.user import UserService, get_user_service
 from auth_service.src.services.token import TokenService, get_token_service
 
 router = APIRouter()
-
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl='/auth/login')
 
 
 @router.post('/register', response_model=UserResponse)

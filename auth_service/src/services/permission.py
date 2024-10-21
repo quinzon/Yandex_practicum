@@ -5,7 +5,7 @@ from uuid import UUID
 
 from auth_service.src.models.dto.common import ErrorMessages
 from auth_service.src.models.entities.permission import Permission
-from auth_service.src.models.dto.permission import PermissionCreate, PermissionUpdate
+from auth_service.src.models.dto.permission import PermissionCreate, PermissionDto
 from auth_service.src.repository.permission import PermissionRepository, get_permission_repository
 from auth_service.src.services.base import BaseService
 
@@ -19,14 +19,14 @@ class PermissionService(BaseService[Permission]):
         )
         return await super().create(permission)
 
-    async def update(self, permission_update: PermissionUpdate) -> Permission:
-        permission = await self.get_by_id(permission_update.id)
+    async def update(self, permission_dto: PermissionDto) -> Permission:
+        permission = await self.get_by_id(permission_dto.id)
         if not permission:
             raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail=ErrorMessages.NOT_FOUND)
 
-        permission.name = permission_update.name
-        permission.http_method = permission_update.http_method
-        permission.resource = permission_update.resource
+        permission.name = permission_dto.name
+        permission.http_method = permission_dto.http_method
+        permission.resource = permission_dto.resource
 
         return await super().update(permission)
 

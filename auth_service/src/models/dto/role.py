@@ -15,3 +15,7 @@ class RoleDto(BaseDto):
 class RoleCreate(BaseDto):
     name: str
     permission_ids: List[UUID] | None = None
+
+
+class RoleResponse(BaseDto):
+    name: str

@@ -5,7 +5,7 @@ from uuid import UUID
 
 from auth_service.src.models.dto.common import ErrorMessages
 from auth_service.src.models.entities.role import Role
-from auth_service.src.models.dto.role import RoleCreate, RoleUpdate
+from auth_service.src.models.dto.role import RoleCreate, RoleDto
 from auth_service.src.repository.role import RoleRepository, get_role_repository
 from auth_service.src.services.base import BaseService
 
@@ -17,7 +17,7 @@ class RoleService(BaseService[Role]):
         )
         return await super().create(role)
 
-    async def update(self, role_update: RoleUpdate) -> Role:
+    async def update(self, role_update: RoleDto) -> Role:
         role = await self.get_by_id(role_update.id)
         if not role:
             raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail=ErrorMessages.NOT_FOUND)
@@ -32,6 +32,9 @@ class RoleService(BaseService[Role]):
             raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail=ErrorMessages.NOT_FOUND)
 
         await super().delete(role)
+
+    async def get_by_name(self, name: str) -> Role:
+        return await self.repository.get_by_name(name)
 
 
 @lru_cache()

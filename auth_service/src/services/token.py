@@ -39,11 +39,14 @@ class TokenService:
     def create_access_token(self, token_data: TokenData) -> str:
         expire = datetime.utcnow() + timedelta(minutes=self.settings.access_token_expire_minutes)
 
+        is_superuser = 'superadmin' in token_data.roles
+
         to_encode = {
             'sub': token_data.user_id,
             'email': token_data.email,
             'roles': token_data.roles,
-            'exp': expire
+            'exp': expire,
+            'is_superuser': is_superuser
         }
 
         token = jwt.encode(to_encode, self.settings.secret_key, algorithm=self.settings.algorithm)
