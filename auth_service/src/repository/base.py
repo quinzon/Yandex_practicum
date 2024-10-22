@@ -1,6 +1,8 @@
 import uuid
 from abc import abstractmethod
-from typing import TypeVar, Generic, List, Type
+from typing import TypeVar, Generic, List, Type, Tuple
+
+from sqlalchemy import func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.exc import SQLAlchemyError
@@ -19,10 +21,14 @@ class BaseRepository(Generic[T]):
 
     async def get_all(
         self, page: int = 1, page_size: int = 10
-    ) -> List[T]:
-        query = select(T).offset((page - 1) * page_size).limit(page_size)
+    ) -> Tuple[List[T], int]:
+        model = self.get_model()
+        query = select(model).offset((page - 1) * page_size).limit(page_size)
         result = await self.session.execute(query)
-        return result.scalars().all()
+        total_query = select(func.count()).select_from(model)
+        total_result = await self.session.execute(total_query)
+        total_items = total_result.scalar_one()
+        return result.scalars().all(), total_items
 
     async def get_by_id(self, entity_id: uuid) -> T | None:
         return await self.session.get(self.get_model(), entity_id)

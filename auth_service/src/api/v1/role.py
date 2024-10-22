@@ -1,16 +1,30 @@
 from http import HTTPStatus
+from typing import List
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query, Body
 
-from auth_service.src.core.security import oauth2_scheme
-from auth_service.src.models.dto.common import ErrorMessages, BaseResponse, Messages
+from auth_service.src.core.security import oauth2_scheme, has_permission
+from auth_service.src.models.dto.common import ErrorMessages, BaseResponse, Messages, \
+    paginated_response, Pagination
 from auth_service.src.models.dto.role import RoleCreate, RoleDto
 from auth_service.src.services.access_control import AccessControlService, \
     get_access_control_service
 from auth_service.src.services.role import RoleService, get_role_service
+from auth_service.src.services.role_permission import get_role_permission_service, \
+    RolePermissionService
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(has_permission)])
+
+
+@router.get('/', response_model=Pagination[RoleDto])
+@paginated_response()
+async def get_roles(
+        role_service: RoleService = Depends(get_role_service),
+        page_size: int = Query(10, gt=0, description="Number of items per page"),
+        page_number: int = Query(1, gt=0, description="The page number to retrieve"),
+):
+    return await role_service.get_all(page_size=page_size, page=page_number)
 
 
 @router.post('/', response_model=RoleDto)
@@ -31,10 +45,10 @@ async def get_role(
 
 @router.put('/{role_id}', response_model=RoleDto)
 async def update_role(
-        role_dto: RoleDto,
+        role_create: RoleCreate,
         role_service: RoleService = Depends(get_role_service)
 ):
-    return await role_service.update(role_dto)
+    return await role_service.update(role_create)
 
 
 @router.delete('/{role_id}')
@@ -44,6 +58,15 @@ async def delete_role(
 ):
     await role_service.delete(role_id)
     return BaseResponse(message=Messages.DELETED)
+
+
+@router.put('/{role_id}/permissions', response_model=RoleDto)
+async def set_permissions_for_role(
+    role_id: UUID,
+    permission_ids: List[UUID] = Body(..., embed=True),
+    role_permission_service: RolePermissionService = Depends(get_role_permission_service)
+):
+    return await role_permission_service.set_permissions(role_id, permission_ids)
 
 
 @router.post('/check-permission')

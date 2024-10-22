@@ -1,13 +1,26 @@
 from http import HTTPStatus
+from typing import List
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 
-from auth_service.src.models.dto.common import BaseResponse, Messages, ErrorMessages
+from auth_service.src.core.security import has_permission
+from auth_service.src.models.dto.common import BaseResponse, Messages, ErrorMessages, \
+    paginated_response
 from auth_service.src.models.dto.permission import PermissionCreate, PermissionDto
 from auth_service.src.services.permission import PermissionService, get_permission_service
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(has_permission)])
+
+
+@router.get('/', response_model=List[PermissionDto])
+@paginated_response()
+async def get_roles(
+        permission_service: PermissionService = Depends(get_permission_service),
+        page_size: int = Query(10, gt=0, description="Number of items per page"),
+        page_number: int = Query(1, gt=0, description="The page number to retrieve"),
+):
+    return await permission_service.get_all(page_size=page_size, page=page_number)
 
 
 @router.post('/', response_model=PermissionDto)

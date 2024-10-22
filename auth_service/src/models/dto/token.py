@@ -4,7 +4,6 @@ from uuid import UUID
 from pydantic import BaseModel
 
 from auth_service.src.models.dto.common import BaseDto
-from auth_service.src.models.dto.role import RoleResponse
 
 
 class RefreshToken(BaseDto):
@@ -21,6 +20,7 @@ class TokenData(BaseDto):
     user_id: str
     email: str
     roles: List[str] | None
+    is_superuser: bool = False
 
 
 class AccessTokenRequest(BaseModel):

@@ -4,6 +4,7 @@ from typing import List
 from fastapi import Depends
 
 from auth_service.src.models.dto.user import UserCreate, UserResponse, LoginRequest
+from auth_service.src.models.entities.role import Role
 from auth_service.src.repository.user import UserRepository, get_user_repository
 from auth_service.src.models.entities.user import User
 from auth_service.src.services.base import BaseService
@@ -33,6 +34,11 @@ class UserService(BaseService[User]):
 
     async def get_user_by_id(self, user_id: str) -> User | None:
         return await self.repository.get_by_id(user_id)
+
+    async def set_roles(self, user: User, roles: List[Role]) -> User:
+        user.roles = roles
+        await self.update(user)
+        return user
 
     @staticmethod
     def hash_password(password: str) -> str:

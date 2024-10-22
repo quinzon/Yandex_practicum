@@ -1,13 +1,12 @@
 import hashlib
-from http import HTTPStatus
-
 import uuid
 from datetime import timedelta, datetime
 from functools import lru_cache
+from http import HTTPStatus
 
-from redis.asyncio import Redis
 from fastapi import HTTPException, Depends
 from jose import JWTError, jwt
+from redis.asyncio import Redis
 
 from auth_service.src.core.config import JWTSettings, get_jwt_settings
 from auth_service.src.db.redis import get_redis
@@ -39,7 +38,7 @@ class TokenService:
     def create_access_token(self, token_data: TokenData) -> str:
         expire = datetime.utcnow() + timedelta(minutes=self.settings.access_token_expire_minutes)
 
-        is_superuser = 'superadmin' in token_data.roles
+        is_superuser = 'superuser' in token_data.roles
 
         to_encode = {
             'sub': token_data.user_id,
@@ -62,7 +61,8 @@ class TokenService:
             'jti': str(uuid.uuid4()),
         }
 
-        refresh_token = jwt.encode(to_encode, self.settings.secret_key, algorithm=self.settings.algorithm)
+        refresh_token = jwt.encode(to_encode, self.settings.secret_key,
+                                   algorithm=self.settings.algorithm)
 
         hashed_token = self._hash_token(refresh_token)
 
@@ -96,14 +96,16 @@ class TokenService:
     async def check_access_token(self, access_token: str) -> TokenData:
         token_data = await self.get_token_data(access_token)
         if await self.is_token_blacklisted(access_token):
-            raise HTTPException(status_code=HTTPStatus.UNAUTHORIZED, detail=ErrorMessages.TOKEN_REVOKED)
+            raise HTTPException(status_code=HTTPStatus.UNAUTHORIZED,
+                                detail=ErrorMessages.TOKEN_REVOKED)
         return token_data
 
     async def check_refresh_token(self, refresh_token: str) -> (TokenData, RefreshToken):
         token_data = await self.get_token_data(refresh_token)
         db_token = await self.token_repository.get_by_user_id(uuid.UUID(token_data.user_id))
         if not db_token or self._hash_token(refresh_token) != db_token.token_value:
-            raise HTTPException(status_code=HTTPStatus.UNAUTHORIZED, detail=ErrorMessages.INVALID_REFRESH_TOKEN)
+            raise HTTPException(status_code=HTTPStatus.UNAUTHORIZED,
+                                detail=ErrorMessages.INVALID_REFRESH_TOKEN)
         return token_data, db_token
 
     async def get_token_data(self, token: str) -> TokenData | None:
@@ -111,16 +113,20 @@ class TokenService:
         user_id: str = payload.get('sub')
         email: str = payload.get('email')
         roles: list = payload.get('roles', [])
+        is_superuser: bool = payload.get('is_superuser')
 
-        return TokenData(user_id=user_id, email=email, roles=roles)
+        return TokenData(user_id=user_id, email=email, roles=roles, is_superuser=is_superuser)
 
     def _verify_token(self, token: str) -> dict | None:
         try:
-            payload = jwt.decode(token, self.settings.secret_key, algorithms=[self.settings.algorithm])
+            payload = jwt.decode(token, self.settings.secret_key,
+                                 algorithms=[self.settings.algorithm])
         except JWTError:
-            raise HTTPException(status_code=HTTPStatus.UNAUTHORIZED, detail=ErrorMessages.INVALID_TOKEN)
+            raise HTTPException(status_code=HTTPStatus.UNAUTHORIZED,
+                                detail=ErrorMessages.INVALID_TOKEN)
         if self._get_ttl(payload) <= 0:
-            raise HTTPException(status_code=HTTPStatus.UNAUTHORIZED, detail=ErrorMessages.TOKEN_EXPIRED)
+            raise HTTPException(status_code=HTTPStatus.UNAUTHORIZED,
+                                detail=ErrorMessages.TOKEN_EXPIRED)
         return payload
 
     async def refresh_tokens(self, token_data: TokenData, db_token: RefreshToken) -> TokenResponse:
@@ -141,8 +147,8 @@ class TokenService:
 
 @lru_cache()
 def get_token_service(
-    jwt_settings: JWTSettings = Depends(get_jwt_settings),
-    token_repository: TokenRepository = Depends(get_token_repository),
-    redis: Redis = Depends(get_redis)
+        jwt_settings: JWTSettings = Depends(get_jwt_settings),
+        token_repository: TokenRepository = Depends(get_token_repository),
+        redis: Redis = Depends(get_redis)
 ) -> TokenService:
     return TokenService(jwt_settings, token_repository, redis)

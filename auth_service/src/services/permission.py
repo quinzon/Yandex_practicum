@@ -1,4 +1,6 @@
 from functools import lru_cache
+from typing import List
+
 from fastapi import HTTPException, Depends
 from http import HTTPStatus
 from uuid import UUID
@@ -36,6 +38,9 @@ class PermissionService(BaseService[Permission]):
             raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail=ErrorMessages.NOT_FOUND)
 
         await super().delete(permission)
+
+    async def get_by_ids(self, permission_ids: List[UUID]) -> List[Permission]:
+        return await self.repository.get_by_ids(permission_ids)
 
 
 @lru_cache()

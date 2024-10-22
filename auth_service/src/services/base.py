@@ -1,5 +1,5 @@
 import uuid
-from typing import Generic, TypeVar, List
+from typing import Generic, TypeVar, List, Tuple
 
 from auth_service.src.repository.base import BaseRepository
 
@@ -10,7 +10,7 @@ class BaseService(Generic[T]):
     def __init__(self, repository: BaseRepository[T]):
         self.repository = repository
 
-    async def get_all(self, page: int = 1, page_size: int = 10) -> List[T]:
+    async def get_all(self, page: int = 1, page_size: int = 10) -> Tuple[List[T], int]:
         return await self.repository.get_all(page, page_size)
 
     async def get_by_id(self, entity_id: uuid) -> T | None:

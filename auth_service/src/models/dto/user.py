@@ -1,12 +1,10 @@
 import re
 from datetime import datetime
-from uuid import UUID
 
 from pydantic import BaseModel, EmailStr, Field, SecretStr, field_validator
 from typing import List, Any
 
 from auth_service.src.models.dto.common import BaseDto
-from auth_service.src.models.dto.role import RoleDto, RoleResponse
 
 
 class UserCreate(BaseModel):
@@ -43,12 +41,6 @@ class UserResponse(BaseDto):
     last_name: str | None
     roles: List[str] | None
 
-    @field_validator('id', mode='before')
-    def convert_uuid_to_str(cls, value):
-        if isinstance(value, UUID):
-            return str(value)
-        return value
-
     @field_validator('roles', mode='before')
     def convert_roles_to_strings(cls, roles: Any) -> List[str]:
         if roles is None:
@@ -75,8 +67,3 @@ class LoginHistoryResponse(BaseDto):
     ip_address: str
     timestamp: datetime
 
-    @field_validator('id', 'user_id', mode='before')
-    def convert_uuid_to_str(cls, value):
-        if isinstance(value, UUID):
-            return str(value)
-        return value

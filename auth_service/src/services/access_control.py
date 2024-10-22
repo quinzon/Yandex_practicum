@@ -14,7 +14,7 @@ class AccessControlService:
     async def check_permission(self, token: str, resource: str, http_method: str) -> bool:
         token_data = await self.token_service.check_access_token(token)
 
-        if token_data.get('is_superuser'):
+        if token_data.is_superuser:
             return True
 
         roles = token_data.roles

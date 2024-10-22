@@ -11,12 +11,18 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl='/api/v1/auth/login')
 
 
 async def has_permission(
+    request: Request,
     token: str = Depends(oauth2_scheme),
     access_control_service: AccessControlService = Depends(get_access_control_service),
-    request: Request = Depends()
 ):
     http_method = request.method
-    resource = request.url.path
+    route = request.scope.get("route")
+    tags = getattr(route, "tags", None)
+
+    if tags and len(tags) > 0:
+        resource = tags[0]
+    else:
+        resource = 'default_resource'
 
     has_permission_ = await access_control_service.check_permission(token, resource, http_method)
     if not has_permission_:
