@@ -1,9 +1,10 @@
 from functools import lru_cache
 from typing import List
-
-from fastapi import HTTPException, Depends
 from http import HTTPStatus
 from uuid import UUID
+
+from sqlalchemy import select
+from fastapi import HTTPException, Depends
 
 from auth_service.src.models.dto.common import ErrorMessages
 from auth_service.src.models.entities.permission import Permission
@@ -23,8 +24,6 @@ class PermissionService(BaseService[Permission]):
 
     async def update(self, permission_dto: PermissionDto) -> Permission:
         permission = await self.get_by_id(permission_dto.id)
-        if not permission:
-            raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail=ErrorMessages.NOT_FOUND)
 
         permission.name = permission_dto.name
         permission.http_method = permission_dto.http_method
@@ -40,7 +39,10 @@ class PermissionService(BaseService[Permission]):
         await super().delete(permission)
 
     async def get_by_ids(self, permission_ids: List[UUID]) -> List[Permission]:
-        return await self.repository.get_by_ids(permission_ids)
+        result = await self.repository.session.execute(
+            select(Permission).where(Permission.id.in_(permission_ids))
+        )
+        return result.scalars().all()
 
 
 @lru_cache()

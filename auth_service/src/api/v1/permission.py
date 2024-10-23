@@ -5,15 +5,14 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Query
 
 from auth_service.src.core.security import has_permission
-from auth_service.src.models.dto.common import BaseResponse, Messages, ErrorMessages, \
-    paginated_response
-from auth_service.src.models.dto.permission import PermissionCreate, PermissionDto
+from auth_service.src.models.dto.common import BaseResponse, Messages, ErrorMessages, paginated_response, Pagination
+from auth_service.src.models.dto.permission import PermissionCreate, PermissionDto, PermissionUpdate
 from auth_service.src.services.permission import PermissionService, get_permission_service
 
 router = APIRouter(dependencies=[Depends(has_permission)])
 
 
-@router.get('/', response_model=List[PermissionDto])
+@router.get('/', response_model=Pagination[PermissionDto])
 @paginated_response()
 async def get_roles(
         permission_service: PermissionService = Depends(get_permission_service),
@@ -46,10 +45,12 @@ async def get_permission(
 
 @router.put('/{permission_id}', response_model=PermissionDto)
 async def update_permission(
-        permission_dto: PermissionDto,
+        permission_id: UUID,
+        permission_dto: PermissionCreate,
         permission_service: PermissionService = Depends(get_permission_service)
 ):
-    return await permission_service.update(permission_dto)
+    permission_update = PermissionUpdate(id=permission_id, **permission_dto.dict())
+    return await permission_service.update(permission_update)
 
 
 @router.delete('/{permission_id}')

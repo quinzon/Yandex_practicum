@@ -1,10 +1,13 @@
+import uuid
+
 import pytest
 from http import HTTPStatus
 
 from auth_service.tests.functional.testdata.authentication import valid_user, valid_login
+from auth_service.tests.functional.testdata.authorization import already_exist_role, roles, already_exist_superuser
 
 pytestmark = pytest.mark.asyncio
-ENDPOINT = '/api/v1/users'
+ENDPOINT = '/api/v1/auth/users'
 
 
 # Test for getting user profile
@@ -95,3 +98,55 @@ async def test_get_profile_invalid_token(make_get_request):
     )
 
     assert status == HTTPStatus.UNAUTHORIZED
+
+
+@pytest.mark.parametrize('setup_superuser', [already_exist_superuser], indirect=True)
+@pytest.mark.parametrize('setup_roles', [roles], indirect=True)
+async def test_set_roles_for_user(make_put_request, setup_superuser, setup_roles, get_tokens):
+    access_token, _ = await get_tokens(already_exist_superuser['email'], already_exist_superuser['password'])
+
+    user_id = setup_superuser
+    role_ids = setup_roles
+
+    response_body, _, status = await make_put_request(
+        f'{ENDPOINT}/{user_id}/roles',
+        json={'role_ids': role_ids},
+        headers={'Authorization': f'Bearer {access_token}'}
+    )
+    assert status == HTTPStatus.OK
+    assert response_body['id'] == user_id
+    assert any([r in [_['name'] for _ in roles] for r in response_body['roles']])
+
+
+@pytest.mark.parametrize('setup_superuser', [already_exist_superuser], indirect=True)
+@pytest.mark.parametrize('setup_roles', [[already_exist_role]], indirect=True)
+async def test_set_not_exist_roles_for_user(make_put_request, setup_superuser, setup_roles, get_tokens):
+    access_token, _ = await get_tokens(already_exist_superuser['email'], already_exist_superuser['password'])
+
+    user_id = setup_superuser
+    role_ids = [str(uuid.uuid4())]
+
+    _, _, status = await make_put_request(
+        f'{ENDPOINT}/{user_id}/permissions',
+        json={'role_ids': role_ids},
+        headers={'Authorization': f'Bearer {access_token}'}
+    )
+
+    assert status == HTTPStatus.NOT_FOUND
+
+
+@pytest.mark.parametrize('setup_superuser', [already_exist_superuser], indirect=True)
+@pytest.mark.parametrize('setup_roles', [[already_exist_role]], indirect=True)
+async def test_set_roles_for_not_exist_user(make_put_request, setup_superuser, setup_roles, get_tokens):
+    access_token, _ = await get_tokens(already_exist_superuser['email'], already_exist_superuser['password'])
+
+    user_id = str(uuid.uuid4())
+    role_ids = setup_roles
+
+    _, _, status = await make_put_request(
+        f'{ENDPOINT}/{user_id}/permissions',
+        json={'role_ids': role_ids},
+        headers={'Authorization': f'Bearer {access_token}'}
+    )
+
+    assert status == HTTPStatus.NOT_FOUND
