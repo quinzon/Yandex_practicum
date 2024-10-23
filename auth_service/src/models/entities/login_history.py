@@ -9,7 +9,6 @@ from auth_service.src.db.postgres import Base
 
 class LoginHistory(Base):
     __tablename__ = 'login_history'
-    __table_args__ = {'schema': 'auth'}
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, unique=True, nullable=False)
     user_id = Column(UUID(as_uuid=True), ForeignKey('auth.user.id'), nullable=False)
