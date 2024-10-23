@@ -1,5 +1,6 @@
 from functools import lru_cache
 from typing import List
+from uuid import UUID
 
 from fastapi import Depends
 
@@ -25,14 +26,14 @@ class UserService(BaseService[User]):
             return UserResponse.from_orm(user)
         return None
 
-    async def get_user_roles(self, user_id: str) -> List[str]:
+    async def get_user_roles(self, user_id: UUID) -> List[str]:
         user = await self.repository.get_by_id(user_id)
         return [role.name for role in user.roles] if user else []
 
     async def assign_role_to_user(self, user_id: str, role_id: str) -> None:
         await self.repository.assign_role(user_id, role_id)
 
-    async def get_user_by_id(self, user_id: str) -> User | None:
+    async def get_user_by_id(self, user_id: UUID) -> User | None:
         return await self.repository.get_by_id(user_id)
 
     async def set_roles(self, user: User, roles: List[Role]) -> User:

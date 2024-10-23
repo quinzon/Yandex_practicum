@@ -14,3 +14,7 @@ class RoleDto(BaseDto):
 
 class RoleCreate(BaseDto):
     name: str
+
+
+class RoleUpdate(RoleCreate):
+    id: UUID

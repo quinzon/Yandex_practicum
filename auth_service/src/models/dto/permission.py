@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from auth_service.src.models.dto.common import BaseDto
 
 
@@ -9,3 +11,7 @@ class PermissionCreate(BaseDto):
 
 class PermissionDto(PermissionCreate):
     id: str
+
+
+class PermissionUpdate(PermissionDto):
+    id: UUID

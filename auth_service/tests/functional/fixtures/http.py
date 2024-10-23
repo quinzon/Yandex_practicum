@@ -38,3 +38,12 @@ async def make_put_request(client_session):
         async with client_session.put(url, json=json, headers=headers) as response:
             return await response.json(), response.headers, response.status
     return inner
+
+
+@pytest_asyncio.fixture(name='make_delete_request')
+async def make_delete_request(client_session):
+    async def inner(endpoint: str, headers: dict = None):
+        url = f'{test_settings.service_url}{endpoint}'
+        async with client_session.delete(url, headers=headers) as response:
+            return await response.json(), response.headers, response.status
+    return inner

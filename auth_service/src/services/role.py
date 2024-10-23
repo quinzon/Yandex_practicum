@@ -25,9 +25,6 @@ class RoleService(BaseService[Role]):
     async def update(self, role_update: RoleCreate) -> Role:
         role = await self.get_by_id(role_update.id)
 
-        if not role:
-            raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail=ErrorMessages.NOT_FOUND)
-
         role.name = role_update.name
 
         return await super().update(role)

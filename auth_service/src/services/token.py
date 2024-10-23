@@ -114,7 +114,8 @@ class TokenService:
         email: str = payload.get('email')
         roles: list = payload.get('roles', [])
         is_superuser: bool = payload.get('is_superuser')
-
+        if not is_superuser:
+            is_superuser = False
         return TokenData(user_id=user_id, email=email, roles=roles, is_superuser=is_superuser)
 
     def _verify_token(self, token: str) -> dict | None:

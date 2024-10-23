@@ -17,8 +17,6 @@ class RolePermissionService:
 
     async def set_permissions(self, role_id: UUID, permission_ids: List[UUID]) -> Role:
         role = await self.role_service.get_by_id(role_id)
-        if not role:
-            raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail=ErrorMessages.NOT_FOUND)
 
         permissions = await self.permission_service.get_by_ids(permission_ids)
 
