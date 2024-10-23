@@ -5,6 +5,7 @@ from sqlalchemy.exc import IntegrityError
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
+from auth_service.src.core.oauth import oauth
 from auth_service.src.core.security import oauth2_scheme
 from auth_service.src.models.dto.common import ErrorMessages, Messages
 from auth_service.src.models.dto.token import TokenResponse, TokenData, RefreshTokenRequest
@@ -66,7 +67,7 @@ async def refresh_token(
     token_data, db_token = await token_service.check_refresh_token(
         refresh_token_request.refresh_token)
 
-    user = await user_service.get_user_by_id(token_data.user_id)
+    user = await user_service.get_by_id(token_data.user_id)
 
     if not user:
         raise HTTPException(
@@ -95,3 +96,47 @@ async def logout_user(
     await token_service.revoke_token(access_token, refresh_token_request.refresh_token)
 
     return JSONResponse(status_code=HTTPStatus.OK, content={'message': Messages.SUCCESSFUL_LOGOUT})
+
+
+@router.get('/{provider_name}')
+async def login_with_provider(provider_name: str, request: Request):
+    client = oauth.create_client(provider_name)
+    if not client:
+        raise HTTPException(status_code=HTTPStatus.BAD_REQUEST,
+                            detail=ErrorMessages.UNSUPPORTED_PROVIDER)
+
+    redirect_uri = request.url_for('auth_callback', provider_name=provider_name)
+    return await client.authorize_redirect(request, redirect_uri)
+
+
+@router.get('/{provider_name}/callback')
+async def auth_callback(
+        provider_name: str,
+        request: Request,
+        user_service: UserService = Depends(get_user_service),
+        token_service: TokenService = Depends(get_token_service),
+):
+    client = oauth.create_client(provider_name)
+    if not client:
+        raise HTTPException(status_code=HTTPStatus.BAD_REQUEST,
+                            detail=ErrorMessages.UNSUPPORTED_PROVIDER)
+
+    token = await client.authorize_access_token(request)
+
+    user_info_response = await client.userinfo(token=token)
+    user_info = user_info_response.json()
+
+    user = await user_service.get_or_create_oauth_user(
+        provider_name=provider_name,
+        provider_user_id=user_info['id'],
+        user_data={
+            'email': user_info.get('email'),
+            'first_name': user_info.get('first_name'),
+            'last_name': user_info.get('last_name')
+        }
+    )
+
+    token_data = TokenData(user_id=user.id, email=user.email, roles=user.roles)
+    token_response = await token_service.create_tokens(token_data)
+
+    return token_response
