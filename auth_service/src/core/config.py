@@ -1,6 +1,7 @@
 import os
 from functools import lru_cache
 from logging import config as logging_config
+from typing import Dict
 
 from pydantic import Field
 from pydantic_settings import SettingsConfigDict, BaseSettings
@@ -12,6 +13,8 @@ logging_config.dictConfig(LOGGING)
 PROJECT_NAME = os.getenv('PROJECT_NAME', 'auth')
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+SUPPORTED_OAUTH_PROVIDERS = ['yandex',]
 
 
 class CommonSettings(BaseSettings):
@@ -30,7 +33,12 @@ class JWTSettings(CommonSettings):
 
     def __hash__(self):
         return hash(
-            (self.secret_key, self.algorithm, self.access_token_expire_minutes, self.refresh_token_expire_minutes))
+            (
+                self.secret_key, self.algorithm,
+                self.access_token_expire_minutes,
+                self.refresh_token_expire_minutes
+            )
+        )
 
 
 class RedisSettings(CommonSettings):
@@ -63,6 +71,40 @@ class PostgresSettings(CommonSettings):
         return f'postgresql+asyncpg://{self.user}:{self.password}@{self.host}:{self.port}/{self.db}'
 
 
+class OAuthProviderSettings(CommonSettings):
+    client_id: str
+    client_secret: str
+    authorize_url: str
+    access_token_url: str
+    scope: str
+    userinfo_endpoint: str
+
+
+class OAuthSettings(CommonSettings):
+    providers: Dict[str, OAuthProviderSettings] = {}
+
+    model_config = SettingsConfigDict(
+        env_file='.env',
+        extra='ignore',
+    )
+
+    @classmethod
+    def load_from_env(cls) -> 'OAuthSettings':
+        settings = cls()
+        for provider_name in SUPPORTED_OAUTH_PROVIDERS:
+            prefix = f'{provider_name.upper()}_'
+            provider_settings = OAuthProviderSettings(
+                client_id=os.getenv(f'{prefix}CLIENT_ID'),
+                client_secret=os.getenv(f'{prefix}CLIENT_SECRET'),
+                authorize_url=os.getenv(f'{prefix}AUTHORIZE_URL'),
+                access_token_url=os.getenv(f'{prefix}ACCESS_TOKEN_URL'),
+                scope=os.getenv(f'{prefix}SCOPE', ''),
+                userinfo_endpoint=os.getenv(f'{prefix}USERINFO_ENDPOINT'),
+            )
+            settings.providers[provider_name] = provider_settings
+        return settings
+
+
 @lru_cache()
 def get_redis_settings() -> RedisSettings:
     return RedisSettings()
@@ -82,3 +124,8 @@ def get_postgres_url() -> str:
 @lru_cache()
 def get_jwt_settings() -> JWTSettings:
     return JWTSettings()
+
+
+@lru_cache()
+def get_oauth_settings() -> OAuthSettings:
+    return OAuthSettings().load_from_env()

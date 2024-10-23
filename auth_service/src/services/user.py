@@ -1,15 +1,15 @@
 from functools import lru_cache
 from typing import List
-from uuid import UUID
 
 from fastapi import Depends
+from passlib.context import CryptContext
 
+from auth_service.src.core.helpers import generate_password
 from auth_service.src.models.dto.user import UserCreate, UserResponse, LoginRequest
 from auth_service.src.models.entities.role import Role
-from auth_service.src.repository.user import UserRepository, get_user_repository
 from auth_service.src.models.entities.user import User
+from auth_service.src.repository.user import UserRepository, get_user_repository
 from auth_service.src.services.base import BaseService
-from passlib.context import CryptContext
 
 pwd_context = CryptContext(schemes=['bcrypt'], deprecated='auto')
 
@@ -17,7 +17,7 @@ pwd_context = CryptContext(schemes=['bcrypt'], deprecated='auto')
 class UserService(BaseService[User]):
     async def register_user(self, user_create: UserCreate) -> UserResponse:
         user = User.create(user_create)
-        user = await self.repository.create(user)
+        user = await self.create(user)
         return UserResponse.from_orm(user)
 
     async def authenticate_user(self, login_data: LoginRequest) -> UserResponse | None:
@@ -26,19 +26,31 @@ class UserService(BaseService[User]):
             return UserResponse.from_orm(user)
         return None
 
-    async def get_user_roles(self, user_id: UUID) -> List[str]:
-        user = await self.repository.get_by_id(user_id)
+    async def get_user_roles(self, user_id: str) -> List[str]:
+        user = await self.get_by_id(user_id)
         return [role.name for role in user.roles] if user else []
 
     async def assign_role_to_user(self, user_id: str, role_id: str) -> None:
         await self.repository.assign_role(user_id, role_id)
 
-    async def get_user_by_id(self, user_id: UUID) -> User | None:
-        return await self.repository.get_by_id(user_id)
-
     async def set_roles(self, user: User, roles: List[Role]) -> User:
         user.roles = roles
         await self.update(user)
+        return user
+
+    async def get_or_create_oauth_user(self, provider_name: str, provider_user_id: str,
+                                       user_data: dict) -> User:
+        user = await self.repository.get_by_provider(provider_name, provider_user_id)
+        if not user:
+            user = User(
+                email=user_data.get('email'),
+                first_name=user_data.get('first_name'),
+                last_name=user_data.get('last_name'),
+                provider=provider_name,
+                provider_user_id=provider_user_id,
+                password_hash=(self.hash_password(generate_password())),
+            )
+            user = await self.create(user)
         return user
 
     @staticmethod
@@ -52,6 +64,6 @@ class UserService(BaseService[User]):
 
 @lru_cache()
 def get_user_service(
-    user_repository: UserRepository = Depends(get_user_repository)
+        user_repository: UserRepository = Depends(get_user_repository)
 ) -> UserService:
     return UserService(user_repository)

@@ -39,6 +39,7 @@ class BaseResponse(BaseModel):
 
 
 class ErrorMessages:
+    UNSUPPORTED_PROVIDER = 'Unsupported provider'
     PERMISSION_DENIED = 'Permission denied'
     NOT_FOUND = 'Not found'
     INVALID_CREDENTIALS = 'Invalid credentials'
