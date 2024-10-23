@@ -13,6 +13,7 @@ from auth_service.src.models.entities.role import Role
 from auth_service.src.models.entities.user import User
 from auth_service.src.repository.user import UserRepository, get_user_repository
 from auth_service.src.services.base import BaseService
+from passlib.context import CryptContext
 
 pwd_context = CryptContext(schemes=['bcrypt'], deprecated='auto')
 
