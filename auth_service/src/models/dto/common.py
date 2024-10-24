@@ -1,11 +1,12 @@
 from functools import wraps
 from typing import TypeVar, Callable, List, Generic
+from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, model_validator
 from pydantic_settings import SettingsConfigDict
 
 
-T = TypeVar("T")
+T = TypeVar('T')
 
 
 class BaseDto(BaseModel):
@@ -13,8 +14,33 @@ class BaseDto(BaseModel):
         from_attributes=True,
     )
 
+    @model_validator(mode='before')
+    def convert_uuid_fields(cls, data):
+        if isinstance(data, dict):
+            for field_name, value in data.items():
+                if 'id' in field_name:
+                    if isinstance(value, UUID):
+                        data[field_name] = str(value)
+            return data
+        else:
+            new_data = {}
+            for field_name in cls.model_fields:
+                value = getattr(data, field_name, None)
+                if value is not None:
+                    if 'id' in field_name and isinstance(value, UUID):
+                        new_data[field_name] = str(value)
+                    else:
+                        new_data[field_name] = value
+            return new_data
+
+
+class BaseResponse(BaseModel):
+    message: str
+
 
 class ErrorMessages:
+    PERMISSION_DENIED = 'Permission denied'
+    NOT_FOUND = 'Not found'
     INVALID_CREDENTIALS = 'Invalid credentials'
     INVALID_TOKEN = 'Invalid token'
     INVALID_REFRESH_TOKEN = 'Invalid refresh token'
@@ -28,6 +54,9 @@ class ErrorMessages:
 
 class Messages:
     SUCCESSFUL_LOGOUT = 'Successful logout'
+    CREATED = 'Created'
+    DELETED = 'Deleted'
+    PERMISSION_GRANTED = 'Permission granted'
 
 
 class PaginationMeta(BaseModel):

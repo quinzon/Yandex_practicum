@@ -1,17 +1,23 @@
 from http import HTTPStatus
+from typing import List
+from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query
-from fastapi.security import OAuth2PasswordBearer
+from fastapi import APIRouter, Depends, HTTPException, Query, Body
 
-from auth_service.src.models.dto.common import ErrorMessages, paginated_response, Pagination
+from auth_service.src.core.security import oauth2_scheme
+from auth_service.src.models.dto.common import ErrorMessages, paginated_response, Pagination, \
+    Messages, BaseResponse
 from auth_service.src.models.dto.user import UserResponse, UpdateProfileRequest, \
     LoginHistoryResponse
+from auth_service.src.services.access_control import AccessControlService, \
+    get_access_control_service
 from auth_service.src.services.login_history import LoginHistoryService, get_login_history_service
 from auth_service.src.services.token import TokenService, get_token_service
 from auth_service.src.services.user import UserService, get_user_service
+from auth_service.src.services.user_role import UserRoleService, get_user_role_service
+from auth_service.src.core.security import has_permission
 
 router = APIRouter()
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl='/auth/login')
 
 
 @router.get('/profile', response_model=UserResponse)
@@ -22,9 +28,11 @@ async def get_profile(
 ):
     token_data = await token_service.check_access_token(token)
     user = await user_service.get_user_by_id(token_data.user_id)
+
     if not user:
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail=ErrorMessages.USER_NOT_FOUND)
-    return UserResponse.from_orm(user)
+
+    return user
 
 
 @router.put('/profile', response_model=UserResponse)
@@ -44,8 +52,7 @@ async def update_profile(
     if update_data.password:
         user.password_hash = user_service.hash_password(update_data.password.get_secret_value())
 
-    updated_user = await user_service.update(user)
-    return UserResponse.from_orm(updated_user)
+    return await user_service.update(user)
 
 
 @router.get('/profile/login-history', response_model=Pagination[LoginHistoryResponse])
@@ -64,3 +71,29 @@ async def get_login_history(
         page_number
     )
     return items, total_items
+
+
+@router.put('/{user_id}/roles', response_model=UserResponse)
+async def set_roles_for_user(
+    user_id: UUID,
+    role_ids: List[UUID] = Body(..., embed=True),
+    user_role_service: UserRoleService = Depends(get_user_role_service),
+    _: None = Depends(has_permission)
+):
+    return await user_role_service.set_roles(user_id, role_ids)
+
+
+@router.get('/check-permission')
+async def check_permission(
+        resource: str,
+        http_method: str,
+        access_control_service: AccessControlService = Depends(get_access_control_service),
+        token: str = Depends(oauth2_scheme)
+):
+    has_permission_ = await access_control_service.check_permission(token, resource, http_method)
+
+    if has_permission_:
+        return BaseResponse(message=Messages.PERMISSION_GRANTED)
+    else:
+        raise HTTPException(status_code=HTTPStatus.FORBIDDEN,
+                            detail=ErrorMessages.PERMISSION_DENIED)

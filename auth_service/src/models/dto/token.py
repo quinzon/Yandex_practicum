@@ -1,3 +1,4 @@
+from typing import List
 from uuid import UUID
 
 from pydantic import BaseModel
@@ -18,7 +19,8 @@ class TokenResponse(BaseDto):
 class TokenData(BaseDto):
     user_id: str
     email: str
-    roles: list[str]
+    roles: List[str] | None
+    is_superuser: bool = False
 
 
 class AccessTokenRequest(BaseModel):

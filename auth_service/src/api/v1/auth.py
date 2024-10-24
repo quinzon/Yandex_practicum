@@ -1,21 +1,19 @@
-from fastapi import APIRouter, Depends, HTTPException
 from http import HTTPStatus
 
-from fastapi.security import OAuth2PasswordBearer
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.exc import IntegrityError
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
+from auth_service.src.core.security import oauth2_scheme
 from auth_service.src.models.dto.common import ErrorMessages, Messages
 from auth_service.src.models.dto.token import TokenResponse, TokenData, RefreshTokenRequest
 from auth_service.src.models.dto.user import UserCreate, UserResponse, LoginRequest
 from auth_service.src.services.login_history import LoginHistoryService, get_login_history_service
-from auth_service.src.services.user import UserService, get_user_service
 from auth_service.src.services.token import TokenService, get_token_service
+from auth_service.src.services.user import UserService, get_user_service
 
 router = APIRouter()
-
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl='/auth/login')
 
 
 @router.post('/register', response_model=UserResponse)
@@ -65,7 +63,8 @@ async def refresh_token(
         user_service: UserService = Depends(get_user_service),
         token_service: TokenService = Depends(get_token_service),
 ) -> TokenResponse:
-    token_data, db_token = await token_service.check_refresh_token(refresh_token_request.refresh_token)
+    token_data, db_token = await token_service.check_refresh_token(
+        refresh_token_request.refresh_token)
 
     user = await user_service.get_user_by_id(token_data.user_id)
 
@@ -89,9 +88,9 @@ async def refresh_token(
 
 @router.post('/logout')
 async def logout_user(
-    refresh_token_request: RefreshTokenRequest,
-    access_token: str = Depends(oauth2_scheme),
-    token_service: TokenService = Depends(get_token_service),
+        refresh_token_request: RefreshTokenRequest,
+        access_token: str = Depends(oauth2_scheme),
+        token_service: TokenService = Depends(get_token_service),
 ):
     await token_service.revoke_token(access_token, refresh_token_request.refresh_token)
 

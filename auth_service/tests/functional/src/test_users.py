@@ -1,10 +1,14 @@
+import uuid
+
 import pytest
 from http import HTTPStatus
 
 from auth_service.tests.functional.testdata.authentication import valid_user, valid_login
+from auth_service.tests.functional.testdata.authorization import already_exist_role, roles, \
+    already_exist_superuser, already_exist_user, permission
 
 pytestmark = pytest.mark.asyncio
-ENDPOINT = '/api/v1/users'
+ENDPOINT = '/api/v1/auth/users'
 
 
 # Test for getting user profile
@@ -95,3 +99,90 @@ async def test_get_profile_invalid_token(make_get_request):
     )
 
     assert status == HTTPStatus.UNAUTHORIZED
+
+
+@pytest.mark.parametrize('setup_superuser', [already_exist_superuser], indirect=True)
+@pytest.mark.parametrize('setup_roles', [roles], indirect=True)
+async def test_set_roles_for_user(make_put_request, setup_superuser, setup_roles, get_tokens):
+    access_token, _ = await get_tokens(already_exist_superuser['email'], already_exist_superuser['password'])
+
+    user_id = setup_superuser
+    role_ids = setup_roles
+
+    response_body, _, status = await make_put_request(
+        f'{ENDPOINT}/{user_id}/roles',
+        json={'role_ids': role_ids},
+        headers={'Authorization': f'Bearer {access_token}'}
+    )
+    assert status == HTTPStatus.OK
+    assert response_body['id'] == user_id
+    assert any([r in [_['name'] for _ in roles] for r in response_body['roles']])
+
+
+@pytest.mark.parametrize('setup_superuser', [already_exist_superuser], indirect=True)
+@pytest.mark.parametrize('setup_roles', [[already_exist_role]], indirect=True)
+async def test_set_not_exist_roles_for_user(make_put_request, setup_superuser, setup_roles, get_tokens):
+    access_token, _ = await get_tokens(already_exist_superuser['email'], already_exist_superuser['password'])
+
+    user_id = setup_superuser
+    role_ids = [str(uuid.uuid4())]
+
+    _, _, status = await make_put_request(
+        f'{ENDPOINT}/{user_id}/permissions',
+        json={'role_ids': role_ids},
+        headers={'Authorization': f'Bearer {access_token}'}
+    )
+
+    assert status == HTTPStatus.NOT_FOUND
+
+
+@pytest.mark.parametrize('setup_superuser', [already_exist_superuser], indirect=True)
+@pytest.mark.parametrize('setup_roles', [[already_exist_role]], indirect=True)
+async def test_set_roles_for_not_exist_user(make_put_request, setup_superuser, setup_roles, get_tokens):
+    access_token, _ = await get_tokens(already_exist_superuser['email'], already_exist_superuser['password'])
+
+    user_id = str(uuid.uuid4())
+    role_ids = setup_roles
+
+    _, _, status = await make_put_request(
+        f'{ENDPOINT}/{user_id}/permissions',
+        json={'role_ids': role_ids},
+        headers={'Authorization': f'Bearer {access_token}'}
+    )
+
+    assert status == HTTPStatus.NOT_FOUND
+
+
+@pytest.mark.parametrize('setup_superuser', [already_exist_superuser], indirect=True)
+@pytest.mark.parametrize('setup_user', [already_exist_user], indirect=True)
+@pytest.mark.parametrize('setup_roles', [[already_exist_role]], indirect=True)
+@pytest.mark.parametrize('setup_permissions', [[permission]], indirect=True)
+async def test_check_permission(make_get_request, make_post_request, make_put_request, setup_superuser, setup_user,
+                                setup_roles, setup_permissions, get_tokens):
+    superuser_access_token, _ = await get_tokens(already_exist_superuser['email'], already_exist_superuser['password'])
+
+    user_id = setup_user
+    role_ids = setup_roles
+    permission_ids = setup_permissions
+
+    await make_put_request(
+        f'/api/v1/auth/roles/{role_ids[0]}/permissions',
+        json={'permission_ids': permission_ids},
+        headers={'Authorization': f'Bearer {superuser_access_token}'}
+    )
+
+    await make_put_request(
+        f'{ENDPOINT}/{user_id}/roles',
+        json={'role_ids': role_ids},
+        headers={'Authorization': f'Bearer {superuser_access_token}'}
+    )
+
+    user_access_token, _ = await get_tokens(already_exist_user['email'], already_exist_user['password'])
+
+    response_body, _, status = await make_get_request(
+        f'{ENDPOINT}/check-permission',
+        params={'resource': 'test_resource', 'http_method': 'post'},
+        headers={'Authorization': f'Bearer {user_access_token}'}
+    )
+
+    assert status == HTTPStatus.OK

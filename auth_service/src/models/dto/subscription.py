@@ -8,6 +8,3 @@ class SubscriptionResponse(BaseDto):
     name: str
     price: float
     duration_days: int
-
-    class Config:
-        orm_mode = True
