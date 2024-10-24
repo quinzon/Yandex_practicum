@@ -1,13 +1,11 @@
-from http import HTTPStatus
 from typing import List
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Body
+from fastapi import APIRouter, Depends, Query, Body
 
-from auth_service.src.core.security import oauth2_scheme, has_permission
-from auth_service.src.models.dto.common import ErrorMessages, BaseResponse, Messages, paginated_response, Pagination
+from auth_service.src.core.security import has_permission
+from auth_service.src.models.dto.common import BaseResponse, Messages, paginated_response, Pagination
 from auth_service.src.models.dto.role import RoleCreate, RoleDto, RoleUpdate
-from auth_service.src.services.access_control import AccessControlService, get_access_control_service
 from auth_service.src.services.role import RoleService, get_role_service
 from auth_service.src.services.role_permission import get_role_permission_service, RolePermissionService
 
@@ -66,19 +64,3 @@ async def set_permissions_for_role(
     role_permission_service: RolePermissionService = Depends(get_role_permission_service)
 ):
     return await role_permission_service.set_permissions(role_id, permission_ids)
-
-
-@router.get('/check-permission')
-async def check_permission(
-        resource: str,
-        http_method: str,
-        access_control_service: AccessControlService = Depends(get_access_control_service),
-        token: str = Depends(oauth2_scheme)
-):
-    has_permission_ = await access_control_service.check_permission(token, resource, http_method)
-
-    if has_permission_:
-        return BaseResponse(message=Messages.PERMISSION_GRANTED)
-    else:
-        raise HTTPException(status_code=HTTPStatus.FORBIDDEN,
-                            detail=ErrorMessages.PERMISSION_DENIED)
