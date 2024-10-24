@@ -5,9 +5,12 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Query, Body
 
 from auth_service.src.core.security import oauth2_scheme
-from auth_service.src.models.dto.common import ErrorMessages, paginated_response, Pagination
+from auth_service.src.models.dto.common import ErrorMessages, paginated_response, Pagination, \
+    Messages, BaseResponse
 from auth_service.src.models.dto.user import UserResponse, UpdateProfileRequest, \
     LoginHistoryResponse
+from auth_service.src.services.access_control import AccessControlService, \
+    get_access_control_service
 from auth_service.src.services.login_history import LoginHistoryService, get_login_history_service
 from auth_service.src.services.token import TokenService, get_token_service
 from auth_service.src.services.user import UserService, get_user_service
@@ -78,3 +81,19 @@ async def set_roles_for_user(
     _: None = Depends(has_permission)
 ):
     return await user_role_service.set_roles(user_id, role_ids)
+
+
+@router.get('/check-permission')
+async def check_permission(
+        resource: str,
+        http_method: str,
+        access_control_service: AccessControlService = Depends(get_access_control_service),
+        token: str = Depends(oauth2_scheme)
+):
+    has_permission_ = await access_control_service.check_permission(token, resource, http_method)
+
+    if has_permission_:
+        return BaseResponse(message=Messages.PERMISSION_GRANTED)
+    else:
+        raise HTTPException(status_code=HTTPStatus.FORBIDDEN,
+                            detail=ErrorMessages.PERMISSION_DENIED)

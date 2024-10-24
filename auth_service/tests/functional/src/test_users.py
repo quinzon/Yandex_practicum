@@ -4,7 +4,8 @@ import pytest
 from http import HTTPStatus
 
 from auth_service.tests.functional.testdata.authentication import valid_user, valid_login
-from auth_service.tests.functional.testdata.authorization import already_exist_role, roles, already_exist_superuser
+from auth_service.tests.functional.testdata.authorization import already_exist_role, roles, \
+    already_exist_superuser, already_exist_user, permission
 
 pytestmark = pytest.mark.asyncio
 ENDPOINT = '/api/v1/auth/users'
@@ -150,3 +151,38 @@ async def test_set_roles_for_not_exist_user(make_put_request, setup_superuser, s
     )
 
     assert status == HTTPStatus.NOT_FOUND
+
+
+@pytest.mark.parametrize('setup_superuser', [already_exist_superuser], indirect=True)
+@pytest.mark.parametrize('setup_user', [already_exist_user], indirect=True)
+@pytest.mark.parametrize('setup_roles', [[already_exist_role]], indirect=True)
+@pytest.mark.parametrize('setup_permissions', [[permission]], indirect=True)
+async def test_check_permission(make_get_request, make_post_request, make_put_request, setup_superuser, setup_user,
+                                setup_roles, setup_permissions, get_tokens):
+    superuser_access_token, _ = await get_tokens(already_exist_superuser['email'], already_exist_superuser['password'])
+
+    user_id = setup_user
+    role_ids = setup_roles
+    permission_ids = setup_permissions
+
+    await make_put_request(
+        f'/api/v1/auth/roles/{role_ids[0]}/permissions',
+        json={'permission_ids': permission_ids},
+        headers={'Authorization': f'Bearer {superuser_access_token}'}
+    )
+
+    await make_put_request(
+        f'{ENDPOINT}/{user_id}/roles',
+        json={'role_ids': role_ids},
+        headers={'Authorization': f'Bearer {superuser_access_token}'}
+    )
+
+    user_access_token, _ = await get_tokens(already_exist_user['email'], already_exist_user['password'])
+
+    response_body, _, status = await make_get_request(
+        f'{ENDPOINT}/check-permission',
+        params={'resource': 'test_resource', 'http_method': 'post'},
+        headers={'Authorization': f'Bearer {user_access_token}'}
+    )
+
+    assert status == HTTPStatus.OK
