@@ -5,6 +5,7 @@ from sqlalchemy.exc import IntegrityError
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
+from auth_service.src.core.helpers import get_loging_info
 from auth_service.src.core.oauth import oauth
 from auth_service.src.core.security import oauth2_scheme
 from auth_service.src.models.dto.common import ErrorMessages, Messages
@@ -48,8 +49,7 @@ async def login_user(
             detail=ErrorMessages.INVALID_CREDENTIALS
         )
 
-    user_agent = request.headers.get('user-agent', 'Unknown')
-    client_address = request.headers.get('host')
+    user_agent, client_address = get_loging_info(request)
     await login_history_service.add_login_history(user.id, user_agent, client_address)
 
     token_data = TokenData(user_id=user.id, email=user.email, roles=user.roles)
@@ -113,6 +113,7 @@ async def login_with_provider(provider_name: str, request: Request):
 async def auth_callback(
         provider_name: str,
         request: Request,
+        login_history_service: LoginHistoryService = Depends(get_login_history_service),
         user_service: UserService = Depends(get_user_service),
         token_service: TokenService = Depends(get_token_service),
 ):
@@ -124,17 +125,12 @@ async def auth_callback(
     token = await client.authorize_access_token(request)
 
     user_info_response = await client.userinfo(token=token)
-    user_info = user_info_response.json()
+    user_info = user_info_response
 
-    user = await user_service.get_or_create_oauth_user(
-        provider_name=provider_name,
-        provider_user_id=user_info['id'],
-        user_data={
-            'email': user_info.get('email'),
-            'first_name': user_info.get('first_name'),
-            'last_name': user_info.get('last_name')
-        }
-    )
+    user = await user_service.get_or_create_oauth_user(provider_name, user_info)
+
+    user_agent, client_address = get_loging_info(request)
+    await login_history_service.add_login_history(user.id, user_agent, client_address)
 
     token_data = TokenData(user_id=user.id, email=user.email, roles=user.roles)
     token_response = await token_service.create_tokens(token_data)
