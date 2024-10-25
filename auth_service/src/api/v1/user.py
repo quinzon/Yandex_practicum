@@ -94,6 +94,6 @@ async def check_permission(
 
     if has_permission_:
         return BaseResponse(message=Messages.PERMISSION_GRANTED)
-    else:
-        raise HTTPException(status_code=HTTPStatus.FORBIDDEN,
-                            detail=ErrorMessages.PERMISSION_DENIED)
+
+    raise HTTPException(status_code=HTTPStatus.FORBIDDEN,
+                        detail=ErrorMessages.PERMISSION_DENIED)
