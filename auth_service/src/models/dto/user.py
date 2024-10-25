@@ -66,4 +66,3 @@ class LoginHistoryResponse(BaseDto):
     user_agent: str
     ip_address: str
     timestamp: datetime
-
