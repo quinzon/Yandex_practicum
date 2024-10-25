@@ -98,7 +98,7 @@ async def logout_user(
     return JSONResponse(status_code=HTTPStatus.OK, content={'message': Messages.SUCCESSFUL_LOGOUT})
 
 
-@router.get('/{provider_name}')
+@router.get('/external/{provider_name}')
 async def login_with_provider(provider_name: str, request: Request):
     client = oauth.create_client(provider_name)
     if not client:
@@ -109,7 +109,7 @@ async def login_with_provider(provider_name: str, request: Request):
     return await client.authorize_redirect(request, redirect_uri)
 
 
-@router.get('/{provider_name}/callback')
+@router.get('/external/{provider_name}/callback')
 async def auth_callback(
         provider_name: str,
         request: Request,
