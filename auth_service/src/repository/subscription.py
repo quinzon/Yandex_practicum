@@ -15,7 +15,7 @@ class SubscriptionRepository(BaseRepository[Subscription]):
         return Subscription
 
     async def get_active_subscriptions(self) -> list[Subscription]:
-        query = select(Subscription).filter(Subscription.is_active == True)
+        query = select(Subscription).filter(Subscription.is_active)
         result = await self.session.execute(query)
         return result.scalars().all()
 

@@ -12,7 +12,7 @@ Base = declarative_base(metadata=metadata_obj)
 def create_engine() -> AsyncEngine:
     settings = get_postgres_settings()
     dsn = f'postgresql+asyncpg://{settings.user}:{settings.password}@{settings.host}:{settings.port}/{settings.db}'
-    return create_async_engine(dsn, echo=True, future=True)
+    return create_async_engine(dsn, echo=settings.echo, future=True)
 
 
 engine = create_engine()

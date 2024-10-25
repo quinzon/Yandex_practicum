@@ -22,16 +22,16 @@ class BaseDto(BaseModel):
                     if isinstance(value, UUID):
                         data[field_name] = str(value)
             return data
-        else:
-            new_data = {}
-            for field_name in cls.model_fields:
-                value = getattr(data, field_name, None)
-                if value is not None:
-                    if 'id' in field_name and isinstance(value, UUID):
-                        new_data[field_name] = str(value)
-                    else:
-                        new_data[field_name] = value
-            return new_data
+
+        new_data = {}
+        for field_name in cls.model_fields:
+            value = getattr(data, field_name, None)
+            if value is not None:
+                if 'id' in field_name and isinstance(value, UUID):
+                    new_data[field_name] = str(value)
+                else:
+                    new_data[field_name] = value
+        return new_data
 
 
 class BaseResponse(BaseModel):

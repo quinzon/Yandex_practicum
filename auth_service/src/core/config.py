@@ -61,6 +61,7 @@ class PostgresSettings(CommonSettings):
     password: str = Field(..., alias='POSTGRES_PASSWORD')
     schema: str = Field(..., alias='POSTGRES_SCHEMA')
     db: str = Field(..., alias='POSTGRES_DB')
+    echo: bool = Field(default=False, alias='POSTGRES_ECHO')
 
     model_config = SettingsConfigDict(
         env_prefix='postgres_',
