@@ -5,6 +5,7 @@ es_film_data = {
     'id': str(uuid.uuid4()),
     'title': 'The Star',
     'imdb_rating': 8.5,
+    'permission': 'public',
     'description': 'New World',
     'genres': [
         {

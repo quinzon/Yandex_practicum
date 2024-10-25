@@ -48,6 +48,9 @@ MOVIES_INDEX = {
       "imdb_rating": {
         "type": "float"
       },
+      "permission": {
+        "type": "keyword"
+      },
       "genres": {
         "type": "nested",
         "dynamic": "strict",

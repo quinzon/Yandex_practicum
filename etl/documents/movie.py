@@ -61,6 +61,7 @@ class Movie(Document):
     directors = Nested(Director)
     actors = Nested(Actor)
     writers = Nested(Writer)
+    permission = Keyword()
     last_change_date = Keyword(index=False)
 
     class Index:
@@ -111,6 +112,7 @@ def get_movie_index_data(
             fw.title,
             fw.description,
             fw.rating as imdb_rating,
+            fw.permission,
             COALESCE (
                 json_agg(
                     DISTINCT jsonb_build_object(

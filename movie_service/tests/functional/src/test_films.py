@@ -39,7 +39,7 @@ async def test_film_list_pagination_validation(make_get_request, page_size, page
 # Test successful film retrieval by ID
 @pytest.mark.parametrize(
     "film_data", [
-        {'id': str(uuid.uuid4()), 'title': 'Test Film title', 'imdb_rating': 5}
+        {'id': str(uuid.uuid4()), 'title': 'Test Film title', 'imdb_rating': 5, 'permission': 'public'}
     ]
 )
 async def test_get_film_by_id_success(make_get_request, es_write_data, film_data):
@@ -146,7 +146,7 @@ async def test_films_list_response_structure(make_get_request, es_write_data):
 )
 async def test_search_films(make_get_request, es_write_data, query, expected_results):
     # Seed Elasticsearch with film data
-    film_data = {'id': str(uuid.uuid4()), 'title': 'Man who build the world', 'imdb_rating': 5}
+    film_data = {'id': str(uuid.uuid4()), 'title': 'Man who build the world', 'imdb_rating': 5, 'permission': 'public'}
     await es_write_data([film_data], test_settings.es_movie_index, test_settings.es_movies_index_mapping)
 
     # Perform the search
@@ -164,9 +164,9 @@ async def test_search_films(make_get_request, es_write_data, query, expected_res
     "films_data, search_query, page_size, page_number, expected_total_items, expected_total_pages, expected_items_count",
     [
         ([
-             {'id': str(uuid.uuid4()), 'title': 'Man', 'imdb_rating': 5},
-             {'id': str(uuid.uuid4()), 'title': 'V-Man', 'imdb_rating': 5},
-             {'id': str(uuid.uuid4()), 'title': 'Manufacture', 'imdb_rating': 5}
+             {'id': str(uuid.uuid4()), 'title': 'Man', 'imdb_rating': 5, 'permission': 'public'},
+             {'id': str(uuid.uuid4()), 'title': 'V-Man', 'imdb_rating': 5, 'permission': 'public'},
+             {'id': str(uuid.uuid4()), 'title': 'Manufacture', 'imdb_rating': 5, 'permission': 'public'}
          ], 'Man', 2, 1, 2, 1, 2),
     ]
 )
@@ -198,10 +198,10 @@ async def test_search_films_pagination_validation(make_get_request, es_write_dat
 @pytest.mark.parametrize(
     "films_data, expected_titles", [
         ([
-             {'id': str(uuid.uuid4()), 'title': 'Man', 'imdb_rating': 5},
-             {'id': str(uuid.uuid4()), 'title': 'V-Man', 'imdb_rating': 5},
-             {'id': str(uuid.uuid4()), 'title': 'Manufacture', 'imdb_rating': 5},
-             {'id': str(uuid.uuid4()), 'title': 'Main', 'imdb_rating': 5},
+             {'id': str(uuid.uuid4()), 'title': 'Man', 'imdb_rating': 5, 'permission': 'public'},
+             {'id': str(uuid.uuid4()), 'title': 'V-Man', 'imdb_rating': 5, 'permission': 'public'},
+             {'id': str(uuid.uuid4()), 'title': 'Manufacture', 'imdb_rating': 5, 'permission': 'public'},
+             {'id': str(uuid.uuid4()), 'title': 'Main', 'imdb_rating': 5, 'permission': 'public'},
          ], ['Main', 'Man', 'V-Man']),  # Ascending order
     ]
 )
@@ -224,10 +224,10 @@ async def test_search_films_sort_ascending(make_get_request, es_write_data, film
 @pytest.mark.parametrize(
     "films_data, expected_titles", [
         ([
-             {'id': str(uuid.uuid4()), 'title': 'Man', 'imdb_rating': 5},
-             {'id': str(uuid.uuid4()), 'title': 'V-Man', 'imdb_rating': 5},
-             {'id': str(uuid.uuid4()), 'title': 'Manufacture', 'imdb_rating': 5},
-             {'id': str(uuid.uuid4()), 'title': 'Main', 'imdb_rating': 5},
+             {'id': str(uuid.uuid4()), 'title': 'Man', 'imdb_rating': 5, 'permission': 'public'},
+             {'id': str(uuid.uuid4()), 'title': 'V-Man', 'imdb_rating': 5, 'permission': 'public'},
+             {'id': str(uuid.uuid4()), 'title': 'Manufacture', 'imdb_rating': 5, 'permission': 'public'},
+             {'id': str(uuid.uuid4()), 'title': 'Main', 'imdb_rating': 5, 'permission': 'public'},
          ], ['V-Man', 'Man', 'Main']),  # Descending order
     ]
 )
@@ -249,7 +249,7 @@ async def test_search_films_sort_descending(make_get_request, es_write_data, fil
 # Test search with cache validation
 @pytest.mark.parametrize(
     "film_data, search_query", [
-        ({'id': str(uuid.uuid4()), 'title': 'Main', 'imdb_rating': 5}, 'Man')
+        ({'id': str(uuid.uuid4()), 'title': 'Main', 'imdb_rating': 5, 'permission': 'public'}, 'Man')
     ]
 )
 async def test_search_films_cache(make_get_request, es_write_data, es_client, film_data, search_query):
