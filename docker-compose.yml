@@ -17,11 +17,15 @@ services:
   postgres:
     build:
       context: .
+      args:
+        POSTGRES_SQL_DB: ${POSTGRES_SQL_DB}
       dockerfile: ./postgres/Dockerfile
     volumes:
       - postgres-data:/var/lib/postgresql/data
       - ./database_dump.sql:/docker-entrypoint-initdb.d/init.sql
       - ./init_pg_partman.sql:/docker-entrypoint-initdb.d/init_pg_partman.sql
+    environment:
+      POSTGRES_SQL_DB: ${POSTGRES_SQL_DB}
     healthcheck:
       <<: *common-healthcheck
       test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} || exit 1" ]

@@ -14,6 +14,7 @@ class TestSettings(BaseSettings):
     redis_port: int = Field('6379', alias='REDIS_PORT')
     redis_db: int = Field('1', alias='REDIS_DB')
     service_url: str = Field('http://api:8001', alias='SERVICE_URL')
+    env: str = Field('test', alias='ENV')
 
     model_config = SettingsConfigDict(
         env_file='.env.tests',
