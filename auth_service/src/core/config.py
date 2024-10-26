@@ -9,7 +9,7 @@ from auth_service.src.core.logger import LOGGING
 
 logging_config.dictConfig(LOGGING)
 
-PROJECT_NAME = os.getenv('PROJECT_NAME', 'auth')
+PROJECT_NAME = os.getenv('PROJECT_NAME', 'auth_service')
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -64,6 +64,11 @@ class PostgresSettings(CommonSettings):
         return f'postgresql+asyncpg://{self.user}:{self.password}@{self.host}:{self.port}/{self.db}'
 
 
+class JaegerSettings(CommonSettings):
+    host: str = Field(..., alias='JAEGER_HOST')
+    port: int = Field(..., alias='JAEGER_PORT')
+
+
 @lru_cache()
 def get_redis_settings() -> RedisSettings:
     return RedisSettings()
@@ -83,3 +88,8 @@ def get_postgres_url() -> str:
 @lru_cache()
 def get_jwt_settings() -> JWTSettings:
     return JWTSettings()
+
+
+@lru_cache()
+def get_jaeger_settings() -> JaegerSettings:
+    return JaegerSettings()
