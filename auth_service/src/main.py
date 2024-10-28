@@ -1,10 +1,11 @@
 from contextlib import asynccontextmanager
+from http import HTTPStatus
 
 from fastapi import FastAPI
 from fastapi.responses import ORJSONResponse
-from redis.asyncio import Redis
-from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 from opentelemetry import trace
+from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
+from redis.asyncio import Redis
 from starlette.requests import Request
 
 from auth_service.src.api.v1 import auth, user, role, permission
@@ -12,13 +13,15 @@ from auth_service.src.core.config import (PROJECT_NAME,
                                           get_redis_settings)
 from auth_service.src.core.tracing import init_tracer
 from auth_service.src.db import redis
+from auth_service.src.models.dto.common import ErrorMessages
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     redis_settings = get_redis_settings()
 
-    redis.redis_client = Redis(host=redis_settings.host, port=redis_settings.port, decode_responses=True)
+    redis.redis_client = Redis(host=redis_settings.host, port=redis_settings.port,
+                               decode_responses=True)
     init_tracer()
     yield
 
@@ -36,14 +39,17 @@ app = FastAPI(
 FastAPIInstrumentor.instrument_app(app)
 
 
-@app.middleware("http")
+@app.middleware('http')
 async def add_x_request_id_header(request: Request, call_next):
     tracer = trace.get_tracer(__name__)
-    request_id = request.headers.get("x-request-id")
+    request_id = request.headers.get('x-request-id')
 
-    with tracer.start_as_current_span("request") as span:
-        if request_id:
-            span.set_attribute("x-request-id", request_id)
+    if not request_id:
+        return ORJSONResponse(status_code=HTTPStatus.BAD_REQUEST,
+                              content={'detail': ErrorMessages.REQUEST_ID_REQUIRED})
+
+    with tracer.start_as_current_span('request') as span:
+        span.set_attribute('x-request-id', request_id)
         response = await call_next(request)
         return response
 

@@ -50,6 +50,7 @@ class ErrorMessages:
     TOKEN_IS_MISSING = 'Authorization header missing or malformed'
     USER_ALREADY_EXISTS = 'User already exists'
     USER_NOT_FOUND = 'User not found'
+    REQUEST_ID_REQUIRED = 'X-Request-Id is required'
 
 
 class Messages:
