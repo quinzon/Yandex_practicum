@@ -42,7 +42,6 @@ class RedisSettings(CommonSettings):
         env_prefix='redis_',
     )
 
-    @property
     def redis_url(self) -> str:
         return f'redis://{self.host}:{self.port}/{self.db}'
 
