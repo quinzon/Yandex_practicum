@@ -15,7 +15,7 @@ def generate_password(length: int = 8) -> str:
             return password
 
 
-def get_loging_info(request: Request) -> tuple:
+def get_login_info(request: Request) -> tuple:
     user_agent = request.headers.get('user-agent', 'Unknown')
     client_address = request.headers.get('host')
     return user_agent, client_address
