@@ -5,13 +5,14 @@ from sqlalchemy.exc import IntegrityError
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
-from auth_service.src.core.helpers import get_loging_info
+from auth_service.src.core.helpers import get_login_info
 from auth_service.src.core.oauth import oauth
 from auth_service.src.core.security import oauth2_scheme
 from auth_service.src.models.dto.common import ErrorMessages, Messages
 from auth_service.src.models.dto.token import TokenResponse, TokenData, RefreshTokenRequest
 from auth_service.src.models.dto.user import UserCreate, UserResponse, LoginRequest
 from auth_service.src.services.login_history import LoginHistoryService, get_login_history_service
+from auth_service.src.services.oauth import OAuthService, get_oauth_service
 from auth_service.src.services.token import TokenService, get_token_service
 from auth_service.src.services.user import UserService, get_user_service
 
@@ -49,7 +50,7 @@ async def login_user(
             detail=ErrorMessages.INVALID_CREDENTIALS
         )
 
-    user_agent, client_address = get_loging_info(request)
+    user_agent, client_address = get_login_info(request)
     await login_history_service.add_login_history(user.id, user_agent, client_address)
 
     token_data = TokenData(user_id=user.id, email=user.email, roles=user.roles)
@@ -113,23 +114,20 @@ async def login_with_provider(provider_name: str, request: Request):
 async def auth_callback(
         provider_name: str,
         request: Request,
+        oauth_service: OAuthService = Depends(get_oauth_service),
         login_history_service: LoginHistoryService = Depends(get_login_history_service),
         user_service: UserService = Depends(get_user_service),
         token_service: TokenService = Depends(get_token_service),
 ):
-    client = oauth.create_client(provider_name)
-    if not client:
-        raise HTTPException(status_code=HTTPStatus.BAD_REQUEST,
-                            detail=ErrorMessages.UNSUPPORTED_PROVIDER)
-
-    token = await client.authorize_access_token(request)
-
-    user_info_response = await client.userinfo(token=token)
-    user_info = user_info_response
+    try:
+        token = await oauth_service.authorize_access_token(provider_name, request)
+        user_info = await oauth_service.get_user_info(provider_name, token)
+    except ValueError as e:
+        raise HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail=str(e))
 
     user = await user_service.get_or_create_oauth_user(provider_name, user_info)
 
-    user_agent, client_address = get_loging_info(request)
+    user_agent, client_address = get_login_info(request)
     await login_history_service.add_login_history(user.id, user_agent, client_address)
 
     token_data = TokenData(user_id=user.id, email=user.email, roles=user.roles)
