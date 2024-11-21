@@ -5,7 +5,7 @@ from sqlalchemy.orm import declarative_base, sessionmaker
 
 from auth_service.src.core.config import get_postgres_settings
 
-metadata_obj = MetaData(schema="auth")
+metadata_obj = MetaData(schema='auth')
 Base = declarative_base(metadata=metadata_obj)
 
 

@@ -10,8 +10,6 @@ from auth_service.src.core.logger import LOGGING
 
 logging_config.dictConfig(LOGGING)
 
-PROJECT_NAME = os.getenv('PROJECT_NAME', 'auth')
-
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 SUPPORTED_OAUTH_PROVIDERS = ['yandex',]
@@ -23,6 +21,12 @@ class CommonSettings(BaseSettings):
         extra='ignore',
         env_file_encoding='utf-8'
     )
+
+
+class GlobalSettings(CommonSettings):
+    session_secret_key: str = Field(alias='SESSION_SECRET_KEY')
+    project_name: str = Field(alias='PROJECT_NAME', default='auth')
+    rate_limit: str = Field(alias='RATE_LIMIT', default='10/minute')
 
 
 class JWTSettings(CommonSettings):
@@ -130,3 +134,8 @@ def get_jwt_settings() -> JWTSettings:
 @lru_cache()
 def get_oauth_settings() -> OAuthSettings:
     return OAuthSettings().load_from_env()
+
+
+@lru_cache()
+def get_global_settings() -> GlobalSettings:
+    return GlobalSettings()

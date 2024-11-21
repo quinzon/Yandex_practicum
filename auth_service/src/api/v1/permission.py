@@ -15,8 +15,8 @@ router = APIRouter(dependencies=[Depends(has_permission)])
 @paginated_response()
 async def get_roles(
         permission_service: PermissionService = Depends(get_permission_service),
-        page_size: int = Query(10, gt=0, description="Number of items per page"),
-        page_number: int = Query(1, gt=0, description="The page number to retrieve"),
+        page_size: int = Query(10, gt=0, description='Number of items per page'),
+        page_number: int = Query(1, gt=0, description='The page number to retrieve'),
 ):
     return await permission_service.get_all(page_size=page_size, page=page_number)
 

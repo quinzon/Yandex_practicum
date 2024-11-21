@@ -10,8 +10,7 @@ from slowapi.util import get_remote_address
 from starlette.middleware.sessions import SessionMiddleware
 
 from auth_service.src.api.v1 import auth, user, role, permission
-from auth_service.src.core.config import (PROJECT_NAME,
-                                          get_redis_settings)
+from auth_service.src.core.config import (get_redis_settings, get_global_settings)
 from auth_service.src.core.oauth import register_providers
 from auth_service.src.db import redis
 
@@ -28,20 +27,24 @@ async def lifespan(app: FastAPI):
     await redis.redis_client.close()
 
 
+settings = get_global_settings()
+
 app = FastAPI(
-    title=PROJECT_NAME,
+    title=settings.project_name,
     docs_url='/api/openapi',
     openapi_url='/api/openapi.json',
     default_response_class=ORJSONResponse,
     lifespan=lifespan
 )
 
-limiter = Limiter(key_func=get_remote_address, default_limits=["10/minute"],
+limiter = Limiter(key_func=get_remote_address, default_limits=[settings.rate_limit],
                   storage_uri=get_redis_settings().redis_url())
+
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 app.add_middleware(SlowAPIMiddleware)
-app.add_middleware(SessionMiddleware, secret_key="your-secret-key", session_cookie="session")
+app.add_middleware(SessionMiddleware, secret_key=settings.session_secret_key,
+                   session_cookie='session')
 
 app.include_router(auth.router, prefix='/api/v1/auth', tags=['auth'])
 app.include_router(user.router, prefix='/api/v1/auth/users', tags=['users'])
