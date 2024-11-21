@@ -39,6 +39,9 @@ class BaseResponse(BaseModel):
 
 
 class ErrorMessages:
+    MISSING_PROVIDER_ID = 'Missing OAuth provider id'
+    CREATION_FAILED = 'Creation failed'
+    UNSUPPORTED_PROVIDER = 'Unsupported provider'
     PERMISSION_DENIED = 'Permission denied'
     NOT_FOUND = 'Not found'
     INVALID_CREDENTIALS = 'Invalid credentials'
@@ -50,6 +53,7 @@ class ErrorMessages:
     TOKEN_IS_MISSING = 'Authorization header missing or malformed'
     USER_ALREADY_EXISTS = 'User already exists'
     USER_NOT_FOUND = 'User not found'
+    NO_EMAIL_PROVIDED = 'No email provided'
 
 
 class Messages:

@@ -27,7 +27,7 @@ async def get_profile(
         user_service: UserService = Depends(get_user_service)
 ):
     token_data = await token_service.check_access_token(token)
-    user = await user_service.get_user_by_id(token_data.user_id)
+    user = await user_service.get_by_id(token_data.user_id)
 
     if not user:
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail=ErrorMessages.USER_NOT_FOUND)
@@ -43,7 +43,7 @@ async def update_profile(
         user_service: UserService = Depends(get_user_service)
 ):
     token_data = await token_service.check_access_token(token)
-    user = await user_service.get_user_by_id(token_data.user_id)
+    user = await user_service.get_by_id(token_data.user_id)
     if not user:
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail=ErrorMessages.USER_NOT_FOUND)
 
