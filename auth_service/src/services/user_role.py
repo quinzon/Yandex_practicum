@@ -17,7 +17,7 @@ class UserRoleService:
         self.role_service = role_service
 
     async def set_roles(self, user_id: UUID, role_ids: List[UUID]) -> User:
-        user = await self.user_service.get_user_by_id(user_id)
+        user = await self.user_service.get_by_id(str(user_id))
         if not user:
             raise HTTPException(status_code=HTTPStatus.NOT_FOUND,
                                 detail=ErrorMessages.USER_NOT_FOUND)

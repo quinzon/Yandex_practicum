@@ -6,10 +6,16 @@ from fastapi.responses import ORJSONResponse
 from opentelemetry import trace
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 from redis.asyncio import Redis
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
+from slowapi.util import get_remote_address
+from starlette.middleware.sessions import SessionMiddleware
 from starlette.requests import Request
 
 from auth_service.src.api.v1 import auth, user, role, permission
-from auth_service.src.core.config import (PROJECT_NAME,
+from auth_service.src.core.oauth import register_providers
+from auth_service.src.core.config import (get_global_settings,
                                           get_redis_settings)
 from auth_service.src.core.tracing import init_tracer
 from auth_service.src.db import redis
@@ -22,14 +28,17 @@ async def lifespan(app: FastAPI):
 
     redis.redis_client = Redis(host=redis_settings.host, port=redis_settings.port,
                                decode_responses=True)
+    register_providers()
     init_tracer()
     yield
 
     await redis.redis_client.close()
 
 
+settings = get_global_settings()
+
 app = FastAPI(
-    title=PROJECT_NAME,
+    title=settings.project_name,
     docs_url='/api/openapi',
     openapi_url='/api/openapi.json',
     default_response_class=ORJSONResponse,
@@ -53,6 +62,15 @@ async def add_x_request_id_header(request: Request, call_next):
         response = await call_next(request)
         return response
 
+
+limiter = Limiter(key_func=get_remote_address, default_limits=[settings.rate_limit],
+                  storage_uri=get_redis_settings().redis_url())
+
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.add_middleware(SlowAPIMiddleware)
+app.add_middleware(SessionMiddleware, secret_key=settings.session_secret_key,
+                   session_cookie='session')
 
 app.include_router(auth.router, prefix='/api/v1/auth', tags=['auth'])
 app.include_router(user.router, prefix='/api/v1/auth/users', tags=['users'])

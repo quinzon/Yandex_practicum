@@ -16,8 +16,8 @@ async def has_permission(
     access_control_service: AccessControlService = Depends(get_access_control_service),
 ):
     http_method = request.method
-    route = request.scope.get("route")
-    tags = getattr(route, "tags", None)
+    route = request.scope.get('route')
+    tags = getattr(route, 'tags', None)
 
     if tags and len(tags) > 0:
         resource = tags[0]
