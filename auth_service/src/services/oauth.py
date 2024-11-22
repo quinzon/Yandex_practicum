@@ -10,7 +10,7 @@ class OAuthService:
     async def get_oauth_client(self, provider_name: str):
         client = self.oauth_client.create_client(provider_name)
         if not client:
-            raise ValueError(f"Unsupported provider: {provider_name}")
+            raise ValueError(f'Unsupported provider: {provider_name}')
         return client
 
     async def authorize_access_token(self, provider_name: str, request: Request):
