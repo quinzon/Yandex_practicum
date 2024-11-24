@@ -26,7 +26,7 @@ class AuthService:
                     )
             except aiohttp.ClientError:
                 raise HTTPException(
-                    status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+                    status_code=HTTPStatus.SERVICE_UNAVAILABLE,
                     detail="Authorization service connection error"
                 )
 
