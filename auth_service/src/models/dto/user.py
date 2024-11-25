@@ -37,8 +37,8 @@ class UserCreate(BaseModel):
 class UserResponse(BaseDto):
     id: str
     email: EmailStr
-    first_name: str | None
-    last_name: str | None
+    first_name: str | None = None
+    last_name: str | None = None
     roles: List[str] | None
 
     @field_validator('roles', mode='before')
