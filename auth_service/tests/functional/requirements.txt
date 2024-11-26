@@ -12,3 +12,4 @@ redis==5.0.8
 psycopg2[binary]==2.9.3
 python-jose==3.3.0
 passlib==1.7.2
+itsdangerous==2.2.0

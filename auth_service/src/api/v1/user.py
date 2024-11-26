@@ -27,7 +27,7 @@ async def get_profile(
         user_service: UserService = Depends(get_user_service)
 ):
     token_data = await token_service.check_access_token(token)
-    user = await user_service.get_user_by_id(token_data.user_id)
+    user = await user_service.get_by_id(token_data.user_id)
 
     if not user:
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail=ErrorMessages.USER_NOT_FOUND)
@@ -43,7 +43,7 @@ async def update_profile(
         user_service: UserService = Depends(get_user_service)
 ):
     token_data = await token_service.check_access_token(token)
-    user = await user_service.get_user_by_id(token_data.user_id)
+    user = await user_service.get_by_id(token_data.user_id)
     if not user:
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail=ErrorMessages.USER_NOT_FOUND)
 
@@ -61,8 +61,8 @@ async def get_login_history(
         token: str = Depends(oauth2_scheme),
         token_service: TokenService = Depends(get_token_service),
         login_history_service: LoginHistoryService = Depends(get_login_history_service),
-        page_size: int = Query(10, gt=0, description="Number of items per page"),
-        page_number: int = Query(1, gt=0, description="The page number to retrieve"),
+        page_size: int = Query(10, gt=0, description='Number of items per page'),
+        page_number: int = Query(1, gt=0, description='The page number to retrieve'),
 ):
     token_data = await token_service.check_access_token(token)
     items, total_items = await login_history_service.get_login_history(

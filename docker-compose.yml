@@ -114,6 +114,13 @@ services:
         condition: service_started
     <<: *common-variables
 
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    ports:
+      - "6831:6831/udp"
+      - "16686:16686"
+    <<: *common-variables
+
 volumes:
   postgres-data:
   es-data:
