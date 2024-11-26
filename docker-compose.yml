@@ -115,7 +115,7 @@ services:
     <<: *common-variables
 
   jaeger:
-    image: jaegertracing/all-in-one:latest
+    image: jaegertracing/all-in-one:1.60
     ports:
       - "6831:6831/udp"
       - "16686:16686"

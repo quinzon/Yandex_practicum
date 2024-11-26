@@ -27,6 +27,7 @@ class GlobalSettings(CommonSettings):
     session_secret_key: str = Field(alias='SESSION_SECRET_KEY')
     project_name: str = Field(alias='PROJECT_NAME', default='auth')
     rate_limit: str = Field(alias='RATE_LIMIT', default='10/minute')
+    env: str = Field(alias='ENV', default='development')
 
 
 class JWTSettings(CommonSettings):

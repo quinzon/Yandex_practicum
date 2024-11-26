@@ -21,6 +21,14 @@ from auth_service.src.core.tracing import init_tracer
 from auth_service.src.db import redis
 from auth_service.src.models.dto.common import ErrorMessages
 
+settings = get_global_settings()
+
+
+def setup_tracing(app: FastAPI):
+    if settings.env != 'test':
+        init_tracer()
+        FastAPIInstrumentor.instrument_app(app)
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -29,13 +37,9 @@ async def lifespan(app: FastAPI):
     redis.redis_client = Redis(host=redis_settings.host, port=redis_settings.port,
                                decode_responses=True)
     register_providers()
-    init_tracer()
     yield
 
     await redis.redis_client.close()
-
-
-settings = get_global_settings()
 
 app = FastAPI(
     title=settings.project_name,
@@ -45,22 +49,26 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-FastAPIInstrumentor.instrument_app(app)
+
+setup_tracing(app)
 
 
 @app.middleware('http')
 async def add_x_request_id_header(request: Request, call_next):
-    tracer = trace.get_tracer(__name__)
+    tracer = trace.get_tracer(__name__) if settings.env != 'test' else None
     request_id = request.headers.get('x-request-id')
 
     if not request_id:
         return ORJSONResponse(status_code=HTTPStatus.BAD_REQUEST,
                               content={'detail': ErrorMessages.REQUEST_ID_REQUIRED})
 
-    with tracer.start_as_current_span('request') as span:
-        span.set_attribute('x-request-id', request_id)
-        response = await call_next(request)
-        return response
+    if tracer:
+        with tracer.start_as_current_span('request') as span:
+            span.set_attribute('x-request-id', request_id)
+            response = await call_next(request)
+            return response
+    else:
+        return await call_next(request)
 
 
 limiter = Limiter(key_func=get_remote_address, default_limits=[settings.rate_limit],
