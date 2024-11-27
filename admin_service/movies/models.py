@@ -100,7 +100,7 @@ class GenreFilmWork(UUIDMixin):
         verbose_name=_('genre'),
     )
     film_work = models.ForeignKey(FilmWork, on_delete=models.CASCADE)
-    created = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return self.genre.name
@@ -136,7 +136,7 @@ class PersonFilmWork(UUIDMixin):
         choices=Roles.choices,
         default=Roles.ACTOR,
     )
-    created = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return self.person.full_name
