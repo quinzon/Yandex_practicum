@@ -27,6 +27,7 @@ class GlobalSettings(CommonSettings):
     session_secret_key: str = Field(alias='SESSION_SECRET_KEY')
     project_name: str = Field(alias='PROJECT_NAME', default='auth')
     rate_limit: str = Field(alias='RATE_LIMIT', default='10/minute')
+    env: str = Field(alias='ENV', default='development')
 
 
 class JWTSettings(CommonSettings):
@@ -110,6 +111,11 @@ class OAuthSettings(CommonSettings):
         return settings
 
 
+class JaegerSettings(CommonSettings):
+    host: str = Field(..., alias='JAEGER_HOST')
+    port: int = Field(..., alias='JAEGER_PORT')
+
+
 @lru_cache()
 def get_redis_settings() -> RedisSettings:
     return RedisSettings()
@@ -129,6 +135,11 @@ def get_postgres_url() -> str:
 @lru_cache()
 def get_jwt_settings() -> JWTSettings:
     return JWTSettings()
+
+
+@lru_cache()
+def get_jaeger_settings() -> JaegerSettings:
+    return JaegerSettings()
 
 
 @lru_cache()
