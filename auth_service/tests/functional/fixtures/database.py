@@ -190,7 +190,7 @@ async def setup_superuser(request):
     conn.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
     cur = conn.cursor(cursor_factory=RealDictCursor)
 
-    superuser_role_name = 'superuser'
+    superuser_role_name = 'superadmin'
 
     cur.execute("""
         SELECT id FROM auth.role WHERE name = %s;
