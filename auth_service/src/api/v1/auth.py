@@ -76,7 +76,9 @@ async def refresh_token(
             detail=ErrorMessages.INVALID_CREDENTIALS
         )
 
-    actual_token_data = TokenData(user_id=str(user.id), email=user.email, roles=user.roles)
+    role_names = [role.name for role in user.roles]
+
+    actual_token_data = TokenData(user_id=str(user.id), email=user.email, roles=role_names)
     new_tokens = await token_service.refresh_tokens(actual_token_data, db_token)
 
     if not new_tokens:

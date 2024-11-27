@@ -45,6 +45,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'debug_toolbar.middleware.DebugToolbarMiddleware',
+    'config.authentication.middleware.JWTMiddleware',
 ]
 
 ROOT_URLCONF = 'config.urls'
@@ -71,25 +72,6 @@ WSGI_APPLICATION = 'config.wsgi.application'
 include(
     'components/database.py',
 )
-
-
-# Password validation
-# https://docs.djangoproject.com/en/3.2/ref/settings/#auth-password-validators
-
-AUTH_PASSWORD_VALIDATORS = [
-    {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
-    },
-]
 
 
 # Internationalization
@@ -147,3 +129,8 @@ LOGGING = {
         }
     },
 }
+
+
+AUTHENTICATION_BACKENDS = ['config.authentication.auth_backend.AuthServiceBackend',]
+
+AUTH_SERVICE_URL = os.getenv('AUTH_SERVICE_URL', 'http://auth_service:8001/api/v1/auth')
