@@ -11,9 +11,9 @@ class JWTMiddleware:
         refresh_token = request.session.get('refresh_token')
 
         if access_token:
-            if check_permission(access_token, 'admin', 'get'):
+            if check_permission(request, access_token, 'admin', 'get'):
                 try:
-                    new_access_token, new_refresh_token = refresh_tokens(refresh_token)
+                    new_access_token, new_refresh_token = refresh_tokens(request, refresh_token)
                     request.session['access_token'] = new_access_token
                     request.session['refresh_token'] = new_refresh_token
                     request.META['HTTP_AUTHORIZATION'] = f'Bearer {new_access_token}'

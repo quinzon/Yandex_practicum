@@ -20,7 +20,8 @@ class PermissionAdmin(admin.ModelAdmin):
                 request._cached_permissions[cache_key] = False
                 return False
 
-            request._cached_permissions[cache_key] = check_permission(access_token, self.resource_name, http_method)
+            request._cached_permissions[cache_key] = check_permission(request, access_token, self.resource_name,
+                                                                      http_method)
 
         return request._cached_permissions[cache_key]
 
