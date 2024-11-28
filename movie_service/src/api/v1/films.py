@@ -12,7 +12,7 @@ from movie_service.src.models.pagination import Pagination, paginated_response
 router = APIRouter()
 
 
-@router.get("/search", response_model=Pagination[FilmDetail], summary="Search Films with Pagination and Sorting")
+@router.get('/search', response_model=Pagination[FilmDetail], summary="Search Films with Pagination and Sorting")
 @paginated_response()
 async def search_films(
     query: str = Query(..., description="Search films"),
@@ -39,19 +39,19 @@ async def film_details(
     """
     film = await film_service.get_by_id(film_id)
     if not film:
-        raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail="Film not found")
+        raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='Film not found')
 
     if film.permission is Permissions.PUBLIC:
         return film
 
-    token = request.headers.get("Authorization")
+    token = request.headers.get('Authorization')
     if not token:
         raise HTTPException(
             status_code=HTTPStatus.UNAUTHORIZED,
-            detail="Authorization token missing"
+            detail='Authorization token missing'
         )
 
-    await auth_service.check_permission(token, f'film:{film.permission.value}', "GET")
+    await auth_service.check_permission(request, token, f'film:{film.permission.value}', 'GET')
 
     return film
 
