@@ -38,7 +38,7 @@ class TokenService:
     def create_access_token(self, token_data: TokenData) -> str:
         expire = datetime.utcnow() + timedelta(minutes=self.settings.access_token_expire_minutes)
 
-        is_superuser = 'superuser' in token_data.roles
+        is_superuser = 'superadmin' in token_data.roles
 
         to_encode = {
             'sub': token_data.user_id,

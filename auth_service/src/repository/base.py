@@ -32,7 +32,7 @@ class BaseRepository(Generic[T]):
         except SQLAlchemyError:
             raise HTTPException(
                 status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
-                detail="Failed to fetch records"
+                detail='Failed to fetch records'
             )
 
     async def get_by_id(self, entity_id: uuid.UUID) -> T | None:
@@ -41,13 +41,13 @@ class BaseRepository(Generic[T]):
             if not result:
                 raise HTTPException(
                     status_code=HTTPStatus.NOT_FOUND,
-                    detail=f"Record with ID {entity_id} not found"
+                    detail=f'Record with ID {entity_id} not found'
                 )
             return result
         except SQLAlchemyError:
             raise HTTPException(
                 status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
-                detail="Internal server error"
+                detail='Internal server error'
             )
 
     async def create(self, entity: T) -> T:
@@ -60,13 +60,13 @@ class BaseRepository(Generic[T]):
             await self.session.rollback()
             raise HTTPException(
                 status_code=HTTPStatus.CONFLICT,
-                detail="Already exists"
+                detail='Already exists'
             )
         except SQLAlchemyError:
             await self.session.rollback()
             raise HTTPException(
                 status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
-                detail="Internal server error"
+                detail='Internal server error'
             )
 
     async def update(self, entity: T) -> T:
@@ -78,13 +78,13 @@ class BaseRepository(Generic[T]):
             await self.session.rollback()
             raise HTTPException(
                 status_code=HTTPStatus.CONFLICT,
-                detail="Update conflict"
+                detail='Update conflict'
             )
         except SQLAlchemyError:
             await self.session.rollback()
             raise HTTPException(
                 status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
-                detail="Internal server error"
+                detail='Internal server error'
             )
 
     async def delete(self, entity: T) -> None:
@@ -95,5 +95,5 @@ class BaseRepository(Generic[T]):
             await self.session.rollback()
             raise HTTPException(
                 status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
-                detail="Failed to delete entity"
+                detail='Failed to delete entity'
             )

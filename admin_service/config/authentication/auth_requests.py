@@ -1,0 +1,90 @@
+from http import HTTPStatus
+import requests
+
+from django.core.exceptions import PermissionDenied, ValidationError
+from django.conf import settings
+from django.http import HttpRequest
+
+AUTH_SERVICE_URL = settings.AUTH_SERVICE_URL
+
+
+def prepare_headers(request: HttpRequest, headers: dict | None = None) -> dict:
+    """Подготавливает заголовки для HTTP-запроса."""
+    if headers is None:
+        headers = {}
+    request_id = getattr(request, 'request_id', None)
+    headers['x-request-id'] = request_id
+    return headers
+
+
+def check_permission(request: HttpRequest, access_token: str, resource: str, http_method: str) -> bool:
+    """Проверяет разрешение пользователя через auth-сервис."""
+    response = requests.get(
+        f'{AUTH_SERVICE_URL}/users/check-permission',
+        params={'resource': resource, 'http_method': http_method},
+        headers=prepare_headers(
+            request,
+            {
+                'Authorization': f'Bearer {access_token}',
+            }
+        ),
+    )
+    return response.status_code == HTTPStatus.OK
+
+
+def refresh_tokens(request: HttpRequest, refresh_token: str) -> tuple[str | None, str | None]:
+    """Обновляет токены через auth-сервис."""
+    response = requests.post(
+        f'{AUTH_SERVICE_URL}/refresh',
+        headers=prepare_headers(
+            request,
+            {
+                'accept': 'application/json',
+                'Content-Type': 'application/json'
+            }
+        ),
+        json={'refresh_token': refresh_token}
+    )
+    if response.status_code != HTTPStatus.OK:
+        raise PermissionDenied('Ошибка обновления токенов.')
+
+    data = response.json()
+    return data.get('access_token'), data.get('refresh_token')
+
+
+def login_user(request: HttpRequest, email: str, password: str) -> dict:
+    """Выполняет авторизацию пользователя через auth-сервис."""
+    response = requests.post(
+        f'{AUTH_SERVICE_URL}/login',
+        headers=prepare_headers(
+            request,
+            {
+                'accept': 'application/json',
+                'Content-Type': 'application/json'
+            }
+        ),
+        json={"email": email, "password": password}
+    )
+    if response.status_code != HTTPStatus.OK:
+        detail = "Неизвестная ошибка" if response.status_code == HTTPStatus.INTERNAL_SERVER_ERROR \
+            else response.json().get('detail')
+        raise ValidationError(f"Ошибка подключения к сервису авторизации: {response.status_code} - {detail}")
+
+    return response.json()
+
+
+def get_user_profile(request: HttpRequest, access_token: str) -> dict:
+    """Получает профиль пользователя через auth-сервис."""
+    response = requests.get(
+        f'{AUTH_SERVICE_URL}/users/profile',
+        headers=prepare_headers(
+            request,
+            {
+                'Authorization': f'Bearer {access_token}',
+            }
+        ),
+    )
+    if response.status_code != HTTPStatus.OK:
+        raise PermissionDenied('Ошибка получения профиля.')
+
+    return response.json()

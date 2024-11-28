@@ -15,14 +15,22 @@ x-common-env: &common-env
 
 services:
   postgres:
-    image: postgres:16-alpine
+    build:
+      context: .
+      args:
+        POSTGRES_SQL_DB: ${POSTGRES_SQL_DB}
+      dockerfile: ./postgres/Dockerfile
     volumes:
       - postgres-data:/var/lib/postgresql/data
       - ./database_dump.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./init_pg_partman.sql:/docker-entrypoint-initdb.d/init_pg_partman.sql
+    environment:
+      POSTGRES_SQL_DB: ${POSTGRES_SQL_DB}
     healthcheck:
       <<: *common-healthcheck
       test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} || exit 1" ]
     <<: [ *common-variables, *common-env ]
+
 
   elasticsearch:
     image: elasticsearch:8.6.2
@@ -94,6 +102,22 @@ services:
         condition: service_healthy
     <<: [ *common-variables ]
 
+  admin_service:
+    build:
+      context: ./admin_service
+      dockerfile: Dockerfile
+    image: admin_service
+    command: ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8002", "--reload"]
+    volumes:
+      - ./admin_service:/opt/admin_service
+      - admin-static:/opt/admin_service/static
+    env_file:
+      - admin_service/.env
+    depends_on:
+      postgres:
+        condition: service_healthy
+    <<: [ *common-variables ]
+
   nginx:
     image: nginx:latest
     ports:
@@ -101,15 +125,28 @@ services:
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./nginx/site.conf:/etc/nginx/conf.d/default.conf:ro
+      - admin-static:/opt/admin_service/static:ro
     depends_on:
       movie_service:
         condition: service_started
+      auth_service:
+        condition: service_started
+      admin_service:
+        condition: service_started
+    <<: *common-variables
+
+  jaeger:
+    image: jaegertracing/all-in-one:1.60
+    ports:
+      - "6831:6831/udp"
+      - "16686:16686"
     <<: *common-variables
 
 volumes:
   postgres-data:
   es-data:
   redis-data:
+  admin-static:
 
 networks:
   backend_network:

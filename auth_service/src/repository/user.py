@@ -25,6 +25,14 @@ class UserRepository(BaseRepository[User]):
         await self.session.execute(query)
         await self.session.commit()
 
+    async def get_by_provider(self, provider: str, provider_user_id: str) -> User | None:
+        query = select(User).where(
+            User.provider == provider,
+            User.provider_user_id == provider_user_id
+        )
+        result = await self.session.execute(query)
+        return result.scalar_one_or_none()
+
 
 @lru_cache()
 def get_user_repository(
