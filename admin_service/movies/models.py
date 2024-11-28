@@ -52,6 +52,12 @@ class FilmTypes(models.TextChoices):
     TV_SHOW = 'tv show', _('tv show')
 
 
+class PermissionTypes(models.TextChoices):
+    PUBLIC = 'public', _('public')
+    SUBSCRIPTION = 'subscription', _('subscription')
+    CLOSED = 'closed', _('closed')
+
+
 class FilmWork(UUIDMixin, TimeStampedMixin):
     title = models.CharField(_('title'), max_length=255)
     description = models.TextField(_('description'), blank=True)
@@ -76,6 +82,12 @@ class FilmWork(UUIDMixin, TimeStampedMixin):
         verbose_name=_('genres'),
     )
     persons = models.ManyToManyField(Person, through='PersonFilmWork')
+    permission = models.CharField(
+        _('permission'),
+        max_length=12,
+        choices=PermissionTypes.choices,
+        default=PermissionTypes.CLOSED,
+    )
 
     def __str__(self):
         return self.title

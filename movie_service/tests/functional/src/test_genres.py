@@ -303,8 +303,8 @@ async def test_search_genres_cache(make_get_request, es_write_data, es_client, g
         (
             {'id': str(uuid.uuid4()), 'name': 'Action'},
             [
-                {'id': str(uuid.uuid4()), 'title': 'Film A', 'imdb_rating': 8.0, 'genres': [{'id': 'genre_id', 'name': 'Action'}]},
-                {'id': str(uuid.uuid4()), 'title': 'Film B', 'imdb_rating': 7.5, 'genres': [{'id': 'genre_id', 'name': 'Action'}]},
+                {'id': str(uuid.uuid4()), 'title': 'Film A', 'imdb_rating': 8.0, 'permission': 'public', 'genres': [{'id': 'genre_id', 'name': 'Action'}]},
+                {'id': str(uuid.uuid4()), 'title': 'Film B', 'imdb_rating': 7.5, 'permission': 'public', 'genres': [{'id': 'genre_id', 'name': 'Action'}]},
             ],
             HTTPStatus.OK,
             ['Film A', 'Film B']

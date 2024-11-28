@@ -22,8 +22,8 @@ services:
       dockerfile: ./postgres/Dockerfile
     volumes:
       - postgres-data:/var/lib/postgresql/data
-      - ./database_dump.sql:/docker-entrypoint-initdb.d/init.sql
-      - ./init_pg_partman.sql:/docker-entrypoint-initdb.d/init_pg_partman.sql
+      - ./postgres/database_dump.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./postgres/init_pg_partman.sql:/docker-entrypoint-initdb.d/init_pg_partman.sql
     environment:
       POSTGRES_SQL_DB: ${POSTGRES_SQL_DB}
     healthcheck:
