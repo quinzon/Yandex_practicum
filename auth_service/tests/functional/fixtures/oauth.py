@@ -1,13 +1,14 @@
 import pytest
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock
+from authlib.integrations.starlette_client import OAuth
 from fastapi import Request
+
 from auth_service.src.services.oauth import OAuthService
 
 
 @pytest.fixture
 def oauth_client():
-    client = AsyncMock()
-    return client
+    return OAuth()
 
 
 @pytest.fixture
