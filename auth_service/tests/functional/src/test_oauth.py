@@ -2,6 +2,7 @@ import pytest
 from unittest.mock import AsyncMock, patch
 from auth_service.src.services.oauth import OAuthService
 from auth_service.tests.functional.fixtures.oauth import oauth_service, oauth_client, mock_request
+from fastapi import Request
 
 pytestmark = pytest.mark.asyncio
 
