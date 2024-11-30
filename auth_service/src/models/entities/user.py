@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Column, DateTime, String, Table, ForeignKey, Index
+from sqlalchemy import Column, DateTime, String, Table, ForeignKey, Index, JSON
 from sqlalchemy.dialects.postgresql import UUID
 import bcrypt
 from sqlalchemy.orm import relationship
@@ -12,21 +12,16 @@ from auth_service.src.models.dto.user import UserCreate
 
 class User(Base):
     __tablename__ = 'user'
-    __table_args__ = (
-        Index('idx_user_provider', 'provider', 'provider_user_id', unique=True),
-    )
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, unique=True, nullable=False)
     email = Column(String(255), unique=True, nullable=False)
     password_hash = Column(String(255), nullable=False)
     first_name = Column(String(50), nullable=True)
     last_name = Column(String(50), nullable=True)
-    provider = Column(String(255), nullable=True)
-    provider_user_id = Column(String(255), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
-    roles = relationship('Role', secondary='auth.user_role', back_populates='users',
-                         lazy='selectin')
+    roles = relationship('Role', secondary='auth.user_role', back_populates='users', lazy='selectin')
+    social_accounts = relationship('SocialAccount', back_populates='user')
 
     def set_password(self, password: str) -> None:
         salt = bcrypt.gensalt()
@@ -47,6 +42,25 @@ class User(Base):
 
     def __repr__(self) -> str:
         return f'<User {self.email}>'
+
+
+class SocialAccount(Base):
+    __tablename__ = 'social_accounts'
+    __table_args__ = (
+        Index('ix_social_accounts_provider_user_id', 'provider', 'provider_user_id', unique=True),
+        Index('ix_social_accounts_user_id', 'user_id'),
+    )
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, unique=True, nullable=False)
+    user_id = Column(ForeignKey('auth.user.id'), nullable=False)
+    provider = Column(String, nullable=False)
+    provider_user_id = Column(String, nullable=False, index=True)
+    extra_data = Column(JSON, nullable=True)
+
+    user = relationship('User', back_populates='social_accounts')
+
+    def __repr__(self) -> str:
+        return f'<SocialAccount provider={self.provider} user_id={self.user_id}>'
 
 
 user_role = Table(
