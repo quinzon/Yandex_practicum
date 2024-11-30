@@ -67,8 +67,8 @@ async def add_x_request_id_header(request: Request, call_next):
             span.set_attribute('x-request-id', request_id)
             response = await call_next(request)
             return response
-    else:
-        return await call_next(request)
+
+    return await call_next(request)
 
 
 limiter = Limiter(key_func=get_remote_address, default_limits=[settings.rate_limit],
