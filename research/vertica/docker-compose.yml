@@ -1,0 +1,17 @@
+version: '3'
+
+services:
+  vertica:
+    privileged: true
+    environment:
+      APP_DB_USER: "dbadmin"
+      VERTICA_MEMDEBUG: 4
+      TZ: "Europe/Prague"
+    container_name: vertica-ce
+    image: jbfavre/vertica:latest
+    ports:
+      - "5433:5433"
+      - "5444:5444"
+    platform: linux/amd64
+    deploy:
+      mode: global
