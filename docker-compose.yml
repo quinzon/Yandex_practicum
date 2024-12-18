@@ -144,8 +144,6 @@ services:
 
   kafka-0:
     image: bitnami/kafka:3.4
-    ports:
-      - "9094:9094"
     env_file:
       - ./bigdata_service/.env
     environment:
@@ -162,8 +160,6 @@ services:
 
   kafka-1:
     image: bitnami/kafka:3.4
-    ports:
-      - "9095:9095"
     env_file:
       - ./bigdata_service/.env
     environment:
@@ -180,8 +176,6 @@ services:
 
   kafka-2:
     image: bitnami/kafka:3.4
-    ports:
-      - "9096:9096"
     env_file:
       - ./bigdata_service/.env
     environment:
@@ -191,7 +185,7 @@ services:
     healthcheck:
       test: ["CMD-SHELL", "kafka-cluster.sh cluster-id --bootstrap-server kafka-2:9092 || exit 1"]
       interval: 5s
-      timeout: 2s
+      timeout: 5s
       retries: 3
       start_period: 10s
     <<: [ *common-variables ]
@@ -223,8 +217,6 @@ services:
     <<: [ *common-variables ]
 
   bigdata_service:
-    ports:
-      - "5000:5000"
     build:
       context: ./bigdata_service
       dockerfile: Dockerfile
