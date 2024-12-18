@@ -12,6 +12,5 @@ class Settings:
     PORT = int(os.getenv('APP_PORT', '5000'))
 
     KAFKA_BROKER_URLS = os.getenv('KAFKA_BROKER_URLS', 'localhost:9092')
-    KAFKA_EVENTS_TOPIC_PREFIX = os.getenv('KAFKA_EVENTS_TOPIC_PREFIX', 'events')
 
     SECRET_KEY = os.getenv('SECRET_KEY', 'default-secret-key')

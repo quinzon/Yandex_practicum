@@ -12,6 +12,7 @@ class KafkaEventProducer:
         self.producer = AIOKafkaProducer(
             bootstrap_servers=Settings.KAFKA_BROKER_URLS,
             value_serializer=lambda v: json.dumps(v).encode('utf-8'),
+            acks=1,
         )
         self.is_started = False
 
@@ -28,7 +29,7 @@ class KafkaEventProducer:
             self.is_started = False
 
     async def send_event(self, event_type: str, user_id: str, payload: dict):
-        topic = f'{Settings.KAFKA_EVENTS_TOPIC_PREFIX}_{event_type}'
+        topic = event_type
         key = user_id.encode('utf-8')
         event_data = {
             'user_id': user_id,
