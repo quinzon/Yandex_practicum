@@ -32,7 +32,9 @@ class ValidationError(Exception):
 
 def get_token_payload(token: str) -> dict:
     try:
-        return json.loads(base64.b64decode(token.split('.')[1]))
+        payload_part = token.split('.')[1]
+        payload_decoded = base64.urlsafe_b64decode(payload_part + '=' * (-len(payload_part) % 4))
+        return json.loads(payload_decoded)
     except Exception as exc:
         raise ValidationError(ErrorMessages.ERROR_MISSING_AUTH) from exc
 
