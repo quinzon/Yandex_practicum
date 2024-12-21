@@ -240,6 +240,7 @@ services:
       - "9000:9000"
     volumes:
       - ./clickhouse/data/node1:/etc/clickhouse-server
+      - clickhouse-node1-data:/var/lib/clickhouse
     depends_on:
       zookeeper:
         condition: service_started
@@ -256,6 +257,7 @@ services:
       - "9001:9000"
     volumes:
       - ./clickhouse/data/node2:/etc/clickhouse-server
+      - clickhouse-node2-data:/var/lib/clickhouse
     depends_on:
       zookeeper:
         condition: service_started
@@ -272,6 +274,7 @@ services:
       - "9002:9000"
     volumes:
       - ./clickhouse/data/node3:/etc/clickhouse-server
+      - clickhouse-node3-data:/var/lib/clickhouse
     depends_on:
       zookeeper:
         condition: service_started
@@ -288,6 +291,7 @@ services:
       - "9003:9000"
     volumes:
       - ./clickhouse/data/node4:/etc/clickhouse-server
+      - clickhouse-node4-data:/var/lib/clickhouse
     depends_on:
       zookeeper:
         condition: service_started
@@ -322,6 +326,10 @@ volumes:
   kafka_0_data:
   kafka_1_data:
   kafka_2_data:
+  clickhouse-node1-data:
+  clickhouse-node2-data:
+  clickhouse-node3-data:
+  clickhouse-node4-data:
 
 networks:
   backend_network:
