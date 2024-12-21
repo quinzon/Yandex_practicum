@@ -20,7 +20,8 @@ def main():
         settings.kafka_broker,
         topics=topics,
         clickhouse_handler=clickhouse_handler,
-        poll_interval=settings.poll_interval
+        poll_interval=settings.poll_interval,
+        memory_log_interval=settings.memory_log_interval,
     )
 
     for topic in topics:
@@ -29,5 +30,5 @@ def main():
     kafka_consumer.consume_messages()
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()

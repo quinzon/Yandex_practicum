@@ -4,9 +4,9 @@ from abstract_consumer import AbstractTopicConsumer
 
 
 class VideoPageViewsConsumer(AbstractTopicConsumer):
-    topic_name = "page_views"
-    table_name = "video_page_views_data"
-    fields = ["timestamp", "user_id", "film_id"]
+    topic_name = 'page_views'
+    table_name = 'video_page_views_data'
+    fields = ['timestamp', 'user_id', 'film_id']
 
     def process_message(self, message_value):
         try:
@@ -17,16 +17,16 @@ class VideoPageViewsConsumer(AbstractTopicConsumer):
             film_id = event_data['payload']['film_id']
 
             return {
-                "table_name": self.table_name,
-                "data": [{
-                    "timestamp": timestamp,
-                    "user_id": user_id,
-                    "film_id": film_id
+                'table_name': self.table_name,
+                'data': [{
+                    'timestamp': timestamp,
+                    'user_id': user_id,
+                    'film_id': film_id
                 }]
             }
 
         except json.JSONDecodeError:
-            print(f"Error decoding JSON message: {message_value}")
+            print(f'Error decoding JSON message: {message_value}')
             return None
 
     def create_table_query(self):

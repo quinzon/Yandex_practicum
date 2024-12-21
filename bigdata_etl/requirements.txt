@@ -3,3 +3,4 @@ kafka-python==2.0.2
 confluent-kafka==2.7.0
 pydantic-settings==2.2.1
 pydantic==2.6.4
+psutil==5.9.0
