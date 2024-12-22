@@ -29,7 +29,8 @@ class KafkaConsumer:
         consumer = Consumer({
             'bootstrap.servers': self.broker,
             'group.id': 'bigdata_etl_group',
-            'auto.offset.reset': 'earliest'
+            'auto.offset.reset': 'earliest',
+            'enable.auto.commit': False
         })
 
         topic_names = [topic.topic_name for topic in self.topics]
@@ -66,6 +67,7 @@ class KafkaConsumer:
                     if buffer:
                         self._send_to_clickhouse(buffer)
                         buffer.clear()
+                        consumer.commit(asynchronous=False)
 
                 if time.time() - self.last_memory_log_time > self.memory_log_interval:
                     self._log_memory_usage()
