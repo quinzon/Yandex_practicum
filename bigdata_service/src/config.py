@@ -1,16 +1,21 @@
-import os
-
-from dotenv import load_dotenv
-
-load_dotenv()
+from pydantic import Field, Extra
+from pydantic_settings import BaseSettings
 
 
-class Settings:
-    FLASK_ENV = os.getenv('FLASK_ENV', 'production')
-    DEBUG = os.getenv('FLASK_DEBUG', '0') == '1'
-    HOST = os.getenv('APP_HOST', '0.0.0.0')
-    PORT = int(os.getenv('APP_PORT', '5000'))
+class Settings(BaseSettings):
+    FLASK_ENV: str = Field('production', alias='FLASK_ENV')
+    DEBUG: bool = Field(False, alias='FLASK_DEBUG')
+    HOST: str = Field('0.0.0.0', alias='APP_HOST')
+    PORT: int = Field(5000, alias='APP_PORT')
 
-    KAFKA_BROKER_URLS = os.getenv('KAFKA_BROKER_URLS', 'localhost:9092')
+    KAFKA_BROKER_URLS: str = Field('localhost:9092', alias='KAFKA_BROKER_URLS')
 
-    SECRET_KEY = os.getenv('SECRET_KEY', 'default-secret-key')
+    SECRET_KEY: str = Field('default-secret-key', alias='SECRET_KEY')
+
+    class Config:
+        env_file = '.env'
+        env_file_encoding = 'utf-8'
+        extra = Extra.ignore
+
+
+settings = Settings()

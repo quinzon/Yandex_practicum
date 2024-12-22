@@ -3,14 +3,14 @@ import time
 
 from aiokafka import AIOKafkaProducer
 
-from bigdata_service.src.config import Settings
+from bigdata_service.src.config import settings
 from bigdata_service.src.logging_config import logger
 
 
 class KafkaEventProducer:
     def __init__(self):
         self.producer = AIOKafkaProducer(
-            bootstrap_servers=Settings.KAFKA_BROKER_URLS,
+            bootstrap_servers=settings.KAFKA_BROKER_URLS,
             value_serializer=lambda v: json.dumps(v).encode('utf-8'),
             acks=1,
         )
