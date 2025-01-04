@@ -1,4 +1,5 @@
-version: '3.8'
+include:
+  - mongo-cluster-compose.yml
 
 x-common-variables: &common-variables
   networks:
@@ -117,6 +118,15 @@ services:
       postgres:
         condition: service_healthy
     <<: [ *common-variables ]
+
+  ugc_service:
+    build:
+      context: ./ugc_service
+      dockerfile: Dockerfile
+    image: ugc_service
+    command: [ "gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8003", "--reload" ]
+    env_file:
+      - ugc_service/.env
 
   nginx:
     image: nginx:latest
