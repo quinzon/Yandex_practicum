@@ -9,8 +9,12 @@ from bigdata_service.src.logging_config import logger
 from bigdata_service.src.routes import events_bp
 from bigdata_service.src.utils import ValidationError
 
+from sentry.sentry_client import SentryClient
+
 
 def create_app():
+
+    sentry_client = SentryClient()
     app = Flask(__name__)
     app.config.from_object(Settings)
 

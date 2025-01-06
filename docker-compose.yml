@@ -318,6 +318,19 @@ services:
         condition: service_healthy
     <<: [ *common-variables ]
 
+  sentry:
+    build:
+      context: ./sentry
+      dockerfile: Dockerfile
+    volumes:
+      - ./sentry:/opt/sentry  # Убедитесь, что папка с .env.sentry передается
+    networks:
+      - backend_network
+    env_file:
+      - ./sentry/.env.sentry  # Убедитесь, что путь правильный
+
+
+
 volumes:
   postgres-data:
   es-data:
