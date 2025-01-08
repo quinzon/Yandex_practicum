@@ -3,21 +3,23 @@ from http import HTTPStatus
 
 from ugc_service.src.core.utils import has_permission
 from ugc_service.src.models.documents import Bookmark
-from ugc_service.src.models.models import SearchRequest, PaginatedResponse, BookmarkResponse
+from ugc_service.src.models.models import SearchRequest, PaginatedResponse, BookmarkResponse, BookmarkRequest
 from ugc_service.src.services.bookmark import BookmarkService, get_bookmark_service
 
 router = APIRouter(dependencies=[Depends(has_permission)])
 
 
-@router.post('/bookmarks/', response_model=Bookmark)
+@router.post('/bookmarks', response_model=Bookmark)
 async def create_bookmark(
-        bookmark: Bookmark,
+        bookmark_request: BookmarkRequest,
+        user_id: str = Depends(has_permission),
         service: BookmarkService = Depends(get_bookmark_service)
 ):
+    bookmark = Bookmark(film_id=bookmark_request.film_id, user_id=user_id)
     return await service.create_bookmark(bookmark)
 
 
-@router.get('/bookmarks/{bookmark_id}/', response_model=Bookmark)
+@router.get('/bookmarks/{bookmark_id}', response_model=Bookmark)
 async def get_bookmark(
         bookmark_id: str,
         service: BookmarkService = Depends(get_bookmark_service)
@@ -28,7 +30,7 @@ async def get_bookmark(
     return bookmark
 
 
-@router.delete('/bookmarks/{bookmark_id}/', status_code=HTTPStatus.NO_CONTENT)
+@router.delete('/bookmarks/{bookmark_id}', status_code=HTTPStatus.NO_CONTENT)
 async def delete_bookmark(
         bookmark_id: str,
         service: BookmarkService = Depends(get_bookmark_service)
@@ -37,7 +39,7 @@ async def delete_bookmark(
     return {'message': 'Bookmark deleted successfully'}
 
 
-@router.post('/bookmarks/search/', response_model=PaginatedResponse[BookmarkResponse])
+@router.post('/bookmarks/search', response_model=PaginatedResponse[BookmarkResponse])
 async def search_bookmarks(
         request: SearchRequest,
         service: BookmarkService = Depends(get_bookmark_service)
