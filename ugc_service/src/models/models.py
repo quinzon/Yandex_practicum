@@ -45,6 +45,10 @@ class BookmarkResponse(BaseModel):
     timestamp: datetime
 
 
+class BookmarkRequest(BaseModel):
+    film_id: str
+
+
 class SearchRequest(BaseModel):
     filters: Optional[Dict[str, Any]] = None
     skip: int = 0

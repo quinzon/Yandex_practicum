@@ -10,7 +10,7 @@ from ugc_service.src.services.review import ReviewService, get_review_service
 router = APIRouter(dependencies=[Depends(has_permission)])
 
 
-@router.post('/reviews/search/', response_model=PaginatedResponse[ReviewResponse])
+@router.post('/reviews/search', response_model=PaginatedResponse[ReviewResponse])
 async def search_reviews(
         request: SearchRequest,
         service: ReviewService = Depends(get_review_service)
@@ -20,7 +20,7 @@ async def search_reviews(
     return await service.search_reviews(filters, request.skip, request.limit, sort_params)
 
 
-@router.post('/reviews/', response_model=Review)
+@router.post('/reviews', response_model=Review)
 async def create_review(
         review: Review,
         service: ReviewService = Depends(get_review_service)
@@ -28,7 +28,7 @@ async def create_review(
     return await service.create_review(review)
 
 
-@router.get('/reviews/{review_id}/', response_model=Review)
+@router.get('/reviews/{review_id}', response_model=Review)
 async def get_review(
         review_id: str,
         service: ReviewService = Depends(get_review_service)
@@ -39,7 +39,7 @@ async def get_review(
     return review
 
 
-@router.put('/reviews/{review_id}/', response_model=Review)
+@router.put('/reviews/{review_id}', response_model=Review)
 async def update_review(
         review_id: str,
         review: Review,
@@ -51,7 +51,7 @@ async def update_review(
     return updated_review
 
 
-@router.delete('/reviews/{review_id}/', status_code=HTTPStatus.NO_CONTENT)
+@router.delete('/reviews/{review_id}', status_code=HTTPStatus.NO_CONTENT)
 async def delete_review(
         review_id: str,
         service: ReviewService = Depends(get_review_service)

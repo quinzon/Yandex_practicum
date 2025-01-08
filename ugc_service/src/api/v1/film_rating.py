@@ -8,7 +8,7 @@ from ugc_service.src.services.film_rating import FilmRatingService, get_film_rat
 router = APIRouter(dependencies=[Depends(has_permission)])
 
 
-@router.post('/ratings/', response_model=FilmRating)
+@router.post('/ratings', response_model=FilmRating)
 async def create_rating(
         rating: FilmRating,
         service: FilmRatingService = Depends(get_film_rating_service)
@@ -16,7 +16,7 @@ async def create_rating(
     return await service.create_rating(rating)
 
 
-@router.get('/ratings/{rating_id}/', response_model=FilmRating)
+@router.get('/ratings/{rating_id}', response_model=FilmRating)
 async def get_rating(
         rating_id: str,
         service: FilmRatingService = Depends(get_film_rating_service)
@@ -27,7 +27,7 @@ async def get_rating(
     return rating
 
 
-@router.delete('/ratings/{rating_id}/', status_code=HTTPStatus.NO_CONTENT)
+@router.delete('/ratings/{rating_id}', status_code=HTTPStatus.NO_CONTENT)
 async def delete_rating(
         rating_id: str,
         service: FilmRatingService = Depends(get_film_rating_service)

@@ -13,7 +13,7 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl='token')
 def get_user_id(token: str) -> dict:
     payload_part = token.split('.')[1]
     payload_decoded = base64.urlsafe_b64decode(payload_part + '=' * (-len(payload_part) % 4))
-    return json.loads(payload_decoded).get('user_id', '')
+    return json.loads(payload_decoded).get('sub', '')
 
 
 async def has_permission(

@@ -11,7 +11,10 @@ class Bookmark(Document):
     class Settings:
         collection = 'bookmarks'
         indexes = [
-            [('user_id', 1), ('film_id', 1)],
+            {
+                'fields': [('user_id', 1), ('film_id', 1)],
+                'unique': True
+            }
         ]
 
 
@@ -27,7 +30,10 @@ class Review(Document):
     class Settings:
         collection = 'reviews'
         indexes = [
-            [('user_id', 1), ('film_id', 1)]
+            {
+                'fields': [('user_id', 1), ('film_id', 1)],
+                'unique': True
+            }
         ]
 
 
@@ -40,5 +46,8 @@ class FilmRating(Document):
     class Settings:
         collection = 'film_ratings'
         indexes = [
-            [('user_id', 1), ('film_id', 1)]
+            {
+                'fields': [('user_id', 1), ('film_id', 1)],
+                'unique': True
+            }
         ]
