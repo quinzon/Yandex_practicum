@@ -1,6 +1,5 @@
 from functools import lru_cache
 from typing import Optional
-from uuid import UUID
 
 from fastapi import Depends
 
@@ -15,16 +14,16 @@ class FilmRatingService:
     async def create_rating(self, rating: FilmRating) -> FilmRating:
         return await self.repository.create(rating)
 
-    async def get_rating(self, rating_id: UUID) -> Optional[FilmRating]:
+    async def get_rating(self, rating_id: str) -> Optional[FilmRating]:
         return await self.repository.get(rating_id)
 
-    async def update_rating(self, rating_id: UUID, rating: FilmRating) -> Optional[FilmRating]:
+    async def update_rating(self, rating_id: str, rating: FilmRating) -> Optional[FilmRating]:
         return await self.repository.update(rating_id, rating)
 
-    async def delete_rating(self, rating_id: UUID) -> None:
+    async def delete_rating(self, rating_id: str) -> None:
         await self.repository.delete(rating_id)
 
-    async def get_average_rating(self, film_id: UUID) -> float:
+    async def get_average_rating(self, film_id: str) -> float:
         return await self.repository.get_average_rating(film_id)
 
 

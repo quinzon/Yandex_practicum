@@ -1,11 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException
-from typing import List, Optional
-from uuid import UUID
 from http import HTTPStatus
 
 from ugc_service.src.core.utils import has_permission
 from ugc_service.src.models.documents import Bookmark
-from ugc_service.src.models.models import SearchRequest
+from ugc_service.src.models.models import SearchRequest, PaginatedResponse, BookmarkResponse
 from ugc_service.src.services.bookmark import BookmarkService, get_bookmark_service
 
 router = APIRouter(dependencies=[Depends(has_permission)])
@@ -21,7 +19,7 @@ async def create_bookmark(
 
 @router.get('/bookmarks/{bookmark_id}/', response_model=Bookmark)
 async def get_bookmark(
-        bookmark_id: UUID,
+        bookmark_id: str,
         service: BookmarkService = Depends(get_bookmark_service)
 ):
     bookmark = await service.get_bookmark(bookmark_id)
@@ -32,14 +30,14 @@ async def get_bookmark(
 
 @router.delete('/bookmarks/{bookmark_id}/', status_code=HTTPStatus.NO_CONTENT)
 async def delete_bookmark(
-        bookmark_id: UUID,
+        bookmark_id: str,
         service: BookmarkService = Depends(get_bookmark_service)
 ):
     await service.delete_bookmark(bookmark_id)
     return {'message': 'Bookmark deleted successfully'}
 
 
-@router.post('/bookmarks/search/', response_model=List[Bookmark])
+@router.post('/bookmarks/search/', response_model=PaginatedResponse[BookmarkResponse])
 async def search_bookmarks(
         request: SearchRequest,
         service: BookmarkService = Depends(get_bookmark_service)

@@ -1,6 +1,3 @@
-include:
-  - mongo-cluster-compose.yml
-
 x-common-variables: &common-variables
   networks:
     - backend_network
@@ -94,6 +91,9 @@ services:
       dockerfile: Dockerfile
     image: auth_service
     command: [ "sh", "-c", "alembic upgrade head && uvicorn src.main:app --host 0.0.0.0 --port 8001" ]
+    container_name: auth_service
+    ports:
+      - "8001:8001"
     env_file:
       - auth_service/.env
     depends_on:
@@ -108,7 +108,7 @@ services:
       context: ./admin_service
       dockerfile: Dockerfile
     image: admin_service
-    command: ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8002", "--reload"]
+    command: [ "gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8002", "--reload" ]
     volumes:
       - ./admin_service:/opt/admin_service
       - admin-static:/opt/admin_service/static
@@ -124,9 +124,19 @@ services:
       context: ./ugc_service
       dockerfile: Dockerfile
     image: ugc_service
-    command: [ "gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8003", "--reload" ]
+    ports:
+      - "8003:8003"
+    command: [ "uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8003", "--reload" ]
     env_file:
       - ugc_service/.env
+    depends_on:
+      mongo_init:
+        condition: service_completed_successfully
+      redis:
+        condition: service_started
+      auth_service:
+        condition: service_started
+    <<: [ *common-variables ]
 
   nginx:
     image: nginx:latest
@@ -142,6 +152,8 @@ services:
       auth_service:
         condition: service_started
       admin_service:
+        condition: service_started
+      ugc_service:
         condition: service_started
     <<: *common-variables
 
@@ -161,7 +173,7 @@ services:
       - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092,CONTROLLER://:9093,EXTERNAL://:9094
       - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://kafka-0:9092,EXTERNAL://127.0.0.1:9094
     healthcheck:
-      test: ["CMD-SHELL", "kafka-cluster.sh cluster-id --bootstrap-server kafka-0:9092 || exit 1"]
+      test: [ "CMD-SHELL", "kafka-cluster.sh cluster-id --bootstrap-server kafka-0:9092 || exit 1" ]
       interval: 5s
       timeout: 5s
       retries: 3
@@ -177,7 +189,7 @@ services:
       - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092,CONTROLLER://:9093,EXTERNAL://:9095
       - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://kafka-1:9092,EXTERNAL://127.0.0.1:9095
     healthcheck:
-      test: ["CMD-SHELL", "kafka-cluster.sh cluster-id --bootstrap-server kafka-1:9092 || exit 1"]
+      test: [ "CMD-SHELL", "kafka-cluster.sh cluster-id --bootstrap-server kafka-1:9092 || exit 1" ]
       interval: 5s
       timeout: 5s
       retries: 3
@@ -193,7 +205,7 @@ services:
       - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092,CONTROLLER://:9093,EXTERNAL://:9096
       - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://kafka-2:9092,EXTERNAL://127.0.0.1:9096
     healthcheck:
-      test: ["CMD-SHELL", "kafka-cluster.sh cluster-id --bootstrap-server kafka-2:9092 || exit 1"]
+      test: [ "CMD-SHELL", "kafka-cluster.sh cluster-id --bootstrap-server kafka-2:9092 || exit 1" ]
       interval: 5s
       timeout: 5s
       retries: 3
@@ -214,7 +226,7 @@ services:
       - ./bigdata_service/.env:/.env
     env_file:
       - .env
-    entrypoint: ["/bin/bash", "/entrypoint.sh"]
+    entrypoint: [ "/bin/bash", "/entrypoint.sh" ]
     <<: [ *common-variables ]
 
   kafka-ui:
@@ -328,6 +340,144 @@ services:
         condition: service_healthy
     <<: [ *common-variables ]
 
+  mongo_init:
+    container_name: mongo_init
+    image: mongo:latest
+    depends_on:
+      - mongos1
+      - mongos2
+    volumes:
+      - ./setup_mongo.sh:/docker-entrypoint-initdb.d/setup_mongo.sh:ro
+    command: [ "sh", "-c", "sleep 10 && /docker-entrypoint-initdb.d/setup_mongo.sh" ]
+    <<: [ *common-variables ]
+
+  mongors1n1:
+    container_name: mongors1n1
+    image: mongo
+    command: mongod --shardsvr --replSet mongors1 --dbpath /data/db --port 27017
+    expose:
+      - "27017"
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - mongo_data1:/data/db
+    <<: [ *common-variables ]
+
+  mongors1n2:
+    container_name: mongors1n2
+    image: mongo
+    command: mongod --shardsvr --replSet mongors1 --dbpath /data/db --port 27017
+    expose:
+      - "27017"
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - mongo_data2:/data/db
+    <<: [ *common-variables ]
+
+  mongors1n3:
+    container_name: mongors1n3
+    image: mongo
+    command: mongod --shardsvr --replSet mongors1 --dbpath /data/db --port 27017
+    expose:
+      - "27017"
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - mongo_data3:/data/db
+    <<: [ *common-variables ]
+
+  mongors2n1:
+    container_name: mongors2n1
+    image: mongo
+    command: mongod --shardsvr --replSet mongors2 --dbpath /data/db --port 27017
+    expose:
+      - "27017"
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - mongo_data4:/data/db
+    <<: [ *common-variables ]
+
+  mongors2n2:
+    container_name: mongors2n2
+    image: mongo
+    command: mongod --shardsvr --replSet mongors2 --dbpath /data/db --port 27017
+    expose:
+      - "27017"
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - mongo_data5:/data/db
+    <<: [ *common-variables ]
+
+  mongors2n3:
+    container_name: mongors2n3
+    image: mongo
+    command: mongod --shardsvr --replSet mongors2 --dbpath /data/db --port 27017
+    expose:
+      - "27017"
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - mongo_data6:/data/db
+    <<: [ *common-variables ]
+
+  mongocfg1:
+    container_name: mongocfg1
+    image: mongo
+    command: mongod --configsvr --replSet mongors1conf --dbpath /data/db --port 27017
+    expose:
+      - "27017"
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - mongo_config1:/data/db
+    <<: [ *common-variables ]
+
+  mongocfg2:
+    container_name: mongocfg2
+    image: mongo
+    command: mongod --configsvr --replSet mongors1conf --dbpath /data/db --port 27017
+    expose:
+      - "27017"
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - mongo_config2:/data/db
+    <<: [ *common-variables ]
+
+  mongocfg3:
+    container_name: mongocfg3
+    image: mongo
+    command: mongod --configsvr --replSet mongors1conf --dbpath /data/db --port 27017
+    expose:
+      - "27017"
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - mongo_config3:/data/db
+    <<: [ *common-variables ]
+
+  mongos1:
+    container_name: mongos1
+    image: mongo
+    depends_on:
+      - mongocfg1
+      - mongocfg2
+      - mongocfg3
+    command: mongos --configdb mongors1conf/mongocfg1:27017,mongocfg2:27017,mongocfg3:27017 --port 27017 --bind_ip_all
+    expose:
+      - "27017"
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+    <<: [ *common-variables ]
+
+  mongos2:
+    container_name: mongos2
+    image: mongo
+    depends_on:
+      - mongocfg1
+      - mongocfg2
+      - mongocfg3
+    command: mongos --configdb mongors1conf/mongocfg1:27017,mongocfg2:27017,mongocfg3:27017 --port 27017 --bind_ip_all
+    expose:
+      - "27017"
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+    <<: [ *common-variables ]
+
 volumes:
   postgres-data:
   es-data:
@@ -340,6 +490,15 @@ volumes:
   clickhouse-node2-data:
   clickhouse-node3-data:
   clickhouse-node4-data:
+  mongo_data1:
+  mongo_data2:
+  mongo_data3:
+  mongo_data4:
+  mongo_data5:
+  mongo_data6:
+  mongo_config1:
+  mongo_config2:
+  mongo_config3:
 
 networks:
   backend_network:

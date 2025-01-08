@@ -1,9 +1,8 @@
+from enum import Enum
 from typing import List, TypeVar, Generic, Optional, Dict, Any
 
 from pydantic import BaseModel, Field
-from uuid import UUID
 from datetime import datetime
-
 
 T = TypeVar('T')
 
@@ -14,14 +13,14 @@ class PaginatedResponse(BaseModel, Generic[T]):
 
 
 class FilmRatingResponse(BaseModel):
-    user_id: UUID
-    film_id: UUID
+    user_id: str
+    film_id: str
     rating: int = Field(..., ge=0, le=10)
     timestamp: datetime
 
 
 class FilmAggregatedRatingResponse(BaseModel):
-    film_id: UUID
+    film_id: str
     avg_rating: float
     likes_count: int
     dislikes_count: int
@@ -30,8 +29,8 @@ class FilmAggregatedRatingResponse(BaseModel):
 
 class ReviewResponse(BaseModel):
     id: str
-    user_id: UUID
-    film_id: UUID
+    user_id: str
+    film_id: str
     review_text: str
     rating: int = Field(..., ge=0, le=10)
     likes_count: int
@@ -41,8 +40,8 @@ class ReviewResponse(BaseModel):
 
 class BookmarkResponse(BaseModel):
     id: str
-    user_id: UUID
-    film_id: UUID
+    user_id: str
+    film_id: str
     timestamp: datetime
 
 
@@ -52,3 +51,12 @@ class SearchRequest(BaseModel):
     limit: int = 10
     sort_by: Optional[str] = None
     sort_order: int = 1
+
+
+class ReactionType(str, Enum):
+    like = "like"
+    dislike = "dislike"
+
+
+class ReactionRequest(BaseModel):
+    reaction: ReactionType

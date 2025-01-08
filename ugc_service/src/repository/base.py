@@ -1,7 +1,8 @@
 from typing import List, Optional, Dict, Any, TypeVar, Generic
-from uuid import UUID
 from beanie import Document, SortDirection
 from abc import ABC, abstractmethod
+
+from bson import ObjectId
 
 T = TypeVar('T', bound=Document)
 
@@ -15,21 +16,21 @@ class BaseRepository(Generic[T], ABC):
         await item.insert()
         return item
 
-    async def get(self, item_id: UUID) -> Optional[T]:
+    async def get(self, item_id: str) -> Optional[T]:
         model = self.get_model()
-        return await model.find_one({'_id': item_id})
+        return await model.find_one({'_id': ObjectId(item_id)})
 
-    async def update(self, item_id: UUID, item: T) -> Optional[T]:
+    async def update(self, item_id: str, item: T) -> Optional[T]:
         existing_item = await self.get(item_id)
         if not existing_item:
             return None
-        update_data = item.dict(exclude_unset=True)
+        update_data = item.model_dump(exclude_unset=True)
         for key, value in update_data.items():
             setattr(existing_item, key, value)
         await existing_item.save()
         return existing_item
 
-    async def delete(self, item_id: UUID) -> None:
+    async def delete(self, item_id: str) -> None:
         model = self.get_model()
         await model.find_one({'_id': item_id}).delete()
 
@@ -39,10 +40,10 @@ class BaseRepository(Generic[T], ABC):
             skip: int = 0,
             limit: int = 10,
             sort_by: Optional[Dict[str, int]] = None,
-    ) -> List[T]:
+    ) -> tuple[int, List[T]]:
         model = self.get_model()
         query = model.find(filters)
-
+        count = await model.count()
         if sort_by:
             sort_params = [
                 (field, SortDirection.ASCENDING if direction == 1 else SortDirection.DESCENDING)
@@ -50,4 +51,6 @@ class BaseRepository(Generic[T], ABC):
             ]
             query = query.sort(*sort_params)
 
-        return await query.skip(skip).limit(limit).to_list()
+        documents = await query.skip(skip).limit(limit).to_list()
+
+        return count, documents
