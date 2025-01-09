@@ -1,8 +1,8 @@
+from datetime import datetime
 from enum import Enum
 from typing import List, TypeVar, Generic, Optional, Dict, Any
 
 from pydantic import BaseModel, Field
-from datetime import datetime
 
 T = TypeVar('T')
 
@@ -19,12 +19,28 @@ class FilmRatingResponse(BaseModel):
     timestamp: datetime
 
 
+class FilmRatingCreate(BaseModel):
+    user_id: str
+    film_id: str
+    rating: int = Field(..., ge=0, le=10)
+
+
 class FilmAggregatedRatingResponse(BaseModel):
     film_id: str
     avg_rating: float
-    likes_count: int
-    dislikes_count: int
     total_ratings: int
+
+
+class ReviewCreate(BaseModel):
+    user_id: str
+    film_id: str
+    review_text: str = Field(..., max_length=500)
+    rating: int = Field(..., ge=0, le=10)
+
+
+class ReviewUpdate(BaseModel):
+    review_text: str = Field(..., max_length=500)
+    rating: int = Field(..., ge=0, le=10)
 
 
 class ReviewResponse(BaseModel):
@@ -32,7 +48,7 @@ class ReviewResponse(BaseModel):
     user_id: str
     film_id: str
     review_text: str
-    rating: int = Field(..., ge=0, le=10)
+    rating: int
     likes_count: int
     dislikes_count: int
     timestamp: datetime

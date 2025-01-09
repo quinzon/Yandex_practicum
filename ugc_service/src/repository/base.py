@@ -3,6 +3,9 @@ from beanie import Document, SortDirection
 from abc import ABC, abstractmethod
 
 from bson import ObjectId
+from pymongo.errors import DuplicateKeyError
+
+from ugc_service.src.core.exceptions import DuplicateException
 
 T = TypeVar('T', bound=Document)
 
@@ -13,8 +16,11 @@ class BaseRepository(Generic[T], ABC):
         pass
 
     async def create(self, item: T) -> T:
-        await item.insert()
-        return item
+        try:
+            await item.insert()
+            return item
+        except DuplicateKeyError as e:
+            raise DuplicateException('Duplicate key in MongoDB') from e
 
     async def get(self, item_id: str) -> Optional[T]:
         model = self.get_model()

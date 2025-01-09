@@ -18,12 +18,12 @@ async def init_mongo_and_shard():
 
     try:
         admin_db.command('enableSharding', settings.mongo_db)
-        logger.info(f'Sharding enabled for database {settings.mongo_db}')
+        logger.info('Sharding enabled for database %s', settings.mongo_db)
 
         for collection_name, shard_key in [
-            ('bookmarks', {'user_id': 'hashed'}),
-            ('film_ratings', {'film_id': 'hashed'}),
-            ('reviews', {'film_id': 'hashed'}),
+            ('bookmarks', {'user_id': 1, 'film_id': 1}),
+            ('film_ratings', {'user_id': 1, 'film_id': 1}),
+            ('reviews', {'user_id': 1, 'film_id': 1}),
         ]:
             admin_db.command(
                 'shardCollection',
@@ -31,6 +31,7 @@ async def init_mongo_and_shard():
                 key=shard_key
             )
             logger.info('Collection %s sharded successfully', collection_name)
+
 
     except Exception as e:
         logger.warning('Shard initialization error: %s', e)
