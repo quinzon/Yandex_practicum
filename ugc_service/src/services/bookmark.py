@@ -3,8 +3,9 @@ from typing import Optional, Dict, Any
 
 from fastapi import Depends
 
+from ugc_service.src.core.exceptions import DuplicateException
 from ugc_service.src.models.documents import Bookmark
-from ugc_service.src.models.models import PaginatedResponse, BookmarkResponse
+from ugc_service.src.models.models import PaginatedResponse, BookmarkResponse, BookmarkRequest
 from ugc_service.src.repository.bookmark import BookmarkRepository, get_bookmark_repository
 
 
@@ -12,11 +13,37 @@ class BookmarkService:
     def __init__(self, repository: BookmarkRepository):
         self.repository = repository
 
-    async def create_bookmark(self, bookmark: Bookmark) -> Bookmark:
-        return await self.repository.create(bookmark)
+    async def create_bookmark(self, bookmark_req: BookmarkRequest,
+                              user_id: str) -> BookmarkResponse:
+        bookmark_doc = Bookmark(
+            user_id=user_id,
+            film_id=bookmark_req.film_id
+        )
+        try:
+            bookmark_doc = await self.repository.create(bookmark_doc)
+        except Exception as e:
+            if 'duplicate key error' in str(e).lower():
+                raise DuplicateException('Bookmark already exists') from e
+            raise
 
-    async def get_bookmark(self, bookmark_id: str) -> Optional[Bookmark]:
-        return await self.repository.get(bookmark_id)
+        return BookmarkResponse(
+            id=str(bookmark_doc.id),
+            user_id=bookmark_doc.user_id,
+            film_id=bookmark_doc.film_id,
+            timestamp=bookmark_doc.timestamp
+        )
+
+    async def get_bookmark(self, bookmark_id: str) -> Optional[BookmarkResponse]:
+        bookmark_doc = await self.repository.get(bookmark_id)
+        if not bookmark_doc:
+            return None
+
+        return BookmarkResponse(
+            id=str(bookmark_doc.id),
+            user_id=bookmark_doc.user_id,
+            film_id=bookmark_doc.film_id,
+            timestamp=bookmark_doc.timestamp
+        )
 
     async def delete_bookmark(self, bookmark_id: str) -> None:
         await self.repository.delete(bookmark_id)
