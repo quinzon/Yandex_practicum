@@ -1,0 +1,8 @@
+fastapi[standard]==0.112.2
+pydantic==2.8.2
+uvicorn[standard]==0.30.6
+pydantic-settings==2.4.0
+orjson==3.10.7
+beanie==1.28.0
+motor==3.6.0
+httpx==0.28.1

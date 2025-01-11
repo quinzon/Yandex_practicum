@@ -19,16 +19,16 @@ def create_superuser_in_db(email: str, password: str, db_conn_str: str):
     cursor = conn.cursor(cursor_factory=DictCursor)
 
     try:
-        cursor.execute("SELECT id FROM auth.role WHERE name = %s", ('superuser',))
+        cursor.execute("SELECT id FROM auth.role WHERE name = %s", ('superadmin',))
         role = cursor.fetchone()
 
         if not role:
             cursor.execute(
                 "INSERT INTO auth.role (id, name) VALUES (gen_random_uuid(), %s) RETURNING id",
-                ('superuser',))
+                ('superadmin',))
             role_id = cursor.fetchone()['id']
             conn.commit()
-            typer.echo(f"Role 'superuser' created with id {role_id}")
+            typer.echo(f"Role 'superadmin' created with id {role_id}")
         else:
             role_id = role['id']
 
