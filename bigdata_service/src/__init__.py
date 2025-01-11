@@ -1,3 +1,4 @@
+import sys
 from http import HTTPStatus
 
 from asgiref.wsgi import WsgiToAsgi
@@ -9,6 +10,7 @@ from bigdata_service.src.logging_config import logger
 from bigdata_service.src.routes import events_bp
 from bigdata_service.src.utils import ValidationError
 
+sys.path.append('/opt/sentry')
 from sentry.sentry_client import SentryClient
 
 

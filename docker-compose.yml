@@ -127,8 +127,12 @@ services:
     command: [ "uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8003", "--reload" ]
     env_file:
       - ugc_service/.env
+    volumes:
+      - sentry-data:/opt/sentry
     depends_on:
       mongo_init:
+        condition: service_completed_successfully
+      sentry:
         condition: service_completed_successfully
       redis:
         condition: service_started
@@ -242,6 +246,8 @@ services:
       dockerfile: Dockerfile
     env_file:
       - bigdata_service/.env
+    volumes:
+      - sentry-data:/opt/sentry
     depends_on:
       kafka-init:
         condition: service_completed_successfully
@@ -485,6 +491,7 @@ services:
       dockerfile: Dockerfile
     volumes:
       - ./sentry:/opt/sentry
+      - sentry-data:/opt/sentry
     networks:
       - backend_network
     env_file:
@@ -511,6 +518,7 @@ volumes:
   mongo_config1:
   mongo_config2:
   mongo_config3:
+  sentry-data:
 
 networks:
   backend_network:
