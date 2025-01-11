@@ -32,7 +32,7 @@ echo "Starting MongoDB cluster setup..."
 wait_for_mongo "mongocfg1"
 wait_for_mongo "mongocfg2"
 wait_for_mongo "mongocfg3"
-wait_for_mongo "mongos1"
+
 
 sleep 2
 
