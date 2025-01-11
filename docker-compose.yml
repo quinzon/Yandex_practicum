@@ -245,6 +245,8 @@ services:
     depends_on:
       kafka-init:
         condition: service_completed_successfully
+      sentry:
+        condition: service_completed_successfully
     <<: [ *common-variables ]
 
   zookeeper:
@@ -475,6 +477,18 @@ services:
     volumes:
       - /etc/localtime:/etc/localtime:ro
     <<: [ *common-variables ]
+
+
+  sentry:
+    build:
+      context: ./sentry
+      dockerfile: Dockerfile
+    volumes:
+      - ./sentry:/opt/sentry
+    networks:
+      - backend_network
+    env_file:
+      - ./sentry/.env.sentry
 
 volumes:
   postgres-data:

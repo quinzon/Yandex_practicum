@@ -29,5 +29,6 @@ docker-compose.test.override.yml
 .*.sw?
 .cache
 etl/.env.etl
+sentry/.env.sentry
 # macOS
 .DS_Store
