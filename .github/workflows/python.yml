@@ -26,12 +26,12 @@ jobs:
       - name: Install Dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install wemake-python-styleguide mypy pylint-report
+          pip install wemake-python-styleguide mypy pylint pylint-html
 
       - name: Run Linter
         run: |
-          pylint --output-format=pylint_report ./src > pylint_report.json
-          pylint_report.py pylint_report.json -o reports/lint_report.html
+          mkdir -p reports
+          pylint --output-format=html ./src > reports/lint_report.html
 
       - name: Run MyPy
         run: mypy ./src
@@ -40,4 +40,4 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: lint-report
-          path: reports/
+          path: reports/lint_report.html
