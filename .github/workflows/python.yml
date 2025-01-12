@@ -26,6 +26,10 @@ jobs:
           pip install --upgrade pip
           pip install wemake-python-styleguide flake8 flake8-html --verbose
 
+      - name: Create report directory
+        run: |
+          mkdir -p flake-report
+
       - name: Run flake8 and generate HTML report
         run: |
           flake8 . --format=html --htmldir=flake-report
