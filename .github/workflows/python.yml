@@ -25,23 +25,17 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          echo "Upgrading pip"
           python -m pip install --upgrade pip
-          echo "Installing dependencies"
-          pip install wemake-python-styleguide mypy pylint-html
-          echo "Dependencies installed"
+          pip install --no-cache-dir wemake-python-styleguide mypy pylint-html
 
       - name: Run Linter
         run: |
-          echo "Running linter"
           pylint --output-format=html --reports=your_html_report_dir ./src
           mkdir -p reports
           mv your_html_report_dir/* reports/
 
       - name: Run MyPy
-        run: |
-          echo "Running MyPy"
-          mypy ./src
+        run: mypy ./src
 
       - name: Upload Linter HTML Report
         uses: actions/upload-artifact@v3
