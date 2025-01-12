@@ -24,7 +24,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install --upgrade pip
-          pip install wemake-python-styleguide flake8 flake8-html --verbose
+          pip install wemake-python-styleguide flake8 flake8-html mypy --verbose
 
       - name: Create report directory
         run: |
@@ -34,9 +34,12 @@ jobs:
         run: |
           flake8 . --config=setup.cfg --format=html --htmldir=flake-report || true
 
-
       - name: Upload HTML report as artifact
         uses: actions/upload-artifact@v4
         with:
           name: flake-report
           path: flake-report/
+
+      - name: Run mypy type check
+        run: |
+          mypy .
