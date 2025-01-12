@@ -23,6 +23,7 @@ jobs:
 
       - name: Install dependencies
         run: |
+          pip install --upgrade pip
           pip install wemake-python-styleguide flake8 flake8-html --verbose
 
       - name: Run flake8 and generate HTML report
