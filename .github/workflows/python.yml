@@ -1,46 +1,34 @@
 name: Python CI
 
 on:
+  push:
+    branches: [main]
   pull_request:
-    branches:
-      - main
+    branches: [main]
 
 jobs:
-  lint-and-typecheck:
-    name: Lint and Type Check
-    runs-on: ubuntu-20.04
-
+  lint:
+    runs-on: ubuntu-latest
     strategy:
       matrix:
         python-version: [3.10, 3.11, 3.12]
-
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v2
 
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v4
+      - name: Set up Python
+        uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Install Dependencies
+      - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip
-          pip install flake8 wemake-python-styleguide mypy
+          pip install wemake-python-styleguide mypy
 
-      - name: Verify wemake-python-styleguide installation
+      - name: Run wemake-python-styleguide
         run: |
-          pip show wemake-python-styleguide
+          wemake-python-styleguide .
 
-      - name: Check Python environment
-        run: |
-          python --version
-          which python
-
-      - name: Run Linter
-        run: |
-          flake8 . --select=WPS --max-line-length 120
-
-      - name: Run mypy for type checking
+      - name: Run mypy type check
         run: |
           mypy .
