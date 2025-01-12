@@ -32,6 +32,11 @@ jobs:
         run: |
           pip show wemake-python-styleguide
 
+      - name: Check Python environment
+        run: |
+          python --version
+          which python
+
       - name: Run Linter
         run: |
           python -m wemake_python_styleguide --max-line-length 120
