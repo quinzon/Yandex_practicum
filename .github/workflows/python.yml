@@ -26,18 +26,13 @@ jobs:
       - name: Install Dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install wemake-python-styleguide mypy pylint pylint-html
+          pip install -r requirements.txt
+          pip install wemake-python-styleguide mypy
 
       - name: Run Linter
         run: |
-          mkdir -p reports
-          pylint --output-format=html ./src > reports/lint_report.html
+          wemake-python-styleguide --ignore <list_of_ignored_checks>
 
-      - name: Run MyPy
-        run: mypy ./src
-
-      - name: Upload Linter HTML Report
-        uses: actions/upload-artifact@v3
-        with:
-          name: lint-report
-          path: reports/lint_report.html
+      - name: Run mypy for type checking
+        run: |
+          mypy .
