@@ -23,8 +23,14 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install wemake-python-styleguide flake8
+          pip install wemake-python-styleguide flake8 flake8-html
 
-      - name: Run flake8 with wemake-python-styleguide
+      - name: Run flake8 and generate HTML report
         run: |
-          flake8 --select=WPS --max-line-length=120 .
+          flake8 . --format=html --htmldir=flake8_report
+
+      - name: Upload HTML report as artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: flake8-report
+          path: flake8_report/
