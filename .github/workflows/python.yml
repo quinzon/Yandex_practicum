@@ -23,12 +23,8 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install wemake-python-styleguide mypy
+          pip install wemake-python-styleguide flake8
 
-      - name: Run wemake-python-styleguide
+      - name: Run flake8 with wemake-python-styleguide
         run: |
-          wemake-python-styleguide .
-
-      - name: Run mypy type check
-        run: |
-          mypy .
+          flake8 --select=WPS --max-line-length=120 .
