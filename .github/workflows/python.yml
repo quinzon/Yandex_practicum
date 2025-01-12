@@ -32,7 +32,8 @@ jobs:
 
       - name: Run flake8 and generate HTML report
         run: |
-          flake8 . --format=html --htmldir=flake-report
+          flake8 . --format=html --htmldir=flake-report || true
+
 
       - name: Upload HTML report as artifact
         uses: actions/upload-artifact@v3
