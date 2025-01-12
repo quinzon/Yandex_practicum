@@ -26,7 +26,7 @@ jobs:
       - name: Install Dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install wemake-python-styleguide mypy
+          pip install flake8 wemake-python-styleguide mypy
 
       - name: Verify wemake-python-styleguide installation
         run: |
