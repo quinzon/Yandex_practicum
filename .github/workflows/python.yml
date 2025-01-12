@@ -39,7 +39,7 @@ jobs:
 
       - name: Run Linter
         run: |
-          python -m wemake_python_styleguide --max-line-length 120
+          flake8 . --select=WPS --max-line-length 120
 
       - name: Run mypy for type checking
         run: |
