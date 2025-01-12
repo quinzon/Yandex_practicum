@@ -30,7 +30,7 @@ jobs:
 
       - name: Run Linter
         run: |
-          wemake-python-styleguide --ignore <list_of_ignored_checks>
+          wemake-python-styleguide --max-line-length 120
 
       - name: Run mypy for type checking
         run: |
