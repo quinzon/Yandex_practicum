@@ -26,7 +26,6 @@ jobs:
       - name: Install Dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
           pip install wemake-python-styleguide mypy
 
       - name: Run Linter
