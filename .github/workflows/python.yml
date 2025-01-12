@@ -12,7 +12,7 @@ jobs:
 
     strategy:
       matrix:
-        python-version: [3.10.12, 3.11, 3.12]
+        python-version: [3.10, 3.11, 3.12]
 
     steps:
       - name: Checkout Code
@@ -28,9 +28,13 @@ jobs:
           python -m pip install --upgrade pip
           pip install wemake-python-styleguide mypy
 
+      - name: Verify wemake-python-styleguide installation
+        run: |
+          pip show wemake-python-styleguide
+
       - name: Run Linter
         run: |
-          wemake-python-styleguide --max-line-length 120
+          python -m wemake_python_styleguide --max-line-length 120
 
       - name: Run mypy for type checking
         run: |
