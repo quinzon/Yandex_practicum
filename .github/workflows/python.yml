@@ -50,7 +50,9 @@ jobs:
       - name: Get artifact download URL
         id: get_artifact_url
         run: |
-          ARTIFACT_URL="https://github.com/${{ github.repository }}/actions/artifacts/${{ steps.upload_artifact.outputs.artifact_id }}"
+          ARTIFACT_ID="${{ steps.upload_artifact.outputs.artifact_id }}"
+          RUN_ID="${{ github.run_id }}"
+          ARTIFACT_URL="https://github.com/${{ github.repository }}/actions/runs/${RUN_ID}/artifacts/${ARTIFACT_ID}"
           echo "artifact_url=${ARTIFACT_URL}" >> $GITHUB_ENV
 
       - name: Send Telegram notification
@@ -62,7 +64,7 @@ jobs:
               MESSAGE+="flake8 - success\n"
           else
               MESSAGE+="flake8 - failed\n"
-              MESSAGE+="\nArtifact download URL: [Download here](${{ env.artifact_url }})"
+              MESSAGE+="[Artifact download here](${{ env.artifact_url }})\n"
           fi
           
           if [[ "${{ env.mypy_success }}" == "true" ]]; then
