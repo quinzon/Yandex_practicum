@@ -58,24 +58,25 @@ jobs:
       - name: Send Telegram notification
         if: always()
         run: |
-          MESSAGE="Python CI for version ${{ matrix.python-version }}:  "
+          MESSAGE="Python CI for version ${{ matrix.python-version }}:\n\n"
           
           if [[ "${{ steps.flake8_check.outcome }}" == "failure" ]]; then
-            MESSAGE+="    flake8 - failed  "
+              MESSAGE+="flake8 - failed\n"
           else
-            MESSAGE+="    flake8 - success  "
+              MESSAGE+="flake8 - success\n"
           fi
-
+          
           if [[ "${{ steps.mypy_check.outcome }}" == "failure" ]]; then
-            MESSAGE+="    mypy - failed  "
+              MESSAGE+="mypy - failed\n"
           else
-            MESSAGE+="    mypy - success  "
+              MESSAGE+="mypy - success\n"
           fi
-
+          
           curl -s -X POST https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage \
                -d chat_id=${{ secrets.TELEGRAM_BOT_CHAT_ID }} \
                -d text="$MESSAGE" \
                -d parse_mode="Markdown"
+
 
       - name: Exit with code from previous checks
         run: exit ${{ env.exit_code }}
