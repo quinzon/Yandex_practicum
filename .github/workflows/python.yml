@@ -33,7 +33,7 @@ jobs:
       - name: Run flake8 and generate HTML report
         id: flake8_check
         run: |
-          flake8 . --config=setup.cfg --format=html --htmldir=flake-report || echo "flake8_failed=true" >> $GITHUB_ENV
+          flake8 . --config=setup.cfg --format=html --htmldir=flake-report && echo "flake8_success=true" >> $GITHUB_ENV || echo "flake8 failed"
 
       - name: Upload HTML report as artifact
         uses: actions/upload-artifact@v4
@@ -44,23 +44,23 @@ jobs:
       - name: Run mypy type check
         id: mypy_check
         run: |
-          mypy . || echo "mypy_failed=true" >> $GITHUB_ENV
+          mypy . && echo "mypy_success=true" >> $GITHUB_ENV || echo "mypy failed"
 
       - name: Send Telegram notification
         if: always()
         run: |
           MESSAGE="Python CI for version ${{ matrix.python-version }}:\n\n"
           
-          if [[ "${{ env.flake8_failed }}" == "true" ]]; then
-              MESSAGE+="flake8 - failed\n"
-          else
+          if [[ "${{ env.flake8_success }}" == "true" ]]; then
               MESSAGE+="flake8 - success\n"
+          else
+              MESSAGE+="flake8 - failed\n"
           fi
           
-          if [[ "${{ env.mypy_failed }}" == "true" ]]; then
-              MESSAGE+="mypy - failed\n"
-          else
+          if [[ "${{ env.mypy_success }}" == "true" ]]; then
               MESSAGE+="mypy - success\n"
+          else
+              MESSAGE+="mypy - failed\n"
           fi
 
           curl -s -X POST https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage \
@@ -70,6 +70,8 @@ jobs:
 
       - name: Exit with code from previous checks
         run: |
-          if [[ "${{ env.flake8_failed }}" == "true" || "${{ env.mypy_failed }}" == "true" ]]; then
+          if [[ "${{ env.flake8_success }}" == "true" && "${{ env.mypy_success }}" == "true" ]]; then
+            exit 0
+          else
             exit 1
           fi
