@@ -46,6 +46,15 @@ jobs:
         run: |
           mypy . || echo "mypy failed"
 
+      - name: Set exit code based on checks
+        id: set_exit_code
+        run: |
+          if [[ "${{ steps.flake8_check.outcome }}" == "failure" || "${{ steps.mypy_check.outcome }}" == "failure" ]]; then
+            echo "exit_code=1" >> $GITHUB_ENV
+          else
+            echo "exit_code=0" >> $GITHUB_ENV
+          fi
+
       - name: Send Telegram notification
         if: always()
         run: |
@@ -59,6 +68,13 @@ jobs:
             MESSAGE="Python CI for version ${{ matrix.python-version }} failed during mypy check."
           fi
 
+          if [[ "${{ steps.flake8_check.outcome }}" == "success" && "${{ steps.mypy_check.outcome }}" == "success" ]]; then
+            MESSAGE="Python CI for version ${{ matrix.python-version }} completed successfully."
+          fi
+
           curl -s -X POST https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage \
                -d chat_id=${{ secrets.TELEGRAM_BOT_CHAT_ID }} \
                -d text="$MESSAGE"
+
+      - name: Exit with code from previous checks
+        run: exit ${{ env.exit_code }}
