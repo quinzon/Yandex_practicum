@@ -19,4 +19,5 @@ RUN pip install --upgrade pip && \
 
 COPY . .
 
+
 CMD ["sh", "-c", "cp -r /opt/sentry /opt/ugc_service/src/sentry && uvicorn src.main:app --host 0.0.0.0 --port 8003"]

@@ -485,6 +485,7 @@ services:
     <<: [ *common-variables ]
 
 
+
   sentry:
     build:
       context: ./sentry
@@ -496,6 +497,7 @@ services:
       - backend_network
     env_file:
       - ./sentry/.env.sentry
+
 
 volumes:
   postgres-data:
@@ -519,6 +521,7 @@ volumes:
   mongo_config2:
   mongo_config3:
   sentry-data:
+
 
 networks:
   backend_network:
