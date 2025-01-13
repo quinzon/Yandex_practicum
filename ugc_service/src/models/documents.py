@@ -3,6 +3,7 @@ from beanie import Document
 from pydantic import Field
 from pymongo import ASCENDING, IndexModel
 
+
 class Bookmark(Document):
     user_id: str
     film_id: str
@@ -16,6 +17,7 @@ class Bookmark(Document):
                 unique=True
             )
         ]
+
 
 class Review(Document):
     user_id: str
@@ -34,6 +36,7 @@ class Review(Document):
                 unique=True
             )
         ]
+
 
 class FilmRating(Document):
     user_id: str

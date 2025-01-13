@@ -1,4 +1,4 @@
-from typing import List, Optional, Dict, Any, TypeVar, Generic
+from typing import List, Optional, Dict, Any, TypeVar, Generic, Type
 from beanie import Document, SortDirection
 from abc import ABC, abstractmethod
 
@@ -12,7 +12,7 @@ T = TypeVar('T', bound=Document)
 
 class BaseRepository(Generic[T], ABC):
     @abstractmethod
-    def get_model(self) -> T:
+    def get_model(self) -> Type[T]:
         pass
 
     async def create(self, item: T) -> T:

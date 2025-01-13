@@ -26,8 +26,7 @@ class ErrorMessages:
 
 
 class ValidationError(Exception):
-    def __init__(self, message):
-        super().__init__(message)
+    pass
 
 
 def get_token_payload(token: str) -> dict:
@@ -48,8 +47,9 @@ def validate_request(headers: Headers, json_data: dict) -> tuple:
     token_payload = get_token_payload(token)
     user_id = token_payload.get('sub', 'unknown_user')
 
-    if (not json_data or RequiredFields.EVENT_TYPE not in json_data
-            or RequiredFields.PAYLOAD not in json_data):
+    if (not json_data or
+            RequiredFields.EVENT_TYPE not in json_data or
+            RequiredFields.PAYLOAD not in json_data):
         raise ValidationError(ErrorMessages.ERROR_INVALID_PAYLOAD)
 
     return user_id, json_data

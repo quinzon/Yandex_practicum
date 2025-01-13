@@ -20,21 +20,22 @@ class FilmRatingRepository(BaseRepository[FilmRating]):
                 }
             }
         ]
-        result = await FilmRating.aggregate(pipeline).to_list()
+        aggregate_result = await FilmRating.aggregate(pipeline).to_list()
 
-        if not result:
+        if not aggregate_result:
             return FilmAggregatedRatingResponse(
                 film_id=film_id,
                 avg_rating=0.0,
                 total_ratings=0,
             )
 
-        doc = result[0]
+        doc = aggregate_result[0]
         return FilmAggregatedRatingResponse(
             film_id=film_id,
             avg_rating=doc['avg_rating'],
             total_ratings=doc['total_ratings'],
         )
+
 
 @lru_cache()
 def get_film_rating_repository() -> FilmRatingRepository:

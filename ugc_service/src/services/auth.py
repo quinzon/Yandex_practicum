@@ -15,10 +15,10 @@ class AuthServiceClient:
 
     async def check_permission(self, token: str, resource: str, http_method: str, headers: Headers) -> bool:
         headers = {'Authorization': f'Bearer {token}', 'X-Request-Id': headers.get('X-Request-Id', str(uuid.uuid4()))}
-        params = {'resource': resource, 'http_method': http_method}
+        query_params = {'resource': resource, 'http_method': http_method}
 
         async with httpx.AsyncClient() as client:
-            response = await client.get(self.service_url, headers=headers, params=params)
+            response = await client.get(self.service_url, headers=headers, params=query_params)
 
             if response.status_code == HTTPStatus.OK:
                 return True
