@@ -12,7 +12,9 @@ events_bp = Blueprint('events', __name__)
 def before_request_validation():
     headers = request.headers
     json_data = request.get_json(silent=True)
-    request.user_id, request.event_data = validate_request(headers, json_data)
+    user_id, event_data = validate_request(headers, json_data)
+    request.user_id = user_id
+    request.event_data = event_data
 
 
 @events_bp.route('/events', methods=['POST'])
@@ -21,5 +23,5 @@ async def handle_events():
     payload = request.event_data['payload']
     user_id = request.user_id
 
-    result = await process_event(event_type, user_id, payload)
-    return jsonify(result), HTTPStatus.OK
+    event_processing_result = await process_event(event_type, user_id, payload)  # Renamed variable
+    return jsonify(event_processing_result), HTTPStatus.OK
