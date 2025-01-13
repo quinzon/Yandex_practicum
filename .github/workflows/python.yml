@@ -33,7 +33,7 @@ jobs:
       - name: Run flake8 and generate HTML report
         id: flake8_check
         run: |
-          flake8 . --config=setup.cfg --format=html --htmldir=flake-report
+          flake8 . --config=setup.cfg --format=html --htmldir=flake-report || echo "flake8 failed"
 
       - name: Upload HTML report as artifact
         uses: actions/upload-artifact@v4
@@ -44,7 +44,7 @@ jobs:
       - name: Run mypy type check
         id: mypy_check
         run: |
-          mypy .
+          mypy . || echo "mypy failed"
 
       - name: Set exit code based on checks
         id: set_exit_code
