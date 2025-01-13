@@ -36,7 +36,6 @@ jobs:
           flake8 . --config=setup.cfg --format=html --htmldir=flake-report && echo "flake8_success=true" >> $GITHUB_ENV || echo "flake8 failed"
 
       - name: Upload HTML report as artifact
-        id: upload_artifact
         uses: actions/upload-artifact@v4
         with:
           name: flake-report-${{ matrix.python-version }}
@@ -47,14 +46,6 @@ jobs:
         run: |
           mypy . && echo "mypy_success=true" >> $GITHUB_ENV || echo "mypy failed"
 
-      - name: Get artifact download URL
-        id: get_artifact_url
-        run: |
-          ARTIFACT_ID="${{ steps.upload_artifact.outputs.artifact_id }}"
-          RUN_ID="${{ github.run_id }}"
-          ARTIFACT_URL="https://github.com/${{ github.repository }}/actions/runs/${RUN_ID}/artifacts/${ARTIFACT_ID}"
-          echo "artifact_url=${ARTIFACT_URL}" >> $GITHUB_ENV
-
       - name: Send Telegram notification
         if: always()
         run: |
@@ -64,7 +55,6 @@ jobs:
               MESSAGE+="flake8 - success\n"
           else
               MESSAGE+="flake8 - failed\n"
-              MESSAGE+="[Artifact download here](${{ env.artifact_url }})\n"
           fi
           
           if [[ "${{ env.mypy_success }}" == "true" ]]; then
