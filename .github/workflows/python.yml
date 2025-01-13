@@ -32,7 +32,7 @@ jobs:
 
       - name: Run flake8 and generate HTML report
         run: |
-          flake8 . --config=setup.cfg --format=html --htmldir=flake-report || true
+          flake8 . --config=setup.cfg --format=html --htmldir=flake-report-${{ matrix.python-version }} || true
 
       - name: Upload HTML report as artifact
         uses: actions/upload-artifact@v4
