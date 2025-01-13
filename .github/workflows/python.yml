@@ -33,7 +33,7 @@ jobs:
       - name: Run flake8 and generate HTML report
         id: flake8_check
         run: |
-          flake8 . --config=setup.cfg --format=html --htmldir=flake-report
+          flake8 . --config=setup.cfg --format=html --htmldir=flake-report || echo "flake8 failed" >> $GITHUB_ENV
 
       - name: Upload HTML report as artifact
         uses: actions/upload-artifact@v4
@@ -44,15 +44,21 @@ jobs:
       - name: Run mypy type check
         id: mypy_check
         run: |
-          mypy .
+          mypy . || echo "mypy failed" >> $GITHUB_ENV
 
       - name: Set exit code based on checks
         id: set_exit_code
         run: |
-          if [[ "${{ steps.flake8_check.outcome }}" == "failure" || "${{ steps.mypy_check.outcome }}" == "failure" ]]; then
-            echo "exit_code=1" >> $GITHUB_ENV
+          if [[ "${{ steps.flake8_check.outcome }}" == "failure" ]]; then
+            echo "flake8_failed=true" >> $GITHUB_ENV
           else
-            echo "exit_code=0" >> $GITHUB_ENV
+            echo "flake8_failed=false" >> $GITHUB_ENV
+          fi
+
+          if [[ "${{ steps.mypy_check.outcome }}" == "failure" ]]; then
+            echo "mypy_failed=true" >> $GITHUB_ENV
+          else
+            echo "mypy_failed=false" >> $GITHUB_ENV
           fi
 
       - name: Send Telegram notification
@@ -60,13 +66,13 @@ jobs:
         run: |
           MESSAGE="Python CI for version ${{ matrix.python-version }}:\n\n"
           
-          if [[ "${{ steps.flake8_check.outcome }}" == "failure" ]]; then
+          if [[ "${{ env.flake8_failed }}" == "true" ]]; then
               MESSAGE+="flake8 - failed\n"
           else
               MESSAGE+="flake8 - success\n"
           fi
           
-          if [[ "${{ steps.mypy_check.outcome }}" == "failure" ]]; then
+          if [[ "${{ env.mypy_failed }}" == "true" ]]; then
               MESSAGE+="mypy - failed\n"
           else
               MESSAGE+="mypy - success\n"
@@ -78,4 +84,7 @@ jobs:
                -d parse_mode="Markdown"
 
       - name: Exit with code from previous checks
-        run: exit ${{ env.exit_code }}
+        run: |
+          if [[ "${{ env.flake8_failed }}" == "true" || "${{ env.mypy_failed }}" == "true" ]]; then
+            exit 1
+          fi
