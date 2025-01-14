@@ -57,7 +57,7 @@ class BookmarkService:
     ) -> PaginatedResponse[BookmarkResponse]:
         count, bookmarks = await self.repository.find(filters, skip, limit, sort_by)
 
-        items = [
+        bookmark_responses = [
             BookmarkResponse(
                 id=str(bookmark.id),
                 user_id=bookmark.user_id,
@@ -67,7 +67,7 @@ class BookmarkService:
             for bookmark in bookmarks
         ]
 
-        return PaginatedResponse(total=count, items=items)
+        return PaginatedResponse(total=count, items=bookmark_responses)
 
 
 @lru_cache()

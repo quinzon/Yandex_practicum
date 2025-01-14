@@ -1,5 +1,7 @@
 import json
 import time
+import logging
+
 from abstract_consumer import AbstractTopicConsumer
 
 
@@ -26,7 +28,7 @@ class VideoPageViewsConsumer(AbstractTopicConsumer):
             }
 
         except json.JSONDecodeError:
-            print(f'Error decoding JSON message: {message_value}')
+            logging.error(f'Error decoding JSON message: {message_value}')
             return None
 
     def create_table_query(self):

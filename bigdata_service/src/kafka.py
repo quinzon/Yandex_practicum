@@ -7,11 +7,15 @@ from bigdata_service.src.config import settings
 from bigdata_service.src.logging_config import logger
 
 
+def json_serializer(value: dict) -> bytes:
+    return json.dumps(value).encode('utf-8')
+
+
 class KafkaEventProducer:
     def __init__(self):
         self.producer = AIOKafkaProducer(
-            bootstrap_servers=settings.KAFKA_BROKER_URLS,
-            value_serializer=lambda v: json.dumps(v).encode('utf-8'),
+            bootstrap_servers=settings.kafka_broker_urls,
+            value_serializer=json_serializer,
             acks=1,
         )
         self.is_started = False
@@ -38,8 +42,8 @@ class KafkaEventProducer:
             'payload': payload,
         }
 
+        logger.info('Sending event | topic=%s, user_id=%s', topic, user_id)
         try:
-            logger.info('Sending event | topic=%s, user_id=%s', topic, user_id)
             await self.producer.send(topic, key=key, value=event_data)
             logger.info('Event successfully sent | topic=%s', topic)
         except Exception as e:
