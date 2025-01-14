@@ -14,7 +14,7 @@ from sentry.sentry_client import SentryClient
 def create_app():
 
     sentry_client = SentryClient()
-    print(sentry_client)
+    logger.info(f"Sentry client initialized: {sentry_client}")
     app = Flask(__name__)
     app.config.from_object(Settings)
 
