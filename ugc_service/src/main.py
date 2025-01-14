@@ -11,8 +11,8 @@ from ugc_service.src.core.mongo import mongo_client
 from ugc_service.src.setup_mongo import init_mongo_and_shard
 
 
-
 sentry_client = SentryClient()
+
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
