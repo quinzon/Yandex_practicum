@@ -127,6 +127,10 @@ services:
     command: [ "uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8003", "--reload" ]
     env_file:
       - ugc_service/.env
+    #logging:
+    #  driver: gelf
+    #  options:
+    #    gelf-address: "udp://logstash:5044"
     volumes:
       - sentry-data:/opt/sentry
     depends_on:
@@ -138,6 +142,8 @@ services:
         condition: service_started
       auth_service:
         condition: service_started
+      #logstash:
+      #  condition: service_started
     <<: [ *common-variables ]
 
   nginx:
@@ -246,6 +252,10 @@ services:
       dockerfile: Dockerfile
     env_file:
       - bigdata_service/.env
+    #logging:
+    #  driver: gelf
+    #  options:
+    #    gelf-address: "udp://logstash:5044"
     volumes:
       - sentry-data:/opt/sentry
     depends_on:
@@ -253,6 +263,8 @@ services:
         condition: service_completed_successfully
       sentry:
         condition: service_completed_successfully
+      #logstash:
+      #  condition: service_started
     <<: [ *common-variables ]
 
   zookeeper:
@@ -497,6 +509,45 @@ services:
       - backend_network
     env_file:
       - ./sentry/.env.sentry
+
+
+  logstash:
+    image: logstash:8.10.2
+    depends_on:
+      - elk_elasticsearch
+    environment:
+      XPACK_MONITORING_ENABLED: "false"
+      ELK_ES_HOST: "elasticsearch:9201"
+    ports:
+      - "5044:5044/udp"
+    volumes:
+      - ./elk/logstash.conf:/config/logstash.conf:ro
+    command: logstash -f /config/logstash.conf
+
+
+  elk_elasticsearch:
+    image: elasticsearch:8.10.2
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - ES_JAVA_OPTS=-Xms1024m -Xmx1024m
+    ports:
+      - 9201:9200
+    volumes:
+      - ./elk/esdata:/usr/share/elasticsearch/data
+
+  kibana:
+    image: kibana:8.10.2
+    ports:
+      - "5601:5601"
+    depends_on:
+      - elk_elasticsearch
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9201
+    #deploy:
+    #  resources:
+    #    limits:
+    #      memory: 512M
 
 
 volumes:
