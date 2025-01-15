@@ -516,13 +516,16 @@ services:
     depends_on:
       - elk_elasticsearch
     environment:
-      XPACK_MONITORING_ENABLED: "false"
-      ELK_ES_HOST: "elasticsearch:9201"
+      - "XPACK_MONITORING_ENABLED:false"
+      - "ELK_ES_HOST:elk_elasticsearch:9200"
+      - "LS_JAVA_OPTS=-Xmx512m -Xms512m"
     ports:
       - "5044:5044/udp"
     volumes:
       - ./elk/logstash.conf:/config/logstash.conf:ro
     command: logstash -f /config/logstash.conf
+    networks:
+      - elk_network
 
 
   elk_elasticsearch:
@@ -530,11 +533,13 @@ services:
     environment:
       - discovery.type=single-node
       - xpack.security.enabled=false
-      - ES_JAVA_OPTS=-Xms1024m -Xmx1024m
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
     ports:
-      - 9201:9200
+      - 9200:9200
     volumes:
       - ./elk/esdata:/usr/share/elasticsearch/data
+    networks:
+      - elk_network
 
   kibana:
     image: kibana:8.10.2
@@ -543,11 +548,9 @@ services:
     depends_on:
       - elk_elasticsearch
     environment:
-      - ELASTICSEARCH_HOSTS=http://elasticsearch:9201
-    #deploy:
-    #  resources:
-    #    limits:
-    #      memory: 512M
+      - ELASTICSEARCH_HOSTS=http://elk_elasticsearch:9200
+    networks:
+      - elk_network
 
 
 volumes:
@@ -576,4 +579,6 @@ volumes:
 
 networks:
   backend_network:
+    driver: bridge
+  elk_network:
     driver: bridge
