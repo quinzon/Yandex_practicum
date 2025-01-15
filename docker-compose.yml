@@ -516,8 +516,8 @@ services:
     depends_on:
       - elk_elasticsearch
     environment:
-      - "XPACK_MONITORING_ENABLED:false"
-      - "ELK_ES_HOST:elk_elasticsearch:9200"
+      - "XPACK_MONITORING_ENABLED=false"
+      - "ELK_ES_HOST=elk_elasticsearch:9201"
       - "LS_JAVA_OPTS=-Xmx512m -Xms512m"
     ports:
       - "5044:5044/udp"
@@ -535,7 +535,7 @@ services:
       - xpack.security.enabled=false
       - ES_JAVA_OPTS=-Xms512m -Xmx512m
     ports:
-      - 9200:9200
+      - 9201:9200
     volumes:
       - ./elk/esdata:/usr/share/elasticsearch/data
     networks:
@@ -548,7 +548,7 @@ services:
     depends_on:
       - elk_elasticsearch
     environment:
-      - ELASTICSEARCH_HOSTS=http://elk_elasticsearch:9200
+      - ELASTICSEARCH_HOSTS=http://elk_elasticsearch:9201
     networks:
       - elk_network
 
