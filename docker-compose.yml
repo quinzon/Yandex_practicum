@@ -143,8 +143,6 @@ services:
         condition: service_started
       auth_service:
         condition: service_started
-      #logstash:
-      #  condition: service_started
     <<: [ *common-variables ]
 
   nginx:
@@ -265,8 +263,6 @@ services:
         condition: service_completed_successfully
       sentry:
         condition: service_completed_successfully
-      #logstash:
-      #  condition: service_started
     <<: [ *common-variables ]
 
   zookeeper:
