@@ -127,10 +127,11 @@ services:
     command: [ "uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8003", "--reload" ]
     env_file:
       - ugc_service/.env
-    #logging:
-    #  driver: gelf
-    #  options:
-    #    gelf-address: "udp://logstash:5044"
+    logging:
+      driver: gelf
+      options:
+        gelf-address: "${GELF_ADDRESS}"
+        labels: "ugc_service"
     volumes:
       - sentry-data:/opt/sentry
     depends_on:
@@ -252,10 +253,11 @@ services:
       dockerfile: Dockerfile
     env_file:
       - bigdata_service/.env
-    #logging:
-    #  driver: gelf
-    #  options:
-    #    gelf-address: "udp://logstash:5044"
+    logging:
+      driver: gelf
+      options:
+        gelf-address: "${GELF_ADDRESS}"
+        labels: "bigdata_service"
     volumes:
       - sentry-data:/opt/sentry
     depends_on:
@@ -514,43 +516,43 @@ services:
   logstash:
     image: logstash:8.10.2
     depends_on:
-      - elk_elasticsearch
+      - elasticsearchelk
     environment:
-      - "XPACK_MONITORING_ENABLED=false"
-      - "ELK_ES_HOST=elk_elasticsearch:9201"
+      - ELK_ES_HOST=${ELK_ES_HOST}
       - "LS_JAVA_OPTS=-Xmx512m -Xms512m"
+      - xpack.monitoring.enabled=false
+      - xpack.management.enabled=false
     ports:
       - "5044:5044/udp"
     volumes:
       - ./elk/logstash.conf:/config/logstash.conf:ro
-    command: logstash -f /config/logstash.conf
-    networks:
-      - elk_network
+    command: logstash --log.level debug -f /config/logstash.conf
+    <<: [ *common-variables, *common-env ]
 
 
-  elk_elasticsearch:
+  elasticsearchelk:
     image: elasticsearch:8.10.2
     environment:
-      - discovery.type=single-node
-      - xpack.security.enabled=false
-      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+      ES_JAVA_OPTS: "-Xms512m -Xmx512m"
+      discovery.type: "single-node"
+      ingest.geoip.downloader.enabled: "false"
+      xpack.security.enabled: "false"
+      ELASTIC_CONTAINER: "true"
     ports:
-      - 9201:9200
+      - "9201:9200"
     volumes:
-      - ./elk/esdata:/usr/share/elasticsearch/data
-    networks:
-      - elk_network
+      - elk-data:/usr/share/elasticsearch/data
+    <<: [ *common-variables, *common-env ]
 
   kibana:
     image: kibana:8.10.2
     ports:
       - "5601:5601"
     depends_on:
-      - elk_elasticsearch
+      - elasticsearchelk
     environment:
-      - ELASTICSEARCH_HOSTS=http://elk_elasticsearch:9201
-    networks:
-      - elk_network
+      - ELASTICSEARCH_HOSTS=${ELK_ES_HOST}
+    <<: [ *common-variables, *common-env ]
 
 
 volumes:
@@ -575,10 +577,9 @@ volumes:
   mongo_config2:
   mongo_config3:
   sentry-data:
+  elk-data:
 
 
 networks:
   backend_network:
-    driver: bridge
-  elk_network:
     driver: bridge
