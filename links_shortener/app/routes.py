@@ -1,9 +1,9 @@
 import string
 import random
 from datetime import datetime, timedelta
-from flask import Blueprint, request, jsonify, redirect, abort
+from flask import Blueprint, request, jsonify, redirect, abort, render_template
 from database import db
-from models import ShortenedURL
+from models import ShortenedURL, UserVisit
 
 shortener_bp = Blueprint("shortener", __name__)
 
@@ -33,7 +33,8 @@ def shorten_url():
         short_id=short_id,
         original_url=original_url,
         redirect_url=redirect_url,
-        expiration_date=expiration_date
+        expiration_date=expiration_date,
+        email_confirmed=False
     )
 
     db.session.add(new_url)
@@ -45,7 +46,34 @@ def shorten_url():
 def redirect_to_url(short_id):
     url_entry = ShortenedURL.query.filter_by(short_id=short_id).first()
 
-    if not url_entry or url_entry.is_expired():
-        abort(404)
+    if not url_entry:
+        return abort(404)
+
+    if url_entry.is_expired():
+        return abort(404)
+
+    if not url_entry.email_confirmed:
+        return jsonify({"error": "Email confirmation required"}), 403
+
+    visit = UserVisit(user_id=url_entry.user_id, short_id=short_id, visit_time=datetime.utcnow())
+    db.session.add(visit)
+    db.session.commit()
 
     return redirect(url_entry.redirect_url)
+
+@shortener_bp.route("/confirm_email/<short_id>", methods=["POST"])
+def confirm_email(short_id):
+    url_entry = ShortenedURL.query.filter_by(short_id=short_id).first()
+
+    if not url_entry:
+        return jsonify({"error": "Invalid short ID"}), 404
+
+    url_entry.email_confirmed = True
+    db.session.commit()
+
+    return jsonify({"message": "Email confirmed successfully"}), 200
+
+@shortener_bp.route("/visits/<short_id>", methods=["GET"])
+def get_visit_count(short_id):
+    visits = UserVisit.query.filter_by(short_id=short_id).count()
+    return jsonify({"short_id": short_id, "visit_count": visits}), 200
