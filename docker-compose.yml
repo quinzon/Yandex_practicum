@@ -551,6 +551,33 @@ services:
     <<: [ *common-variables, *common-env ]
 
 
+
+  links_shortener:
+    build:
+      context: links_shortener
+      dockerfile: Dockerfile
+    ports:
+      - "8001:8001"
+    depends_on:
+      - postgres_sh
+    environment:
+      # DATABASE_URL: ${POSTGRES_SH_DB_ADDR}
+      BASE_URL: "http://localhost:8001/"
+    <<: [ *common-variables, *common-env ]
+
+  postgres_sh:
+    image: postgres:latest
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_USER: ${POSTGRES_SH_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_SH_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_SH_DB}
+    volumes:
+    - postgres_sh_data:/var/lib/postgresql/data
+    <<: [ *common-variables, *common-env ]
+
+
 volumes:
   postgres-data:
   es-data:
@@ -574,6 +601,7 @@ volumes:
   mongo_config3:
   sentry-data:
   elk-data:
+  postgres_sh_data:
 
 
 networks:
