@@ -1,15 +1,17 @@
 import string
 import random
 from datetime import datetime, timedelta
-from flask import Blueprint, request, jsonify, redirect, abort, render_template
+from flask import Blueprint, request, jsonify, redirect, abort
 from database import db
 from models import ShortenedURL, UserVisit
 
 shortener_bp = Blueprint("shortener", __name__)
 
+
 def generate_short_id(length=6):
     characters = string.ascii_letters + string.digits
     return ''.join(random.choice(characters) for _ in range(length))
+
 
 @shortener_bp.route("/shorten", methods=["POST"])
 def shorten_url():
@@ -42,6 +44,7 @@ def shorten_url():
 
     return jsonify({"short_url": f"http://localhost:8001/{short_id}"}), 201
 
+
 @shortener_bp.route("/<short_id>", methods=["GET"])
 def redirect_to_url(short_id):
     url_entry = ShortenedURL.query.filter_by(short_id=short_id).first()
@@ -61,6 +64,7 @@ def redirect_to_url(short_id):
 
     return redirect(url_entry.redirect_url)
 
+
 @shortener_bp.route("/confirm_email/<short_id>", methods=["POST"])
 def confirm_email(short_id):
     url_entry = ShortenedURL.query.filter_by(short_id=short_id).first()
@@ -72,6 +76,7 @@ def confirm_email(short_id):
     db.session.commit()
 
     return jsonify({"message": "Email confirmed successfully"}), 200
+
 
 @shortener_bp.route("/visits/<short_id>", methods=["GET"])
 def get_visit_count(short_id):
