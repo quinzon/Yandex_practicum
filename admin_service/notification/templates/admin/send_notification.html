@@ -1,0 +1,11 @@
+{% extends "admin/base_site.html" %}
+
+{% block content %}
+
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit" class="button" style="font-size: 0.875rem; padding: 5px 10px;">Отправить сообщение</button>
+</form>
+<a href="{% url 'admin:notification_notificationtemplate_changelist' %}">Назад к списку</a>
+{% endblock %}
