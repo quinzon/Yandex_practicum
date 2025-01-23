@@ -13,4 +13,4 @@ class Config:
     SQLALCHEMY_DATABASE_URI = (f"postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@"
                                f"{POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB}")
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    BASE_URL = os.getenv("BASE_URL", "http://localhost:8001/")
+    BASE_URL = os.getenv("BASE_URL", "http://localhost/api/v1/shortener")

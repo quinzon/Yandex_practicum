@@ -162,6 +162,8 @@ services:
         condition: service_started
       ugc_service:
         condition: service_started
+      links_shortener:
+        condition: service_started
     <<: *common-variables
 
   jaeger:
@@ -557,11 +559,9 @@ services:
       context: links_shortener
       dockerfile: Dockerfile
     ports:
-      - "8001:8001"
+      - "9090:9090"
     depends_on:
       - postgres
-    environment:
-      BASE_URL: "http://localhost:8001/"
     <<: [ *common-variables, *common-env ]
 
 

@@ -1,11 +1,11 @@
 import string
 import random
 from datetime import datetime, timedelta
-from flask import Blueprint, request, jsonify, redirect, abort
+from flask import Blueprint, request, jsonify, redirect, url_for
 from database import db
-from models import ShortenedURL, UserVisit
+from models import ShortenedURL
 
-shortener_bp = Blueprint("shortener", __name__)
+shortener_bp = Blueprint("shortener", __name__, url_prefix="/api/v1/shortener")
 
 
 def generate_short_id(length=6):
@@ -16,13 +16,11 @@ def generate_short_id(length=6):
 @shortener_bp.route("/shorten", methods=["POST"])
 def shorten_url():
     data = request.json
-    user_id = data.get("user_id")
     original_url = data.get("url")
-    redirect_url = data.get("redirect_url")
     expiration_minutes = data.get("expiration_minutes", 60)
 
-    if not user_id or not original_url or not redirect_url:
-        return jsonify({"error": "Missing required fields"}), 400
+    if not original_url:
+        return jsonify({"error": "Missing required 'url' field"}), 400
 
     short_id = generate_short_id()
     while ShortenedURL.query.filter_by(short_id=short_id).first():
@@ -30,55 +28,32 @@ def shorten_url():
 
     expiration_date = datetime.utcnow() + timedelta(minutes=expiration_minutes)
 
+    # Создаем новую запись в базе данных
     new_url = ShortenedURL(
-        user_id=user_id,
         short_id=short_id,
         original_url=original_url,
-        redirect_url=redirect_url,
         expiration_date=expiration_date,
-        email_confirmed=False
+        redirect_url=original_url  # Мы добавляем redirect_url, если он нужен
     )
 
     db.session.add(new_url)
     db.session.commit()
 
-    return jsonify({"short_url": f"http://localhost:8001/{short_id}"}), 201
+    short_url = url_for('shortener.redirect_to_url', short_id=short_id, _external=True)
+    short_url = short_url.replace("http://localhost", "http://localhost/api/v1/shortener")
+
+    return jsonify({
+        "short_url": short_url,
+        "original_url": original_url,
+        "expires_at": expiration_date.isoformat()
+    }), 201
 
 
 @shortener_bp.route("/<short_id>", methods=["GET"])
 def redirect_to_url(short_id):
     url_entry = ShortenedURL.query.filter_by(short_id=short_id).first()
 
-    if not url_entry:
-        return abort(404)
+    if not url_entry or url_entry.is_expired():
+        return jsonify({"error": "URL not found or expired"}), 404
 
-    if url_entry.is_expired():
-        return abort(404)
-
-    if not url_entry.email_confirmed:
-        return jsonify({"error": "Email confirmation required"}), 403
-
-    visit = UserVisit(user_id=url_entry.user_id, short_id=short_id, visit_time=datetime.utcnow())
-    db.session.add(visit)
-    db.session.commit()
-
-    return redirect(url_entry.redirect_url)
-
-
-@shortener_bp.route("/confirm_email/<short_id>", methods=["POST"])
-def confirm_email(short_id):
-    url_entry = ShortenedURL.query.filter_by(short_id=short_id).first()
-
-    if not url_entry:
-        return jsonify({"error": "Invalid short ID"}), 404
-
-    url_entry.email_confirmed = True
-    db.session.commit()
-
-    return jsonify({"message": "Email confirmed successfully"}), 200
-
-
-@shortener_bp.route("/visits/<short_id>", methods=["GET"])
-def get_visit_count(short_id):
-    visits = UserVisit.query.filter_by(short_id=short_id).count()
-    return jsonify({"short_id": short_id, "visit_count": visits}), 200
+    return redirect(url_entry.original_url, code=302)
