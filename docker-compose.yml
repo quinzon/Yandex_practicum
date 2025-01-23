@@ -494,8 +494,6 @@ services:
       - /etc/localtime:/etc/localtime:ro
     <<: [ *common-variables ]
 
-
-
   sentry:
     build:
       context: ./sentry
@@ -550,6 +548,29 @@ services:
       - ELASTICSEARCH_HOSTS=${ELK_ES_HOST}
     <<: [ *common-variables, *common-env ]
 
+  rabbitmq:
+    build:
+      dockerfile: ./rabbitmq/Dockerfile
+    env_file:
+      - ./notification_service/.env
+    ports:
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS}
+    volumes:
+      - rabbit-data:/var/lib/rabbitmq
+    <<: [ *common-variables ]
+
+  notifications_service:
+    build:
+      context: ./notification_service
+      dockerfile: Dockerfile
+    env_file:
+      - ./notification_service/.env
+    depends_on:
+      - rabbitmq
+    <<: [ *common-variables ]
 
 volumes:
   postgres-data:
@@ -574,6 +595,7 @@ volumes:
   mongo_config3:
   sentry-data:
   elk-data:
+  rabbit-data:
 
 
 networks:
