@@ -2,11 +2,13 @@ import logging
 from flask import Flask
 from database import db
 from routes import shortener_bp
+from config import settings
 
 
 def create_app():
     app = Flask(__name__)
-    app.config.from_object("config.Config")
+    app.config["SQLALCHEMY_DATABASE_URI"] = settings.SQLALCHEMY_DATABASE_URI
+    app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = settings.SQLALCHEMY_TRACK_MODIFICATIONS
 
     db.init_app(app)
 
