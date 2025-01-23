@@ -2,12 +2,11 @@ from http import HTTPStatus
 
 from fastapi import APIRouter, HTTPException, Depends, Request
 
-from notification_service.src.core.utils import has_permission
 from notification_service.src.model.notification import Notification, NotificationResponse
 from notification_service.src.service.notification import NotificationService, \
     get_notification_service
 
-router = APIRouter(dependencies=[Depends(has_permission)])
+router = APIRouter()
 
 
 @router.post('/notifications/', response_model=NotificationResponse)

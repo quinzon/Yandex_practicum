@@ -29,7 +29,6 @@ services:
       test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} || exit 1" ]
     <<: [ *common-variables, *common-env ]
 
-
   elasticsearch:
     image: elasticsearch:8.6.2
     environment:
@@ -92,8 +91,6 @@ services:
     image: auth_service
     command: [ "sh", "-c", "alembic upgrade head && uvicorn src.main:app --host 0.0.0.0 --port 8001" ]
     container_name: auth_service
-    ports:
-      - "8001:8001"
     env_file:
       - auth_service/.env
     depends_on:
@@ -110,8 +107,6 @@ services:
     image: admin_service
     command: [ "gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8002", "--reload" ]
     container_name: admin_service
-    ports:
-      - "8002:8002"
     volumes:
       - ./admin_service:/opt/admin_service
       - admin-static:/opt/admin_service/static
@@ -511,7 +506,6 @@ services:
     env_file:
       - ./sentry/.env.sentry
 
-
   logstash:
     image: logstash:8.10.2
     depends_on:
@@ -527,7 +521,6 @@ services:
       - ./elk/logstash.conf:/config/logstash.conf:ro
     command: logstash --log.level debug -f /config/logstash.conf
     <<: [ *common-variables, *common-env ]
-
 
   elasticsearchelk:
     image: elasticsearch:8.10.2
@@ -565,6 +558,9 @@ services:
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS}
     volumes:
       - rabbit-data:/var/lib/rabbitmq
+    healthcheck:
+      test: [ "CMD", "rabbitmq-diagnostics", "ping" ]
+      <<: *common-healthcheck
     <<: [ *common-variables ]
 
   notifications_service:
@@ -574,9 +570,9 @@ services:
     env_file:
       - ./notification_service/.env
     depends_on:
-      - rabbitmq
+      rabbitmq:
+        condition: service_healthy
     <<: [ *common-variables ]
-
 
   links_shortener:
     build:
@@ -587,8 +583,6 @@ services:
     depends_on:
       - postgres
     <<: [ *common-variables, *common-env ]
-
-
 
 
 volumes:
