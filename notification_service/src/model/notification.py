@@ -22,7 +22,7 @@ class Notification(BaseModel):
     recipient_group: str = Field(None)
 
     def get_delay_ms(self) -> int:
-        if not self.is_delayed:
+        if not self.is_delayed or not self.send_time:
             return 0
 
         send_time_object = datetime.fromisoformat(self.send_time)

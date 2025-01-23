@@ -16,7 +16,7 @@ class NotificationService:
         headers = {'x-request-id': request_id}
 
         if delay_ms and notification.is_delayed:
-            headers['x-delay'] = delay_ms
+            headers['x-delay'] = str(delay_ms)
 
         await self.rabbit_client.publish(routing_key, notification.model_dump(), headers, delay_ms,
                                          notification.priority)
