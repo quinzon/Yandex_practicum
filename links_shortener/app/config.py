@@ -2,12 +2,12 @@ from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
-    POSTGRES_USER: str  # Имя пользователя PostgreSQL
-    POSTGRES_PASSWORD: str  # Пароль для PostgreSQL
-    POSTGRES_SQL_DB: str  # Имя базы данных (оставляю как в вашем примере)
-    POSTGRES_HOST: str = "postgres"  # Хост базы данных, по умолчанию "postgres"
-    POSTGRES_PORT: int = 5432  # Порт для подключения к PostgreSQL
-    BASE_URL: str = "http://localhost/api/v1/shortener"  # Базовый URL API
+    POSTGRES_USER: str
+    POSTGRES_PASSWORD: str
+    POSTGRES_SQL_DB: str
+    POSTGRES_HOST: str = "postgres"
+    POSTGRES_PORT: int = 5432
+    BASE_URL: str = "http://localhost/api/v1/shortener"
 
     SQLALCHEMY_TRACK_MODIFICATIONS: bool = False
 
@@ -17,8 +17,7 @@ class Settings(BaseSettings):
                 f"{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_SQL_DB}")
 
     class Config:
-        env_file = ".env"  # Путь к файлу с переменными окружения
+        env_file = ".env"
 
 
-# Создаем экземпляр настроек
 settings = Settings()
