@@ -14,20 +14,20 @@ class RabbitMQProducer:
         self.delayed_exchange_name = settings.delayed_exchange_name
         self.exchange = None
         self.delayed_exchange = None
-        self.__connection = None
-        self.__channel = None
+        self._connection = None
+        self._channel = None
 
     async def connect(self):
-        self.__connection = await connect_robust(self.rabbitmq_url)
-        self.__channel = await self.__connection.channel()
+        self._connection = await connect_robust(self.rabbitmq_url)
+        self._channel = await self._connection.channel()
 
-        self.exchange = await self.__channel.declare_exchange(
+        self.exchange = await self._channel.declare_exchange(
             self.exchange_name,
             ExchangeType.TOPIC,
             durable=True
         )
 
-        self.delayed_exchange = await self.__channel.declare_exchange(
+        self.delayed_exchange = await self._channel.declare_exchange(
             self.delayed_exchange_name,
             ExchangeType.X_DELAYED_MESSAGE,
             durable=True,
@@ -38,7 +38,7 @@ class RabbitMQProducer:
         queues = settings.get_queue_list()
 
         for queue_name in queues:
-            queue = await self.__channel.declare_queue(
+            queue = await self._channel.declare_queue(
                 f'{settings.prefix}_{queue_name}',
                 durable=True,
                 arguments={'x-max-priority': settings.max_priority}
@@ -71,8 +71,8 @@ class RabbitMQProducer:
         )
 
     async def close(self):
-        if self.__connection:
-            await self.__connection.close()
+        if self._connection:
+            await self._connection.close()
 
 
 rabbitmq = RabbitMQProducer()
