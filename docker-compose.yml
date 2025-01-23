@@ -162,6 +162,8 @@ services:
         condition: service_started
       ugc_service:
         condition: service_started
+      links_shortener:
+        condition: service_started
     <<: *common-variables
 
   jaeger:
@@ -549,6 +551,20 @@ services:
     environment:
       - ELASTICSEARCH_HOSTS=${ELK_ES_HOST}
     <<: [ *common-variables, *common-env ]
+
+
+
+  links_shortener:
+    build:
+      context: links_shortener
+      dockerfile: Dockerfile
+    ports:
+      - "9090:9090"
+    depends_on:
+      - postgres
+    <<: [ *common-variables, *common-env ]
+
+
 
 
 volumes:
