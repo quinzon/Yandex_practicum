@@ -109,6 +109,9 @@ services:
       dockerfile: Dockerfile
     image: admin_service
     command: [ "gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8002", "--reload" ]
+    container_name: admin_service
+    ports:
+      - "8002:8002"
     volumes:
       - ./admin_service:/opt/admin_service
       - admin-static:/opt/admin_service/static

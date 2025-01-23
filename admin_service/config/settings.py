@@ -33,6 +33,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'debug_toolbar',
+    'rest_framework',
+    'drf_spectacular',
     'movies.apps.MoviesConfig',
     'notification.apps.NotificationConfig',
 ]
@@ -132,6 +134,9 @@ LOGGING = {
     },
 }
 
+REST_FRAMEWORK = {
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+}
 
 AUTHENTICATION_BACKENDS = ['config.authentication.auth_backend.AuthServiceBackend',]
 

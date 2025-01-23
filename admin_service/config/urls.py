@@ -5,6 +5,7 @@ from . import settings
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('notification/', include('notification.urls')),
 ]
 
 if settings.DEBUG:
