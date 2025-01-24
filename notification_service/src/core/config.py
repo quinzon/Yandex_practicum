@@ -3,7 +3,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    project_name: str = Field(alias='PROJECT_NAME', default='auth')
+    project_name: str = Field(alias='PROJECT_NAME', default='notification')
     log_level: str = Field(alias='LOG_LEVEL', default='INFO')
     rabbitmq_url: str = Field(alias='RABBITMQ_URL', default='amqp://guest:guest@localhost/')
 
@@ -14,7 +14,6 @@ class Settings(BaseSettings):
     queue_names: str = Field(alias='RABBITMQ_QUEUES', default='email,sms,push')
     prefix: str = Field(alias='RABBITMQ_PREFIX', default='notifications')
     max_priority: int = Field(alias='MAX_PRIORITY', default=10)
-    auth_service_url: str = Field(..., alias='AUTH_SERVICE_URL')
 
     model_config = SettingsConfigDict(
         env_file='.env',

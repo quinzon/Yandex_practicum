@@ -1,0 +1,82 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-01-24 06:10+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=4; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
+"n%10<=4 && (n%100<12 || n%100>14) ? 1 : n%10==0 || (n%10>=5 && n%10<=9) || "
+"(n%100>=11 && n%100<=14)? 2 : 3);\n"
+
+#: notification/admin.py:31
+msgid "Send it out"
+msgstr "Разослать"
+
+#: notification/admin.py:35
+msgid "Sending message"
+msgstr "Отправка сообщения"
+
+#: notification/admin.py:100
+msgid "Send message out"
+msgstr "Разослать сообщение"
+
+#: notification/apps.py:8
+msgid "notification"
+msgstr "Сообщения пользователям"
+
+#: notification/forms.py:7
+msgid "Subscribers"
+msgstr "Подписчики"
+
+#: notification/forms.py:8
+msgid "All users"
+msgstr "Все пользователи"
+
+#: notification/forms.py:16
+msgid "Choose recipient"
+msgstr "Выберите получателя"
+
+#: notification/forms.py:17
+msgid "Type of message"
+msgstr "Тип сообщения"
+
+#: notification/forms.py:19
+msgid "Time of send (GMT-0)"
+msgstr "Время отправка (GMT-0)"
+
+#: notification/forms.py:24
+msgid "Priority (0-7)"
+msgstr "Приоритет (0-7)"
+
+#: notification/models.py:8
+msgid "title"
+msgstr "название"
+
+#: notification/models.py:9
+msgid "template"
+msgstr "шаблон"
+
+#: notification/models.py:10
+msgid "created_at"
+msgstr "дата создания"
+
+#: notification/models.py:11
+msgid "updated_at"
+msgstr "дата обновления"
+
+#: notification/models.py:18 notification/models.py:19
+msgid "Notification template"
+msgstr "Шаблон сообщения"
+

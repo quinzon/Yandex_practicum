@@ -5,16 +5,9 @@ from django.core.exceptions import PermissionDenied, ValidationError
 from django.conf import settings
 from django.http import HttpRequest
 
+from config.utils import prepare_headers
+
 AUTH_SERVICE_URL = settings.AUTH_SERVICE_URL
-
-
-def prepare_headers(request: HttpRequest, headers: dict | None = None) -> dict:
-    """Подготавливает заголовки для HTTP-запроса."""
-    if headers is None:
-        headers = {}
-    request_id = getattr(request, 'request_id', None)
-    headers['x-request-id'] = request_id
-    return headers
 
 
 def check_permission(request: HttpRequest, access_token: str, resource: str, http_method: str) -> bool:

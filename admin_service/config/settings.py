@@ -32,8 +32,11 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'movies.apps.MoviesConfig',
     'debug_toolbar',
+    'rest_framework',
+    'drf_spectacular',
+    'movies.apps.MoviesConfig',
+    'notification.apps.NotificationConfig',
 ]
 
 MIDDLEWARE = [
@@ -100,7 +103,7 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-LOCALE_PATHS = ['movies/locale']
+LOCALE_PATHS = ['movies/locale', 'notification/locale']
 
 CACHES = {
     'default': {
@@ -131,7 +134,11 @@ LOGGING = {
     },
 }
 
+REST_FRAMEWORK = {
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+}
 
 AUTHENTICATION_BACKENDS = ['config.authentication.auth_backend.AuthServiceBackend',]
 
 AUTH_SERVICE_URL = os.getenv('AUTH_SERVICE_URL', 'http://auth_service:8001/api/v1/auth')
+NOTIFICATION_SERVICE_URL = os.getenv('NOTIFICATION_SERVICE_URL', 'http://notifications_service:8004/api/v1/')
