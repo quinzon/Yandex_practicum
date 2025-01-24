@@ -567,6 +567,7 @@ services:
     build:
       context: ./notification_service
       dockerfile: Dockerfile
+    container_name: notifications_service
     env_file:
       - ./notification_service/.env
     depends_on:

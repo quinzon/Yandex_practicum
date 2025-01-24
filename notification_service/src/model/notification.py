@@ -12,10 +12,10 @@ class NotificationType(str, Enum):
 
 class Notification(BaseModel):
     type: NotificationType = Field(...)
-    user_id: str = Field(...)
+    user_id: str | None = Field(None)
     template_id: str = Field(...)
     subject: str = Field(...)
-    text: str = Field(...)
+    text: str | None = Field(None)
     is_delayed: bool = Field(False)
     send_time: str | None = Field(None)
     priority: int = Field(0, ge=0, le=10)
