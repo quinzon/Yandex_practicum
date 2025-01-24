@@ -7,23 +7,23 @@ def get_users_by_role(role, page=1, page_size=10):
     with connection.cursor() as cursor:
         if role == 'all_users':
             cursor.execute("""
-                SELECT email, first_name, last_name 
-                FROM auth.user 
+                SELECT email, first_name, last_name
+                FROM auth.user
                 LIMIT %s OFFSET %s;
             """, [page_size, offset])
         else:
             cursor.execute("""
-                SELECT 
-                    u.email, 
+                SELECT
+                    u.email,
                     u.first_name,
                     u.last_name
-                FROM 
+                FROM
                     auth.user u
-                LEFT JOIN 
+                LEFT JOIN
                     user_role ur ON u.id = ur.user_id
-                LEFT JOIN 
+                LEFT JOIN
                     role r ON ur.role_id = r.id
-                WHERE 
+                WHERE
                     r.name = %s
                 LIMIT %s OFFSET %s;
             """, [role, page_size, offset])
