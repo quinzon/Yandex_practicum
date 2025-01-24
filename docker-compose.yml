@@ -575,6 +575,20 @@ services:
         condition: service_healthy
     <<: [ *common-variables ]
 
+  push_service:
+    build:
+      context: ./push_service
+      dockerfile: Dockerfile
+    container_name: push_service
+    env_file:
+      - push_service/.env
+    depends_on:
+      auth_service:
+        condition: service_started
+      notifications_service:
+        condition: service_started
+    <<: [ *common-variables ]
+
   links_shortener:
     build:
       context: links_shortener
