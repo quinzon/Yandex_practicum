@@ -7,13 +7,14 @@ def get_users_by_role(role, page=1, page_size=10):
     with connection.cursor() as cursor:
         if role == 'all_users':
             cursor.execute("""
-                SELECT email, first_name, last_name
+                SELECT id, email, first_name, last_name
                 FROM auth.user
                 LIMIT %s OFFSET %s;
             """, [page_size, offset])
         else:
             cursor.execute("""
                 SELECT
+                    u.id,
                     u.email,
                     u.first_name,
                     u.last_name

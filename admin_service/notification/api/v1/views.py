@@ -50,9 +50,10 @@ def get_user_data(request):
 
     result = [
         {
-            'email': row[0],
-            'first_name': row[1],
-            'last_name': row[2]
+            'id': row[0],
+            'email': row[1],
+            'first_name': row[2],
+            'last_name': row[3]
         }
         for row in rows
     ]
