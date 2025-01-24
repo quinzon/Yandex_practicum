@@ -1,8 +1,7 @@
 import os
 
-
-def get_database_config():
-    return {
+DATABASES = {
+    'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': os.getenv('POSTGRES_DB'),
         'USER': os.getenv('POSTGRES_USER'),
@@ -13,8 +12,4 @@ def get_database_config():
             'options': os.getenv('POSTGRES_OPTIONS'),
         },
     }
-
-
-DATABASES = {
-    'default': get_database_config(),
 }
