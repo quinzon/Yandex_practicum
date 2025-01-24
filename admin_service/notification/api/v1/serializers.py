@@ -9,6 +9,7 @@ class NotificationTemplateModelSerializer(serializers.ModelSerializer):
 
 
 class UserDataSerializer(serializers.Serializer):
+    id = serializers.UUIDField()
     email = serializers.CharField(max_length=255)
     first_name = serializers.CharField(max_length=50, allow_null=True)
     last_name = serializers.CharField(max_length=50, allow_null=True)
