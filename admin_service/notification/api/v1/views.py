@@ -5,8 +5,8 @@ from rest_framework import status
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 
 from notification.models import NotificationTemplate
-from .serializers import NotificationTemplateModelSerializer, UserDataSerializer
-from .services import get_users_by_role
+from notification.api.v1.serializers import NotificationTemplateModelSerializer, UserDataSerializer
+from notification.api.v1.services import get_users_by_role
 
 
 class NotificationTemplateViewSet(viewsets.ModelViewSet):

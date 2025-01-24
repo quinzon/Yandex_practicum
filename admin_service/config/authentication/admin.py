@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .auth_requests import check_permission
+from config.authentication.auth_requests import check_permission
 
 
 class PermissionAdmin(admin.ModelAdmin):

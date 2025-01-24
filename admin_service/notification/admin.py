@@ -8,8 +8,8 @@ from django.shortcuts import render, redirect
 from django.utils.translation import gettext_lazy as _
 from django.core.exceptions import PermissionDenied
 
-from .models import NotificationTemplate
-from .forms import NotificationRecipientForm
+from notification.models import NotificationTemplate
+from notification.forms import NotificationRecipientForm
 from config.authentication.admin import PermissionAdmin
 from django.conf import settings
 from config.utils import prepare_headers

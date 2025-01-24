@@ -2,7 +2,7 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
 
-from .views import NotificationTemplateViewSet, get_user_data
+from notification.api.v1.views import NotificationTemplateViewSet, get_user_data
 
 router = DefaultRouter()
 router.register(r'template', NotificationTemplateViewSet)
