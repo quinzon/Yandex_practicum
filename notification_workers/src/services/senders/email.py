@@ -41,6 +41,6 @@ class EmailSender(BaseSender):
         try:
             response = await asyncio.to_thread(sg_client.send, mail)
             logger.info('SendGrid response status: %s', response.status_code)
-        except Exception as exc:
+        except Exception:
             logger.exception('Failed to send email via SendGrid')
             raise

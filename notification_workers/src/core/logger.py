@@ -1,6 +1,6 @@
 import logging
 
-from notification_service.src.core.config import settings
+from notification_workers.src.core.config import settings
 
 
 def setup_logger(name='notification_workers'):

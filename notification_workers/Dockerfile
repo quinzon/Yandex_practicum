@@ -1,6 +1,6 @@
 FROM python:3.11-slim
 
-WORKDIR /opt/notification_service
+WORKDIR /opt/notification_workers
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
@@ -22,4 +22,4 @@ RUN pip install --upgrade pip && \
 
 COPY . .
 
-CMD ["python", "worker.py"]
+CMD ["python", "src/main.py"]

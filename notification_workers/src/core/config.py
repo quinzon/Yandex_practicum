@@ -9,6 +9,7 @@ class Settings(BaseSettings):
     push_service_url: str = Field(alias='PUSH_SERVICE')
     sendgrid_email_key: str = Field(alias='SENDGRID_EMAIL_KEY')
     email_from: str = Field(alias='EMAIL_FROM')
+    log_level: str = Field(alias='LOG_LEVEL')
 
     model_config = SettingsConfigDict(
         env_file='.env',

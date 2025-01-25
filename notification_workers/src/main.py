@@ -31,13 +31,16 @@ async def on_message(message: IncomingMessage) -> None:
 
             notification_msg = NotificationMessage(**data)
 
-            enriched = await enrich_service.get_enriched_notification(notification_msg)
+            if enrich_service is None or dispatcher is None:
+                logger.error("Services are not initialized.")
+                return
 
+            enriched = await enrich_service.get_enriched_notification(notification_msg)
             await dispatcher.dispatch(enriched)
 
             logger.info('Successfully processed message: %s', data)
 
-        except Exception as exc:
+        except Exception:
             logger.exception('Error processing message. NACK -> DLX (if configured).')
             raise
 

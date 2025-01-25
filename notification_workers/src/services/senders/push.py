@@ -1,6 +1,5 @@
 import logging
 import httpx
-import json
 
 from notification_workers.src.services.senders.base import BaseSender
 from notification_workers.src.models.notification import EnrichedNotification
@@ -32,7 +31,7 @@ class PushSender(BaseSender):
                         'Sent push message to user_id=%s, status_code=%d',
                         r.user_id, response.status_code
                     )
-                except httpx.HTTPError as exc:
+                except httpx.HTTPError:
                     logger.exception(
                         'Failed to send push message to user_id=%s',
                         r.user_id

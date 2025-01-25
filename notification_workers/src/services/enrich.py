@@ -10,6 +10,7 @@ from notification_workers.src.models.notification import (
 
 logger = logging.getLogger(__name__)
 
+
 class EnrichService:
     def __init__(self, admin_service_url: str):
         self.admin_service_url = admin_service_url
@@ -75,7 +76,7 @@ class EnrichService:
                 logger.exception('Failed to fetch users for role=%s', role)
                 raise RuntimeError(f'Error fetching users for role {role}: {exc}') from exc
 
-    async def _fetch_template_data(self, template_id: str) -> (str | None, str | None):
+    async def _fetch_template_data(self, template_id: str) -> tuple[str | None, str | None]:
         url = f'{self.admin_service_url}/template/{template_id}/'
         async with httpx.AsyncClient() as client:
             try:
@@ -83,7 +84,7 @@ class EnrichService:
                 response.raise_for_status()
                 data = response.json()
                 return data.get('title'), data.get('template')
-            except httpx.HTTPError as exc:
+            except httpx.HTTPError:
                 logger.exception('Failed to fetch template_id=%s', template_id)
                 return None, None
 
