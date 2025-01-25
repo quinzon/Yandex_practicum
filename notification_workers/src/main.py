@@ -52,7 +52,7 @@ async def setup_services() -> None:
         default_from_email=settings.email_from
     )
     sms_sender = SmsSender()
-    push_sender = PushSender()
+    push_sender = PushSender(settings.push_service_url)
 
     dispatcher = DispatcherService({
         'email': email_sender,
