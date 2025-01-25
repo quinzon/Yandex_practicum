@@ -579,7 +579,9 @@ services:
     build:
       context: ./push_service
       dockerfile: Dockerfile
+    image: push_service
     container_name: push_service
+    command: [ "uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8006" ]
     env_file:
       - push_service/.env
     depends_on:

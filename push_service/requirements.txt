@@ -1,7 +1,6 @@
-flask==3.1.0
-asgiref==3.8.0
-uvicorn==0.32.0
-pydantic-settings==2.2.1
-pydantic==2.6.4
+fastapi[standard]==0.112.2
+pydantic==2.8.2
+uvicorn[standard]==0.30.6
+pydantic-settings==2.4.0
+python-dotenv==1.0.1
 redis==5.0.8
-flask_socketio==5.5.1
