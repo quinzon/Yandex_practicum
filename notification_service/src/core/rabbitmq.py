@@ -16,6 +16,8 @@ class RabbitMQProducer:
         self.delayed_exchange = None
         self._connection = None
         self._channel = None
+        self.__dlx_name = f'{settings.prefix}_dlx'
+        self.__dlq_name = f'{settings.prefix}_dlq'
 
     async def connect(self):
         self._connection = await connect_robust(self.rabbitmq_url)
@@ -34,14 +36,35 @@ class RabbitMQProducer:
             arguments={'x-delayed-type': 'topic'}
         )
 
+    async def initialize_dlx(self):
+        dlx_exchange = await self._channel.declare_exchange(
+            self.__dlx_name,
+            ExchangeType.DIRECT,
+            durable=True
+        )
+
+        dlq_queue = await self._channel.declare_queue(
+            self.__dlq_name,
+            durable=True
+        )
+
+        await dlq_queue.bind(dlx_exchange, routing_key=self.__dlx_name)
+
+        logger.debug('DLX initialized: %s -> %s', self.__dlx_name, self.__dlq_name)
+
     async def initialize_queues(self):
         queues = settings.get_queue_list()
+        await self.initialize_dlx()
 
         for queue_name in queues:
             queue = await self._channel.declare_queue(
                 f'{settings.prefix}_{queue_name}',
                 durable=True,
-                arguments={'x-max-priority': settings.max_priority}
+                arguments={
+                    'x-max-priority': settings.max_priority,
+                    'x-dead-letter-exchange': self.__dlx_name,
+                    'x-dead-letter-routing-key': self.__dlx_name
+                }
             )
 
             routing_key = f'{settings.prefix}.{queue_name}'

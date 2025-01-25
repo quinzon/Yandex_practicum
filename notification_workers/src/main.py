@@ -1,8 +1,7 @@
 import asyncio
 import json
 
-from aio_pika import IncomingMessage
-
+from aio_pika import IncomingMessage, ExchangeType
 from notification_workers.src.core.config import settings
 from notification_workers.src.core.logger import logger
 from notification_workers.src.core.rabbitmq import get_rabbitmq_connection
@@ -12,6 +11,7 @@ from notification_workers.src.services.enrich import EnrichService
 from notification_workers.src.services.senders.email import EmailSender
 from notification_workers.src.services.senders.push import PushSender
 from notification_workers.src.services.senders.sms import SmsSender
+
 
 enrich_service: EnrichService | None = None
 dispatcher: DispatcherService | None = None
@@ -32,7 +32,7 @@ async def on_message(message: IncomingMessage) -> None:
             notification_msg = NotificationMessage(**data)
 
             if enrich_service is None or dispatcher is None:
-                logger.error("Services are not initialized.")
+                logger.error('Services are not initialized.')
                 return
 
             enriched = await enrich_service.get_enriched_notification(notification_msg)
@@ -69,7 +69,20 @@ async def main() -> None:
 
     connection = await get_rabbitmq_connection()
     channel = await connection.channel()
+
     await channel.set_qos(prefetch_count=10)
+
+    dlx_name = 'notifications_dlx'
+    dlx_exchange = await channel.declare_exchange(
+        dlx_name,
+        ExchangeType.DIRECT,
+        durable=True
+    )
+
+    dlq_name = 'notifications_dlq'
+    dlq_queue = await channel.declare_queue(dlq_name, durable=True)
+
+    await dlq_queue.bind(dlx_exchange, routing_key=dlx_name)
 
     queue_names = [
         'notifications_email',
@@ -80,8 +93,14 @@ async def main() -> None:
     for q_name in queue_names:
         queue = await channel.declare_queue(
             q_name,
-            durable=True
+            durable=True,
+            arguments={
+                'x-max-priority': 10,
+                'x-dead-letter-exchange': dlx_name,
+                'x-dead-letter-routing-key': dlx_name
+            }
         )
+        await channel.set_qos(prefetch_count=10)
         await queue.consume(on_message)
         logger.info('Subscribed to queue: %s', q_name)
 
