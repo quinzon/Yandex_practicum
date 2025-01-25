@@ -27,15 +27,16 @@ class WebsocketService:
     async def put_connection(self, user_id: str, ws_token: str) -> None:
         await self.repository.put_by_id(user_id, ws_token)
 
-    async def get_connections(self, user_id: str) -> list:
+    async def get_connections(self, user_id: str) -> list[WebSocket] | None:
         ws_tokens = await self.repository.get_list_by_id(user_id)
-        connections = []
+        if not ws_tokens:
+            return None
 
+        connections = []
         for token in ws_tokens:
             websocket = active_connections.get(token)
             if websocket:
                 connections.append(websocket)
-
         return connections
 
     async def remove_connection(self, user_id: str, ws_token: str) -> None:

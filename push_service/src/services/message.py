@@ -11,6 +11,8 @@ class MessageService:
 
     async def send(self, user_id: str, message: str) -> None:
         connections = await self.websocket.get_connections(user_id)
+        if not connections:
+            return
         await self.websocket.send_message(connections, message)
 
 

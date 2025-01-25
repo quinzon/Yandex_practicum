@@ -27,7 +27,8 @@ async def websocket_endpoint(
 
     try:
         user_id = await auth_service.get_user_id(auth_token)
-    except Exception:
+    except Exception as e:
+        logger.error(f'Connection closed: {websocket}. Error: {e}')
         await websocket.close(code=1008)
         return
 

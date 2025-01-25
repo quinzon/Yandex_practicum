@@ -22,7 +22,10 @@ class AuthService:
 
     async def get_user_id(self, auth_token: str) -> str:
         profile = await self.get_profile(auth_token)
-        return profile.get('id')
+        user_id = profile.get('id')
+        if not user_id:
+            raise HTTPException(status_code=404, detail='User not found')
+        return user_id
 
 
 @lru_cache()
