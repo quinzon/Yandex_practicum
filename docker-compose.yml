@@ -601,6 +601,15 @@ services:
       - postgres
     <<: [ *common-variables, *common-env ]
 
+  notification_workers:
+    build:
+      context: ./notification_workers
+      dockerfile: Dockerfile
+    container_name: 'notification_workers'
+    env_file: ./notification_workers/.env
+    depends_on:
+      - rabbitmq
+    <<: [ *common-variables ]
 
 volumes:
   postgres-data:
