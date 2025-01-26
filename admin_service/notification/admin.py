@@ -1,3 +1,4 @@
+from typing import Union
 from http import HTTPStatus
 import requests
 
@@ -7,6 +8,7 @@ from django.utils.html import format_html
 from django.shortcuts import render, redirect
 from django.utils.translation import gettext_lazy as _
 from django.core.exceptions import PermissionDenied
+from django.http import HttpRequest, HttpResponse
 
 from notification.models import NotificationTemplate
 from notification.forms import NotificationRecipientForm
@@ -23,10 +25,20 @@ class NotificationTemplateAdmin(PermissionAdmin):
     list_display = ('title', 'template', 'created_at', 'updated_at', 'send_button')
     search_fields = ('title', 'id')
 
-    def has_send_permission(self, request):
+    def has_send_permission(self, request: Union[HttpRequest, None]) -> bool:
+        """
+        Проверяет наличие прав на отправку уведомлений.
+
+        Возвращает True, если права есть, иначе False.
+        """
         return self._check_permission(request, 'send')
 
-    def send_button(self, obj):
+    def send_button(self, obj: NotificationTemplate) -> str:
+        """
+        Генерирует кнопку для отправки уведомления.
+
+        Возвращает HTML-код кнопки.
+        """
         return format_html(
             f'<a class="button" href="{{}}">{_("Send it out")}</a>',
             reverse('admin:send_notification_template', args=[obj.id])
@@ -35,6 +47,11 @@ class NotificationTemplateAdmin(PermissionAdmin):
     send_button.short_description = _('Sending message')
 
     def get_urls(self):
+        """
+        Получает URL-адреса для административной панели.
+
+        Возвращает список URL-адресов.
+        """
         urls = super().get_urls()
         custom_urls = [
             path('send/<uuid:notification_template_id>/', self.admin_site.admin_view(self.send_notification),
@@ -42,7 +59,18 @@ class NotificationTemplateAdmin(PermissionAdmin):
         ]
         return custom_urls + urls
 
-    def send_notification(self, request, notification_template_id):
+    def send_notification(self, request: Union[HttpRequest, None],
+                          notification_template_id: str) -> Union[HttpResponse, None]:
+        """
+        Отправляет уведомление на основе шаблона.
+
+        Параметры:
+            request (HttpRequest): Данные формы отправки уведомления.
+            notification_template_id (str): Идентификатор шаблона.
+
+        Возвращает:
+            HttpResponse: Редирект после отправки уведомления.
+        """
         if not self.has_send_permission(request):
             raise PermissionDenied("У вас нет прав для отправки уведомлений.")
 
@@ -71,7 +99,7 @@ class NotificationTemplateAdmin(PermissionAdmin):
                         'template_id': str(notification_template_id),
                         'subject': 'admin messaging',
                         'is_delayed': send_time is not None,
-                        'send_time': str(send_time),
+                        'send_time': str(send_time) if send_time else None,
                         'priority': priority,
                         'recipient_group': recipient_group,
                     }

@@ -1,8 +1,10 @@
-from rest_framework import viewsets
+from typing import List, Dict, Union
+from rest_framework import viewsets, status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from rest_framework import status
 from drf_spectacular.utils import extend_schema, OpenApiParameter
+from rest_framework.request import Request
+from rest_framework.views import Response as DRFResponse
 
 from notification.models import NotificationTemplate
 from notification.api.v1.serializers import NotificationTemplateModelSerializer, UserDataSerializer
@@ -16,17 +18,31 @@ class NotificationTemplateViewSet(viewsets.ModelViewSet):
 
 @extend_schema(
     parameters=[
-        OpenApiParameter('role', type=str, location=OpenApiParameter.QUERY, description='User role or "all_users"'),
-        OpenApiParameter('page', type=int, location=OpenApiParameter.QUERY, description='Page number'),
-        OpenApiParameter('page_size', type=int, location=OpenApiParameter.QUERY, description='Records per page')
+        OpenApiParameter('role', type=str, location=OpenApiParameter.QUERY,
+                         description='Роль пользователя или "all_users"'),
+        OpenApiParameter('page', type=int, location=OpenApiParameter.QUERY,
+                         description='Номер страницы'),
+        OpenApiParameter('page_size', type=int, location=OpenApiParameter.QUERY,
+                         description='Количество записей на странице')
     ],
     responses={200: UserDataSerializer(many=True)}
 )
 @api_view(['GET'])
-def get_user_data(request):
-    role = request.query_params.get('role')
-    page = request.query_params.get('page', 1)
-    page_size = request.query_params.get('page_size', 50)
+def get_user_data(request: Request) -> DRFResponse:
+    """
+    Получить данные пользователей по роли с пагинацией.
+
+    Параметры:
+        - role (str): Обязательный параметр для фильтрации по роли.
+        - page (int, необязательный): Номер страницы (по умолчанию 1).
+        - page_size (int, необязательный): Количество пользователей на странице (по умолчанию 50).
+
+    Возвращает:
+        DRFResponse: JSON с данными пользователей и пагинацией.
+    """
+    role: Union[str, None] = request.query_params.get('role')
+    page: Union[str, int] = request.query_params.get('page', 1)
+    page_size: Union[str, int] = request.query_params.get('page_size', 50)
 
     if role is None:
         return Response({'error': "Parameter 'role' is required."}, status=status.HTTP_400_BAD_REQUEST)
@@ -46,19 +62,14 @@ def get_user_data(request):
             status=status.HTTP_400_BAD_REQUEST
         )
 
-    rows = get_users_by_role(role, page, page_size)
+    rows: List[tuple] = get_users_by_role(role, page, page_size)
 
-    result = [
-        {
-            'id': row[0],
-            'email': row[1],
-            'first_name': row[2],
-            'last_name': row[3]
-        }
+    result: List[Dict[str, str]] = [
+        {'email': row[0], 'first_name': row[1], 'last_name': row[2]}
         for row in rows
     ]
 
-    serializer = UserDataSerializer(data=result, many=True)
+    serializer: UserDataSerializer = UserDataSerializer(data=result, many=True)
     serializer.is_valid(raise_exception=True)
 
     return Response({
