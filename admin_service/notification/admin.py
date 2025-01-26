@@ -8,6 +8,7 @@ from django.utils.html import format_html
 from django.shortcuts import render, redirect
 from django.utils.translation import gettext_lazy as _
 from django.core.exceptions import PermissionDenied
+from django.http import HttpRequest, HttpResponse
 
 from notification.models import NotificationTemplate
 from notification.forms import NotificationRecipientForm
@@ -81,7 +82,8 @@ class NotificationTemplateAdmin(PermissionAdmin):
         ]
         return custom_urls + urls
 
-    def send_notification(self, request: Union[HttpRequest, None], notification_template_id: str) -> Union[HttpResponse, None]:
+    def send_notification(self, request: Union[HttpRequest, None],
+                          notification_template_id: str) -> Union[HttpResponse, None]:
         """
         Отправляет уведомление на основе выбранного шаблона.
 

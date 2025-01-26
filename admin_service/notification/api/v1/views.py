@@ -18,9 +18,12 @@ class NotificationTemplateViewSet(viewsets.ModelViewSet):
 
 @extend_schema(
     parameters=[
-        OpenApiParameter('role', type=str, location=OpenApiParameter.QUERY, description='Роль пользователя или "all_users"'),
-        OpenApiParameter('page', type=int, location=OpenApiParameter.QUERY, description='Номер страницы'),
-        OpenApiParameter('page_size', type=int, location=OpenApiParameter.QUERY, description='Количество записей на странице')
+        OpenApiParameter('role', type=str, location=OpenApiParameter.QUERY,
+                         description='Роль пользователя или "all_users"'),
+        OpenApiParameter('page', type=int, location=OpenApiParameter.QUERY,
+                         description='Номер страницы'),
+        OpenApiParameter('page_size', type=int, location=OpenApiParameter.QUERY,
+                         description='Количество записей на странице')
     ],
     responses={200: UserDataSerializer(many=True)}
 )
