@@ -4,3 +4,4 @@ psycopg2-binary==2.9.8
 python-dotenv==1.0.1
 pydantic-settings==2.2.1
 pydantic==2.6.4
+Flask-Migrate==4.1.0
