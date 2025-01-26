@@ -1,5 +1,6 @@
 import asyncio
 import json
+from enum import Enum
 
 from aio_pika import IncomingMessage, ExchangeType
 from notification_workers.src.core.config import settings
@@ -11,6 +12,11 @@ from notification_workers.src.services.enrich import EnrichService
 from notification_workers.src.services.senders.email import EmailSender
 from notification_workers.src.services.senders.push import PushSender
 from notification_workers.src.services.senders.sms import SmsSender
+
+class QueueNames(Enum):
+    EMAIL = "notifications_email"
+    SMS = "notifications_sms"
+    PUSH = "notifications_push"
 
 
 enrich_service: EnrichService | None = None
@@ -84,11 +90,7 @@ async def main() -> None:
 
     await dlq_queue.bind(dlx_exchange, routing_key=dlx_name)
 
-    queue_names = [
-        'notifications_email',
-        'notifications_sms',
-        'notifications_push'
-    ]
+    queue_names = [queue.value for queue in QueueNames]
 
     for q_name in queue_names:
         queue = await channel.declare_queue(
