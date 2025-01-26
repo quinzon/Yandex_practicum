@@ -13,6 +13,7 @@ from notification_workers.src.services.senders.email import EmailSender
 from notification_workers.src.services.senders.push import PushSender
 from notification_workers.src.services.senders.sms import SmsSender
 
+
 class QueueNames(Enum):
     EMAIL = "notifications_email"
     SMS = "notifications_sms"
