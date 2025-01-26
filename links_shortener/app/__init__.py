@@ -13,7 +13,7 @@ def create_app():
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = settings.SQLALCHEMY_TRACK_MODIFICATIONS
 
     db.init_app(app)
-    migrate = Migrate(app, db)
+    Migrate(app, db)
 
     logging.basicConfig(level=logging.INFO)
     logger = logging.getLogger(__name__)
