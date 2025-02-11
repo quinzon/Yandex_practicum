@@ -1,0 +1,28 @@
+{
+  "request": {
+    "method": "GET",
+    "urlPath": "/check-permission",
+    "queryParameters": {
+      "resource": {
+        "matches": ".*"
+      },
+      "http_method": {
+        "matches": ".*"
+      }
+    },
+    "headers": {
+      "Authorization": {
+        "matches": ".*"
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "jsonBody": {
+      "message": "Permission granted"
+    },
+    "headers": {
+      "Content-Type": "application/json"
+    }
+  }
+}
