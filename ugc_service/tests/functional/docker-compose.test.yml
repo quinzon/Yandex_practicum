@@ -11,10 +11,14 @@ services:
     image: mongo:8.0.4
     ports:
       - "27017:27017"
+    <<: *common-variables
 
-  ugc_service_test:
+  api:
     build: ../../
     image: ugc_service
+    ports:
+      - "8003:8003"
+    container_name: ugc_service
     <<: *common-variables
     entrypoint: [ "uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8003", "--reload" ]
 
@@ -26,6 +30,18 @@ services:
     volumes:
       - ./wiremock/mappings:/home/wiremock/mappings
       - ./wiremock/__files:/home/wiremock/__files
+    <<: *common-variables
+
+  tests:
+    image: ugc_service
+    env_file:
+      - .env.tests
+    <<: *common-variables
+    entrypoint: >
+      sh -c "export PYTHONPATH=/opt
+      && pip install -r /opt/ugc_service/tests/functional/requirements.txt
+      && python3 /opt/ugc_service/tests/functional/utils/wait_for_mongo.py
+      && pytest /opt/ugc_service/tests/functional/src"
 
 networks:
   ugc_test_network:

@@ -1,20 +1,8 @@
 {
+  "priority": 10,
   "request": {
     "method": "GET",
-    "urlPath": "/check-permission",
-    "queryParameters": {
-      "resource": {
-        "matches": ".*"
-      },
-      "http_method": {
-        "matches": ".*"
-      }
-    },
-    "headers": {
-      "Authorization": {
-        "matches": ".*"
-      }
-    }
+    "urlPath": "/api/v1/auth/users/check-permission"
   },
   "response": {
     "status": 200,

@@ -38,7 +38,9 @@ class BaseRepository(Generic[T], ABC):
 
     async def delete(self, item_id: str) -> None:
         model = self.get_model()
-        await model.find_one({'_id': item_id}).delete()
+        document = await model.find_one({'_id': ObjectId(item_id)})
+        if document:
+            await document.delete()
 
     async def find(
             self,
