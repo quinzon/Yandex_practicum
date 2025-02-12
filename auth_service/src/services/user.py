@@ -57,6 +57,8 @@ class UserService(BaseService[User]):
                 email=email,
                 first_name=user_info.get('first_name', ''),
                 last_name=user_info.get('last_name', ''),
+                patronymic=user_info.get('patronymic', ''),
+                phone_number=user_info.get('phone_number', ''),
                 password_hash=self.hash_password(password),
             )
 
