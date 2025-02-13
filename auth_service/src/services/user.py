@@ -12,6 +12,8 @@ from auth_service.src.repository.user import UserRepository, get_user_repository
 from auth_service.src.services.base import BaseService
 from auth_service.src.core.helpers import generate_password
 
+from sqlalchemy.future import select
+
 logger = logging.getLogger('UserService')
 pwd_context = CryptContext(schemes=['bcrypt'], deprecated='auto')
 
@@ -102,6 +104,20 @@ class UserService(BaseService[User]):
     @staticmethod
     def verify_password(plain_password: str, hashed_password: str) -> bool:
         return pwd_context.verify(plain_password, hashed_password)
+
+    async def get_all_users(self, role_id: str = None, page_size: int = 10, page_number: int = 1):
+        query = select(User)
+
+        if role_id:
+            query = query.join(User.roles).filter(Role.id == role_id)
+
+        total_count = await self.session.execute(select(func.count()).select_from(query.subquery()))
+        total_count = total_count.scalar_one()
+
+        result = await self.session.execute(query.offset((page_number - 1) * page_size).limit(page_size))
+        users = result.scalars().all()
+
+        return [UserResponse.from_orm(user) for user in users], total_count
 
 
 def get_user_service(
