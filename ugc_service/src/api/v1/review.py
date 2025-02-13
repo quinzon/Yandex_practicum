@@ -28,7 +28,7 @@ async def get_user_bookmarks(
         limit: int = Query(10, le=50),
         sort_by: str = Query(None),
         sort_order: int = Query(1),
-        service: ReviewService = Depends(get_review_service)
+        service: ReviewService = Depends(get_review_service) #noqa: WPS211
 ):
     filters = {'user_id': user_id}
     sort_params = {sort_by: sort_order} if sort_by else None

@@ -20,7 +20,6 @@ class AuthServiceClient:
         query_params = {'resource': resource, 'http_method': http_method}
 
         async with httpx.AsyncClient() as client:
-            print(self.service_url)
             response = await client.get(self.service_url, headers=headers, params=query_params)
 
             if response.status_code == HTTPStatus.OK:

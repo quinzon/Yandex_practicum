@@ -21,7 +21,7 @@ review_response_data = {
     'rating': 8,
     'likes_count': 5,
     'dislikes_count': 1,
-    'timestamp': datetime.utcnow().isoformat() + 'Z'
+    'timestamp': f'{datetime.utcnow().isoformat()}Z'
 }
 
 paginated_reviews_data = {

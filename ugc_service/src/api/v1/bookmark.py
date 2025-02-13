@@ -54,7 +54,7 @@ async def get_user_bookmarks(
         sort_by: str = Query(None),
         sort_order: int = Query(1),
         service: BookmarkService = Depends(get_bookmark_service)
-):
+): #noqa: WPS211
     filters = {'user_id': user_id}
     sort_params = {sort_by: sort_order} if sort_by else None
     return await service.search_bookmarks(filters, skip, limit, sort_params)

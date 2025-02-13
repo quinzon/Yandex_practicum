@@ -61,7 +61,7 @@ async def get_user_ratings(
         sort_by: str = Query(None),
         sort_order: int = Query(1),
         service: FilmRatingService = Depends(get_film_rating_service)
-):
+): #noqa: WPS211
     filters = {'user_id': user_id}
     sort_params = {sort_by: sort_order} if sort_by else None
     return await service.search_film_ratings(filters, skip, limit, sort_params)
