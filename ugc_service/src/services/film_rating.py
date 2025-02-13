@@ -21,6 +21,7 @@ class FilmRatingService:
         )
         film_rating_doc = await self.repository.create(film_rating_doc)
         return FilmRatingResponse(
+            id=str(film_rating_doc.id),
             user_id=film_rating_doc.user_id,
             film_id=film_rating_doc.film_id,
             rating=film_rating_doc.rating,
@@ -32,6 +33,7 @@ class FilmRatingService:
         if not doc:
             return None
         return FilmRatingResponse(
+            id=str(doc.id),
             user_id=doc.user_id,
             film_id=doc.film_id,
             rating=doc.rating,
@@ -51,6 +53,7 @@ class FilmRatingService:
         if not updated_doc:
             return None
         return FilmRatingResponse(
+            id=str(updated_doc.id),
             user_id=updated_doc.user_id,
             film_id=updated_doc.film_id,
             rating=updated_doc.rating,
@@ -74,6 +77,7 @@ class FilmRatingService:
 
         film_ratings_responses = [
             FilmRatingResponse(
+                id=str(film_rating.id),
                 user_id=film_rating.user_id,
                 film_id=film_rating.film_id,
                 rating=film_rating.rating,

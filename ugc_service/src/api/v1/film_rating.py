@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from ugc_service.src.core.exceptions import DuplicateException
 from ugc_service.src.core.utils import has_permission
 from ugc_service.src.models.models import FilmAggregatedRatingResponse, FilmRatingResponse, \
-    FilmRatingCreate
+    FilmRatingCreate, PaginatedResponse
 from ugc_service.src.services.film_rating import FilmRatingService, get_film_rating_service
 
 router = APIRouter(dependencies=[Depends(has_permission)])
@@ -53,7 +53,7 @@ async def get_average_rating(
     return await service.get_average_rating(film_id)
 
 
-@router.get('/ratings/users/{user_id}', response_model=FilmRatingResponse)
+@router.get('/ratings/users/{user_id}', response_model=PaginatedResponse[FilmRatingResponse])
 async def get_user_ratings(
         user_id: str,
         skip: int = Query(0, ge=0),

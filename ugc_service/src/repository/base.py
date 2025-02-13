@@ -51,7 +51,6 @@ class BaseRepository(Generic[T], ABC):
     ) -> tuple[int, List[T]]:
         model = self.get_model()
         query = model.find(filters)
-        count = await model.count()
         if sort_by:
             sort_params = [
                 (field, SortDirection.ASCENDING if direction == 1 else SortDirection.DESCENDING)
@@ -61,4 +60,4 @@ class BaseRepository(Generic[T], ABC):
 
         documents = await query.skip(skip).limit(limit).to_list()
 
-        return count, documents
+        return len(documents), documents

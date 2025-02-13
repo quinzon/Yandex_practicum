@@ -4,8 +4,8 @@ from http import HTTPStatus
 
 import pytest
 
+from ugc_service.tests.functional.fixtures.common import unique_review_create_data
 from ugc_service.tests.functional.testdata.review_data import (
-    review_create_data as base_review_create_data,
     review_update_data,
     search_request_data,
     reaction_request_data,
@@ -14,14 +14,6 @@ from ugc_service.tests.functional.testdata.review_data import (
 pytestmark = pytest.mark.asyncio
 
 BASE_ENDPOINT = '/api/v1/ugc/reviews'
-
-
-@pytest.fixture
-def unique_review_create_data():
-    data = deepcopy(base_review_create_data)
-    data['film_id'] = str(uuid.uuid4())
-    return data
-
 
 async def test_create_review(make_post_request, valid_token, unique_review_create_data):
     response, headers, status = await make_post_request(
@@ -153,11 +145,12 @@ async def test_react_to_review(make_patch_request, make_post_request, valid_toke
 
 async def test_get_reviews_by_user(make_get_request, make_post_request, valid_token,
                                    unique_review_create_data):
-    test_user_id = 'user_for_test'
+    test_user_id = str(uuid.uuid4())
     unique_review_create_data['user_id'] = test_user_id
 
     created_review_ids = []
     for _ in range(3):
+        unique_review_create_data['film_id'] = str(uuid.uuid4())
         response, _, status = await make_post_request(
             BASE_ENDPOINT,
             json=unique_review_create_data,

@@ -13,6 +13,7 @@ class PaginatedResponse(BaseModel, Generic[T]):
 
 
 class FilmRatingResponse(BaseModel):
+    id: str
     user_id: str
     film_id: str
     rating: int = Field(..., ge=0, le=10)
