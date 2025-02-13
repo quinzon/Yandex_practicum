@@ -28,7 +28,7 @@ async def get_user_bookmarks(
         limit: int = Query(10, le=50),
         sort_by: str = Query(None),
         sort_order: int = Query(1),
-        service: ReviewService = Depends(get_review_service) #noqa: WPS211
+        service: ReviewService = Depends(get_review_service)  # noqa: WPS211
 ):
     filters = {'user_id': user_id}
     sort_params = {sort_by: sort_order} if sort_by else None
@@ -54,10 +54,10 @@ async def get_review(
         review_id: str,
         service: ReviewService = Depends(get_review_service)
 ):
-    rv = await service.get_review(review_id)
-    if not rv:
+    review = await service.get_review(review_id)
+    if not review:
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail='Review not found')
-    return rv
+    return review
 
 
 @router.put('/reviews/{review_id}', response_model=ReviewResponse)
