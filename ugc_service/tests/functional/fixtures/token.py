@@ -10,7 +10,7 @@ def base64_url_encode(data: bytes) -> str:
 
 
 def generate_token(user_id: str = 'user123', email: str = 'user123@example.com',
-                   roles: list[str] = None) -> str:
+                   roles: list[str] | None = None) -> str:
     if roles is None:
         roles = ['user']
     header = {'alg': 'HS256', 'typ': 'JWT'}

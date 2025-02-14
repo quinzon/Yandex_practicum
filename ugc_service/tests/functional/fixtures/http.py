@@ -14,7 +14,7 @@ async def client_session():
     await session.close()
 
 
-def prepare_headers(headers: dict = None) -> dict:
+def prepare_headers(headers: dict | None = None) -> dict:
     if headers is None:
         headers = {}
     headers['x-request-id'] = str(uuid.uuid4())
@@ -23,7 +23,7 @@ def prepare_headers(headers: dict = None) -> dict:
 
 @pytest_asyncio.fixture(name='make_get_request')
 def make_get_request(client_session):
-    async def inner(endpoint: str, params: dict = None, headers: dict = None):
+    async def inner(endpoint: str, params: dict | None = None, headers: dict | None = None):
         url = f'{test_settings.service_url}{endpoint}'
         headers = prepare_headers(headers)
         async with client_session.get(url, params=params, headers=headers) as response:
@@ -34,7 +34,7 @@ def make_get_request(client_session):
 
 @pytest_asyncio.fixture(name='make_post_request')
 async def make_post_request(client_session):
-    async def inner(endpoint: str, json: dict = None, headers: dict = None):
+    async def inner(endpoint: str, json: dict | None = None, headers: dict | None = None):
         url = f'{test_settings.service_url}{endpoint}'
         headers = prepare_headers(headers)
         async with client_session.post(url, json=json, headers=headers) as response:
@@ -68,7 +68,7 @@ async def make_patch_request(client_session):
 
 @pytest_asyncio.fixture(name='make_delete_request')
 async def make_delete_request(client_session):
-    async def inner(endpoint: str, headers: dict = None):
+    async def inner(endpoint: str, headers: dict | None = None):
         url = f'{test_settings.service_url}{endpoint}'
         headers = prepare_headers(headers)
         async with client_session.delete(url, headers=headers) as response:
