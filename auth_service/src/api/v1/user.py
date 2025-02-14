@@ -63,6 +63,8 @@ async def update_profile(
 
     user.first_name = update_data.first_name
     user.last_name = update_data.last_name
+    user.patronymic = update_data.patronymic
+    user.phone_number = update_data.phone_number
     if update_data.password:
         user.password_hash = user_service.hash_password(update_data.password.get_secret_value())
 
@@ -120,7 +122,6 @@ async def get_users(
         page_size: int = Query(10, gt=0, description='Number of items per page'),
         page_number: int = Query(1, gt=0, description='The page number to retrieve'),
         token: str = Depends(oauth2_scheme),
-        token_service: TokenService = Depends(get_token_service),
         user_service: UserService = Depends(get_user_service),
         access_control_service: AccessControlService = Depends(get_access_control_service)
 ):
