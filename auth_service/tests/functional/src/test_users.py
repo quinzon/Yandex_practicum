@@ -205,4 +205,5 @@ async def test_get_users(async_client, access_token):
     assert response.status_code == HTTPStatus.OK
 
     response_json = response.json()
+
     assert isinstance(response_json, list)
