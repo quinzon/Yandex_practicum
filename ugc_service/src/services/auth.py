@@ -13,8 +13,10 @@ class AuthServiceClient:
     def __init__(self):
         self.service_url = settings.auth_service_url
 
-    async def check_permission(self, token: str, resource: str, http_method: str, headers: Headers) -> bool:
-        headers = {'Authorization': f'Bearer {token}', 'X-Request-Id': headers.get('X-Request-Id', str(uuid.uuid4()))}
+    async def check_permission(self, token: str, resource: str, http_method: str,
+                               headers: Headers) -> bool:
+        headers = {'Authorization': f'Bearer {token}',
+                   'X-Request-Id': headers.get('X-Request-Id', str(uuid.uuid4()))}
         query_params = {'resource': resource, 'http_method': http_method}
 
         async with httpx.AsyncClient() as client:
@@ -22,13 +24,14 @@ class AuthServiceClient:
 
             if response.status_code == HTTPStatus.OK:
                 return True
-            elif response.status_code == HTTPStatus.FORBIDDEN or response.status_code == HTTPStatus.UNAUTHORIZED:
+
+            if response.status_code in [HTTPStatus.FORBIDDEN, HTTPStatus.UNAUTHORIZED]:
                 return False
-            else:
-                raise HTTPException(
-                    status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
-                    detail='Failed to communicate with auth service'
-                )
+
+            raise HTTPException(
+                status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+                detail='Failed to communicate with auth service'
+            )
 
 
 @lru_cache()

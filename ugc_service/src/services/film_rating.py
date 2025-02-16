@@ -1,11 +1,11 @@
 from functools import lru_cache
-from typing import Optional
+from typing import Optional, Dict, Any
 
 from fastapi import Depends
 
 from ugc_service.src.models.documents import FilmRating
 from ugc_service.src.models.models import FilmAggregatedRatingResponse, FilmRatingResponse, \
-    FilmRatingCreate
+    FilmRatingCreate, PaginatedResponse
 from ugc_service.src.repository.film_rating import FilmRatingRepository, get_film_rating_repository
 
 
@@ -21,6 +21,7 @@ class FilmRatingService:
         )
         film_rating_doc = await self.repository.create(film_rating_doc)
         return FilmRatingResponse(
+            id=str(film_rating_doc.id),
             user_id=film_rating_doc.user_id,
             film_id=film_rating_doc.film_id,
             rating=film_rating_doc.rating,
@@ -32,6 +33,7 @@ class FilmRatingService:
         if not doc:
             return None
         return FilmRatingResponse(
+            id=str(doc.id),
             user_id=doc.user_id,
             film_id=doc.film_id,
             rating=doc.rating,
@@ -51,6 +53,7 @@ class FilmRatingService:
         if not updated_doc:
             return None
         return FilmRatingResponse(
+            id=str(updated_doc.id),
             user_id=updated_doc.user_id,
             film_id=updated_doc.film_id,
             rating=updated_doc.rating,
@@ -62,6 +65,28 @@ class FilmRatingService:
 
     async def get_average_rating(self, film_id: str) -> FilmAggregatedRatingResponse:
         return await self.repository.get_average_rating(film_id)
+
+    async def search_film_ratings(
+            self,
+            filters: Dict[str, Any],
+            skip: int = 0,
+            limit: int = 10,
+            sort_by: Optional[Dict[str, int]] = None
+    ) -> PaginatedResponse[FilmRatingResponse]:
+        count, film_ratings = await self.repository.find(filters, skip, limit, sort_by)
+
+        film_ratings_responses = [
+            FilmRatingResponse(
+                id=str(film_rating.id),
+                user_id=film_rating.user_id,
+                film_id=film_rating.film_id,
+                rating=film_rating.rating,
+                timestamp=film_rating.timestamp
+            )
+            for film_rating in film_ratings
+        ]
+
+        return PaginatedResponse(total=count, items=film_ratings_responses)
 
 
 @lru_cache()
