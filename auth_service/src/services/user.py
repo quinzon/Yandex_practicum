@@ -13,6 +13,8 @@ from auth_service.src.services.base import BaseService
 from auth_service.src.core.helpers import generate_password
 
 from sqlalchemy.future import select
+from sqlalchemy.sql import func
+
 
 logger = logging.getLogger('UserService')
 pwd_context = CryptContext(schemes=['bcrypt'], deprecated='auto')

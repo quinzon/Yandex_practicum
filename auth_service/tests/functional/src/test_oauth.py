@@ -1,6 +1,6 @@
 import pytest
 from unittest.mock import AsyncMock, patch
-from auth_service.tests.functional.fixtures.oauth import oauth_service, oauth_client, mock_request
+
 
 pytestmark = pytest.mark.asyncio
 
