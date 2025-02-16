@@ -26,6 +26,7 @@ async def test_get_profile(make_get_request, get_tokens):
     assert response_body['email'] == valid_user['email']
     assert response_body['first_name'] == valid_user['first_name']
     assert response_body['last_name'] == valid_user['last_name']
+    assert response_body['patronymic'] == valid_user['patronymic']
 
 
 # Test for getting login history
@@ -73,6 +74,7 @@ async def test_update_profile(make_put_request, get_tokens):
     update_data = {
         'first_name': 'UpdatedName',
         'last_name': 'UpdatedLastName',
+        'patronymic': 'UpdatedPatronymic',
         'password': 'newStrongPassword123!'
     }
 
@@ -86,6 +88,7 @@ async def test_update_profile(make_put_request, get_tokens):
     assert status == HTTPStatus.OK
     assert response_body['first_name'] == 'UpdatedName'
     assert response_body['last_name'] == 'UpdatedLastName'
+    assert response_body['patronymic'] == 'UpdatedPatronymic'
 
 
 # Test for invalid access token
@@ -186,3 +189,20 @@ async def test_check_permission(make_get_request, make_post_request, make_put_re
     )
 
     assert status == HTTPStatus.OK
+
+
+@pytest.mark.parametrize('setup_superuser', [already_exist_superuser], indirect=True)
+@pytest.mark.parametrize('setup_roles', [roles], indirect=True)
+@pytest.mark.parametrize('setup_user', [already_exist_user], indirect=True)
+@pytest.mark.asyncio
+async def test_get_users(async_client, access_token):
+    response = await async_client.get(
+        "/users",
+        params={"role_id": None, "page_size": 10, "page_number": 1},
+        headers={"Authorization": f"Bearer {access_token}"}
+    )
+
+    assert response.status_code == HTTPStatus.OK
+
+    response_json = response.json()
+    assert isinstance(response_json, list)
