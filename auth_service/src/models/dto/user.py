@@ -1,8 +1,11 @@
 import re
+
 import phonenumbers
+
 from datetime import datetime
 
 from pydantic import BaseModel, EmailStr, Field, SecretStr, field_validator
+
 from typing import List, Any
 
 from auth_service.src.models.dto.common import BaseDto
@@ -18,9 +21,7 @@ class UserCreate(BaseModel):
 
     @field_validator('password')
     def validate_password(cls, password: SecretStr) -> SecretStr:
-        """
-        Сheck password for having letters, numbers and special characters
-        """
+        """Check password for having letters, numbers and special characters."""
         str_pass = password.get_secret_value()
         if not re.search(r'[A-Za-z]', str_pass):
             raise ValueError('Password must contain at least one letter.')

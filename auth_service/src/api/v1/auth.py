@@ -54,9 +54,7 @@ async def login_user(
     await login_history_service.add_login_history(user.id, user_agent, client_address)
 
     token_data = TokenData(user_id=user.id, email=user.email, roles=user.roles)
-    token_response = await token_service.create_tokens(token_data)
-
-    return token_response
+    return await token_service.create_tokens(token_data)
 
 
 @router.post('/refresh', response_model=TokenResponse)
@@ -133,6 +131,4 @@ async def auth_callback(
     await login_history_service.add_login_history(user.id, user_agent, client_address)
 
     token_data = TokenData(user_id=user.id, email=user.email, roles=user.roles)
-    token_response = await token_service.create_tokens(token_data)
-
-    return token_response
+    return await token_service.create_tokens(token_data)

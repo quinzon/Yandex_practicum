@@ -1,7 +1,10 @@
 from functools import lru_cache
 from http import HTTPStatus
+
 from fastapi import HTTPException, Depends
+
 from typing import List
+
 from uuid import UUID
 
 from auth_service.src.models.dto.common import ErrorMessages
@@ -26,8 +29,7 @@ class RolePermissionService:
                 detail=ErrorMessages.NOT_FOUND
             )
 
-        updated_role = await self.role_service.set_permissions(role, permissions)
-        return updated_role
+        return await self.role_service.set_permissions(role, permissions)
 
 
 @lru_cache()

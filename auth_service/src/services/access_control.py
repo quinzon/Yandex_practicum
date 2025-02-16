@@ -1,4 +1,5 @@
 from functools import lru_cache
+
 from fastapi import Depends
 
 from auth_service.src.services.token import TokenService, get_token_service

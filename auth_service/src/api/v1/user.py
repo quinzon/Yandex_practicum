@@ -77,12 +77,11 @@ async def get_login_history(
         page_number: int = Query(1, gt=0, description='The page number to retrieve'),
 ):
     token_data = await token_service.check_access_token(token)
-    items, total_items = await login_history_service.get_login_history(
+    return await login_history_service.get_login_history(
         token_data.user_id,
         page_size,
         page_number
     )
-    return items, total_items
 
 
 @router.put('/{user_id}/roles', response_model=UserResponse)
@@ -125,6 +124,4 @@ async def get_users(
     if not has_permission:
         raise HTTPException(status_code=HTTPStatus.FORBIDDEN, detail=ErrorMessages.PERMISSION_DENIED)
 
-    users, total_count = await user_service.get_all_users(role_id=role_id, page_size=page_size, page_number=page_number)
-
-    return users, total_count
+    return await user_service.get_all_users(role_id=role_id, page_size=page_size, page_number=page_number)

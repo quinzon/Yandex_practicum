@@ -1,7 +1,11 @@
 from typing import List
+
 from fastapi import Depends, HTTPException
+
 from http import HTTPStatus
+
 from passlib.context import CryptContext
+
 import logging
 
 from auth_service.src.models.dto.common import ErrorMessages

@@ -1,6 +1,7 @@
 import uuid
 
 import pytest
+
 from http import HTTPStatus
 
 from auth_service.tests.functional.testdata.authentication import valid_user, valid_login
@@ -62,7 +63,7 @@ async def test_get_login_history_with_pagination(make_get_request, get_tokens):
     assert len(items) <= page_size
 
     # check we have entries
-    assert len(items) > 0
+    assert items
 
 
 # Test for updating user profile

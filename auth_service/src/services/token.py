@@ -48,8 +48,7 @@ class TokenService:
             'is_superuser': is_superuser
         }
 
-        token = jwt.encode(to_encode, self.settings.secret_key, algorithm=self.settings.algorithm)
-        return token
+        return jwt.encode(to_encode, self.settings.secret_key, algorithm=self.settings.algorithm)
 
     async def create_refresh_token(self, token_data: TokenData) -> str:
         expire = datetime.utcnow() + timedelta(minutes=self.settings.refresh_token_expire_minutes)

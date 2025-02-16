@@ -1,14 +1,13 @@
 import logging
 import time
 from functools import wraps
-from logging import Logger
 
 
 def backoff(
     start_sleep_time=0.1,
     factor=2,
     border_sleep_time=10,
-    logger: Logger = logging.getLogger('backoff'),
+    logger: logging.Logger = logging.getLogger('backoff'),
 ):
     def func_wrapper(func):
         @wraps(func)

@@ -1,19 +1,21 @@
 import uuid
+
 from datetime import datetime
 
 import pytest_asyncio
+
 import psycopg2
 from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 from psycopg2.extras import RealDictCursor
+
 from auth_service.tests.functional.settings import test_settings
+
 import bcrypt
 
 
 @pytest_asyncio.fixture(scope='function', autouse=True)
 async def clear_db():
-    """
-    Clean database before each test.
-    """
+    """Clean database before each test."""
     conn = psycopg2.connect(
         dbname=test_settings.postgres_db,
         user=test_settings.postgres_user,
