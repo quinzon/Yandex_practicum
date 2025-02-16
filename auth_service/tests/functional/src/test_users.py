@@ -197,7 +197,7 @@ async def test_check_permission(make_get_request, make_post_request, make_put_re
 @pytest.mark.asyncio
 async def test_get_users(async_client, access_token):
     response = await async_client.get(
-        "/users",
+        f"{ENDPOINT}/users",
         params={"role_id": None, "page_size": 10, "page_number": 1},
         headers={"Authorization": f"Bearer {access_token}"}
     )
