@@ -110,11 +110,11 @@ async def test_set_roles_for_user(make_put_request, setup_superuser, setup_roles
     access_token, _ = await get_tokens(already_exist_superuser['email'], already_exist_superuser['password'])
 
     user_id = setup_superuser
-    role_ids = setup_roles
+    role_names = setup_roles
 
     response_body, _, status = await make_put_request(
         f'{ENDPOINT}/{user_id}/roles',
-        json={'role_ids': role_ids},
+        json={'role_names': role_names},
         headers={'Authorization': f'Bearer {access_token}'}
     )
     assert status == HTTPStatus.OK
@@ -128,11 +128,11 @@ async def test_set_not_exist_roles_for_user(make_put_request, setup_superuser, s
     access_token, _ = await get_tokens(already_exist_superuser['email'], already_exist_superuser['password'])
 
     user_id = setup_superuser
-    role_ids = [str(uuid.uuid4())]
+    role_names = [str(uuid.uuid4())]
 
     _, _, status = await make_put_request(
         f'{ENDPOINT}/{user_id}/permissions',
-        json={'role_ids': role_ids},
+        json={'role_names': role_names},
         headers={'Authorization': f'Bearer {access_token}'}
     )
 
@@ -145,11 +145,11 @@ async def test_set_roles_for_not_exist_user(make_put_request, setup_superuser, s
     access_token, _ = await get_tokens(already_exist_superuser['email'], already_exist_superuser['password'])
 
     user_id = str(uuid.uuid4())
-    role_ids = setup_roles
+    role_names = setup_roles
 
     _, _, status = await make_put_request(
         f'{ENDPOINT}/{user_id}/permissions',
-        json={'role_ids': role_ids},
+        json={'role_names': role_names},
         headers={'Authorization': f'Bearer {access_token}'}
     )
 
@@ -165,18 +165,18 @@ async def test_check_permission(make_get_request, make_post_request, make_put_re
     superuser_access_token, _ = await get_tokens(already_exist_superuser['email'], already_exist_superuser['password'])
 
     user_id = setup_user
-    role_ids = setup_roles
+    role_names = setup_roles
     permission_ids = setup_permissions
 
     await make_put_request(
-        f'/api/v1/auth/roles/{role_ids[0]}/permissions',
+        f'/api/v1/auth/roles/{role_names[0]}/permissions',
         json={'permission_ids': permission_ids},
         headers={'Authorization': f'Bearer {superuser_access_token}'}
     )
 
     await make_put_request(
         f'{ENDPOINT}/{user_id}/roles',
-        json={'role_ids': role_ids},
+        json={'role_names': role_names},
         headers={'Authorization': f'Bearer {superuser_access_token}'}
     )
 
@@ -198,7 +198,7 @@ async def test_check_permission(make_get_request, make_post_request, make_put_re
 async def test_get_users(async_client, access_token):
     response = await async_client.get(
         f"{ENDPOINT}/users",
-        params={"role_id": None, "page_size": 10, "page_number": 1},
+        params={"role_name": None, "page_size": 10, "page_number": 1},
         headers={"Authorization": f"Bearer {access_token}"}
     )
 
