@@ -18,6 +18,8 @@ class User(Base):
     password_hash = Column(String(255), nullable=False)
     first_name = Column(String(50), nullable=True)
     last_name = Column(String(50), nullable=True)
+    patronymic = Column(String(50), nullable=True)
+    phone_number = Column(String(20), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
     roles = relationship('Role', secondary='auth.user_role', back_populates='users', lazy='selectin')
@@ -35,7 +37,9 @@ class User(Base):
         user = cls(
             email=user_create.email,
             first_name=user_create.first_name,
-            last_name=user_create.last_name
+            last_name=user_create.last_name,
+            patronymic=user_create.patronymic,
+            phone_number=user_create.phone_number
         )
         user.set_password(user_create.password.get_secret_value())
         return user

@@ -65,8 +65,7 @@ async def add_x_request_id_header(request: Request, call_next):
     if tracer:
         with tracer.start_as_current_span('request') as span:
             span.set_attribute('x-request-id', request_id)
-            response = await call_next(request)
-            return response
+            return await call_next(request)
 
     return await call_next(request)
 

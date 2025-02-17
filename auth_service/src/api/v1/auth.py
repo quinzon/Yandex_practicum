@@ -1,4 +1,5 @@
 from http import HTTPStatus
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.exc import IntegrityError
@@ -15,6 +16,7 @@ from auth_service.src.services.login_history import LoginHistoryService, get_log
 from auth_service.src.services.oauth import OAuthService, get_oauth_service
 from auth_service.src.services.token import TokenService, get_token_service
 from auth_service.src.services.user import UserService, get_user_service
+
 
 router = APIRouter()
 
@@ -54,9 +56,7 @@ async def login_user(
     await login_history_service.add_login_history(user.id, user_agent, client_address)
 
     token_data = TokenData(user_id=user.id, email=user.email, roles=user.roles)
-    token_response = await token_service.create_tokens(token_data)
-
-    return token_response
+    return await token_service.create_tokens(token_data)
 
 
 @router.post('/refresh', response_model=TokenResponse)
@@ -68,7 +68,7 @@ async def refresh_token(
     token_data, db_token = await token_service.check_refresh_token(
         refresh_token_request.refresh_token)
 
-    user = await user_service.get_by_id(token_data.user_id)
+    user = await user_service.get_by_id(UUID(token_data.user_id)) if token_data else None
 
     if not user:
         raise HTTPException(
@@ -78,7 +78,7 @@ async def refresh_token(
 
     role_names = [role.name for role in user.roles]
 
-    actual_token_data = TokenData(user_id=str(user.id), email=user.email, roles=role_names)
+    actual_token_data = TokenData(user_id=str(user.id), email=str(user.email), roles=role_names)
     new_tokens = await token_service.refresh_tokens(actual_token_data, db_token)
 
     if not new_tokens:
@@ -130,9 +130,7 @@ async def auth_callback(
     user = await user_service.get_or_create_oauth_user(provider_name, user_info)
 
     user_agent, client_address = get_login_info(request)
-    await login_history_service.add_login_history(user.id, user_agent, client_address)
+    await login_history_service.add_login_history(str(user.id), user_agent, client_address)
 
-    token_data = TokenData(user_id=user.id, email=user.email, roles=user.roles)
-    token_response = await token_service.create_tokens(token_data)
-
-    return token_response
+    token_data = TokenData(user_id=str(user.id), email=str(user.email), roles=user.roles)
+    return await token_service.create_tokens(token_data)

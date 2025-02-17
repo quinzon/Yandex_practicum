@@ -25,7 +25,7 @@ class LoginHistoryService(BaseService[LoginHistory]):
         page_size: int = 10,
         page_number: int = 1
     ) -> Tuple[List[LoginHistory], int]:
-        return await self.repository.get_login_history(user_id, page_size, page_number)
+        return await LoginHistoryRepository(self.repository).get_login_history(user_id, page_size, page_number)
 
 
 @lru_cache()

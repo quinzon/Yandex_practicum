@@ -21,3 +21,4 @@ opentelemetry-exporter-jaeger==1.21.0
 authlib==1.3.2
 itsdangerous==2.2.0
 slowapi==0.1.9
+phonenumbers==8.13.54

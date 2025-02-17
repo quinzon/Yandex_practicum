@@ -6,9 +6,7 @@ MODELS_DIR = os.path.dirname(__file__)
 
 
 def import_all_models():
-    """
-    Import all models dynamically.
-    """
+    """Import all models dynamically."""
     package_name = __name__
 
     for _, module_name, _ in pkgutil.iter_modules([MODELS_DIR]):

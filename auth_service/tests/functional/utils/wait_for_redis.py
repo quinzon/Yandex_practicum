@@ -1,4 +1,5 @@
 import asyncio
+
 from redis.asyncio import Redis
 
 from auth_service.tests.functional.settings import test_settings
@@ -12,8 +13,7 @@ async def wait_for_redis():
     if await redis_client.ping():
         logger.debug('Redis is available!')
         return True
-    else:
-        raise Exception('Waiting for Redis...')
+    raise Exception('Waiting for Redis...')
 
 if __name__ == '__main__':
     asyncio.run(wait_for_redis())

@@ -10,7 +10,7 @@ class PermissionCreate(BaseDto):
 
 
 class PermissionDto(PermissionCreate):
-    id: str
+    id: UUID
 
 
 class PermissionUpdate(PermissionDto):

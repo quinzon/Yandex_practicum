@@ -1,6 +1,8 @@
 import logging
+
 from alembic.config import Config
 from alembic import command
+
 from auth_service.tests.functional.settings import database_url
 from auth_service.tests.functional.utils.backoff import backoff
 

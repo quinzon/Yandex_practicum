@@ -1,8 +1,9 @@
 valid_user = {
     'email': 'test@example.com',
     'password': 'strongPassword123!',
-    'first_name': 'John',
-    'last_name': 'Doe'
+    'first_name': 'Ivan',
+    'last_name': 'Ivanov',
+    'patronymic': 'Ivanovich'
 }
 
 valid_login = {
@@ -20,8 +21,8 @@ invalid_email_user = {
 invalid_password_user = {
     'email': 'test@example.com',
     'password': '123',
-    'first_name': 'John',
-    'last_name': 'Doe'
+    'first_name': 'Ivan',
+    'last_name': 'Ivanov'
 }
 
 non_existent_user_login = {

@@ -1,5 +1,7 @@
 import asyncio
+
 import asyncpg
+
 from auth_service.tests.functional.settings import test_settings
 from auth_service.tests.functional.utils.backoff import backoff
 from auth_service.tests.functional.utils.logger import logger
