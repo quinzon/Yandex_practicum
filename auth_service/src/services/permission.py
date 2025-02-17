@@ -23,7 +23,7 @@ class PermissionService(BaseService[Permission]):
         return await super().create(permission)
 
     async def update(self, permission_dto: PermissionDto) -> Permission:
-        permission = await self.get_by_id(permission_dto.id)
+        permission = Permission(await self.get_by_id(permission_dto.id))
 
         permission.name = permission_dto.name
         permission.http_method = permission_dto.http_method

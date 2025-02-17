@@ -23,11 +23,11 @@ class RoleService(BaseService[Role]):
         return await super().create(role)
 
     async def update(self, role_update: RoleCreate) -> Role:
-        role = await self.get_by_id(role_update.id)
+        role = Role(await self.get_by_id(role_update.id))
 
         role.name = role_update.name
 
-        return await super().update(role)
+        return await super().update(Role(role))
 
     async def set_permissions(self, role: Role, permissions: List[Permission]) -> Role:
         role.permissions = permissions
@@ -40,8 +40,8 @@ class RoleService(BaseService[Role]):
 
         await super().delete(role)
 
-    async def get_by_name(self, name: str) -> Role:
-        return await self.repository.get_by_name(name)
+    async def get_by_name(self, name: str) -> Role | None:
+        return await RoleRepository(self.repository).get_by_name(name)
 
     async def get_by_ids(self, role_ids: List[UUID]) -> List[Role]:
         result = await self.repository.session.execute(

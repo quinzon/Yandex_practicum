@@ -29,7 +29,7 @@ class RolePermissionService:
                 detail=ErrorMessages.NOT_FOUND
             )
 
-        return await self.role_service.set_permissions(role, permissions)
+        return await self.role_service.set_permissions(Role(role), permissions)
 
 
 @lru_cache()

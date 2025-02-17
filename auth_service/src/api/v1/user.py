@@ -19,7 +19,7 @@ router = APIRouter()
 
 @router.get('/profile', response_model=UserResponse)
 async def get_profile(
-        user_id: UUID = None,
+        user_id: UUID,
         token: str = Depends(oauth2_scheme),
         token_service: TokenService = Depends(get_token_service),
         user_service: UserService = Depends(get_user_service),
@@ -27,20 +27,21 @@ async def get_profile(
 ):
     token_data = await token_service.check_access_token(token)
 
-    if not user_id:
-        user_id = token_data.user_id
+    if not user_id and token_data:
+        user_id = UUID(token_data.user_id)
 
-    user = await user_service.get_by_id(user_id)
+    user = await user_service.get_by_id(user_id) if user_id else None
     if not user:
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail=ErrorMessages.USER_NOT_FOUND)
 
-    if user_id != token_data.user_id:
-        has_permission = await access_control_service.check_permission(token, "user:get_profile", "GET")
-        if not has_permission:
-            raise HTTPException(status_code=HTTPStatus.FORBIDDEN, detail=ErrorMessages.PERMISSION_DENIED)
-        user.roles = []
-        user.email = None
-        user.phone_number = None
+    if token_data:
+        if user_id != token_data.user_id:
+            has_permission = await access_control_service.check_permission(token, "user:get_profile", "GET")
+            if not has_permission:
+                raise HTTPException(status_code=HTTPStatus.FORBIDDEN, detail=ErrorMessages.PERMISSION_DENIED)
+            user.roles = []
+            user.email = None
+            user.phone_number = None
 
     return user
 
@@ -53,7 +54,7 @@ async def update_profile(
         user_service: UserService = Depends(get_user_service)
 ):
     token_data = await token_service.check_access_token(token)
-    user = await user_service.get_by_id(token_data.user_id)
+    user = await user_service.get_by_id(UUID(token_data.user_id)) if token_data else None
     if not user:
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail=ErrorMessages.USER_NOT_FOUND)
 
@@ -77,6 +78,10 @@ async def get_login_history(
         page_number: int = Query(1, gt=0, description='The page number to retrieve'),
 ):
     token_data = await token_service.check_access_token(token)
+
+    if token_data is None:
+        raise HTTPException(status_code=401, detail="Invalid or expired token data")
+
     return await login_history_service.get_login_history(
         token_data.user_id,
         page_size,
@@ -113,7 +118,7 @@ async def check_permission(
 @router.get('/users', response_model=Pagination[UserResponse])
 @paginated_response()
 async def get_users(
-        role_id: UUID = None,
+        role_id: UUID,
         page_size: int = Query(10, gt=0, description='Number of items per page'),
         page_number: int = Query(1, gt=0, description='The page number to retrieve'),
         token: str = Depends(oauth2_scheme),
@@ -124,4 +129,4 @@ async def get_users(
     if not has_permission:
         raise HTTPException(status_code=HTTPStatus.FORBIDDEN, detail=ErrorMessages.PERMISSION_DENIED)
 
-    return await user_service.get_all_users(role_id=role_id, page_size=page_size, page_number=page_number)
+    return await user_service.get_all_users(role_id=str(role_id), page_size=page_size, page_number=page_number)

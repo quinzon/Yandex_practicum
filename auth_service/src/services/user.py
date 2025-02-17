@@ -1,4 +1,5 @@
 from typing import List
+from uuid import UUID
 
 from fastapi import Depends, HTTPException
 
@@ -18,6 +19,9 @@ from auth_service.src.core.helpers import generate_password
 
 from sqlalchemy.future import select
 from sqlalchemy.sql import func
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from typing import cast
 
 
 logger = logging.getLogger('UserService')
@@ -25,23 +29,29 @@ pwd_context = CryptContext(schemes=['bcrypt'], deprecated='auto')
 
 
 class UserService(BaseService[User]):
+
+    def __init__(self, repository: UserRepository, session: AsyncSession):
+        super().__init__(cast(UserRepository, repository))
+        self.session = session
+
     async def register_user(self, user_create: UserCreate) -> UserResponse:
         user = User.create(user_create)
         user = await self.create(user)
         return UserResponse.from_orm(user)
 
     async def authenticate_user(self, login_data: LoginRequest) -> UserResponse | None:
-        user = await self.repository.get_user_by_email(login_data.email)
+        user = await cast(UserRepository, self.repository).get_user_by_email(login_data.email)
+
         if user and self.verify_password(login_data.password, user.password_hash):
             return UserResponse.from_orm(user)
         return None
 
     async def get_user_roles(self, user_id: str) -> List[str]:
-        user = await self.get_by_id(user_id)
+        user = await self.get_by_id(UUID(user_id))
         return [role.name for role in user.roles] if user else []
 
     async def assign_role_to_user(self, user_id: str, role_id: str) -> None:
-        await self.repository.assign_role(user_id, role_id)
+        await cast(UserRepository, self.repository).assign_role(user_id, role_id)
 
     async def set_roles(self, user: User, roles: List[Role]) -> User:
         user.roles = roles
@@ -51,17 +61,17 @@ class UserService(BaseService[User]):
     async def get_or_create_oauth_user(self, provider_name: str, user_info: dict) -> User:
         provider_user_id = self._get_provider_user_id(user_info)
 
-        social_account = await self.repository.get_social_account(provider_name, provider_user_id)
+        social_account = await cast(UserRepository, self.repository).get_social_account(provider_name, provider_user_id)
         if social_account:
             return social_account.user
 
         email = self._get_user_email(user_info)
-        user = await self.repository.get_user_by_email(email)
+        user = await cast(UserRepository, self.repository).get_user_by_email(email)
 
         if not user:
             logger.info(f'Creating new user from {provider_name} with email {email}')
             password = self.hash_password(generate_password())
-            user = await self.repository.create_user(
+            user = await cast(UserRepository, self.repository).create_user(
                 email=email,
                 first_name=user_info.get('first_name', ''),
                 last_name=user_info.get('last_name', ''),
@@ -70,7 +80,7 @@ class UserService(BaseService[User]):
                 password_hash=self.hash_password(password),
             )
 
-        await self.repository.create_social_account(
+        await cast(UserRepository, self.repository).create_social_account(
             user=user,
             provider=provider_name,
             provider_user_id=provider_user_id,
@@ -111,7 +121,7 @@ class UserService(BaseService[User]):
     def verify_password(plain_password: str, hashed_password: str) -> bool:
         return pwd_context.verify(plain_password, hashed_password)
 
-    async def get_all_users(self, role_id: str = None, page_size: int = 10, page_number: int = 1):
+    async def get_all_users(self, role_id: str | None, page_size: int = 10, page_number: int = 1):
         query = select(User)
 
         if role_id:
@@ -127,6 +137,7 @@ class UserService(BaseService[User]):
 
 
 def get_user_service(
+        session: AsyncSession,
         user_repository: UserRepository = Depends(get_user_repository),
 ) -> UserService:
-    return UserService(user_repository)
+    return UserService(user_repository, session)
