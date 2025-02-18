@@ -19,7 +19,7 @@ async def has_permission(
     route = request.scope.get('route')
     tags = getattr(route, 'tags', None)
 
-    if tags and len(tags) > 0:
+    if tags:
         resource = tags[0]
     else:
         resource = 'default_resource'

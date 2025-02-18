@@ -52,11 +52,14 @@ class UserRepository(BaseRepository[User]):
         self.session.add(new_account)
         await self.session.commit()
 
-    async def create_user(self, email: str, first_name: str, last_name: str, password_hash: str) -> User:
+    async def create_user(self, email: str, first_name: str, last_name: str, patronymic: str, phone_number: str,
+                          password_hash: str) -> User:
         user = User(
             email=email,
             first_name=first_name,
             last_name=last_name,
+            patronymic=patronymic,
+            phone_number=phone_number,
             password_hash=password_hash
         )
         self.session.add(user)

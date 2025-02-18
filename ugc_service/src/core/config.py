@@ -7,6 +7,7 @@ class Settings(BaseSettings):
     mongo_url: str = Field(..., alias='MONGO_URL')
     mongo_db: str = Field(..., alias='MONGO_DB')
     auth_service_url: str = Field(..., alias='AUTH_SERVICE_URL')
+    env: str = Field(..., alias='ENV')
 
     model_config = SettingsConfigDict(
         env_file='.env',

@@ -38,7 +38,9 @@ class BaseRepository(Generic[T], ABC):
 
     async def delete(self, item_id: str) -> None:
         model = self.get_model()
-        await model.find_one({'_id': item_id}).delete()
+        document = await model.find_one({'_id': ObjectId(item_id)})
+        if document:
+            await document.delete()
 
     async def find(
             self,
@@ -49,7 +51,6 @@ class BaseRepository(Generic[T], ABC):
     ) -> tuple[int, List[T]]:
         model = self.get_model()
         query = model.find(filters)
-        count = await model.count()
         if sort_by:
             sort_params = [
                 (field, SortDirection.ASCENDING if direction == 1 else SortDirection.DESCENDING)
@@ -59,4 +60,4 @@ class BaseRepository(Generic[T], ABC):
 
         documents = await query.skip(skip).limit(limit).to_list()
 
-        return count, documents
+        return len(documents), documents

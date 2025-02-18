@@ -1,0 +1,16 @@
+{
+  "priority": 10,
+  "request": {
+    "method": "GET",
+    "urlPath": "/api/v1/auth/users/check-permission"
+  },
+  "response": {
+    "status": 200,
+    "jsonBody": {
+      "message": "Permission granted"
+    },
+    "headers": {
+      "Content-Type": "application/json"
+    }
+  }
+}

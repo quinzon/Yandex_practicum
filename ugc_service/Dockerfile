@@ -18,6 +18,3 @@ RUN pip install --upgrade pip && \
     pip install --no-cache-dir --upgrade -r requirements.txt
 
 COPY . .
-
-
-CMD ["sh", "-c", "cp -r /opt/sentry /opt/ugc_service/src/sentry && uvicorn src.main:app --host 0.0.0.0 --port 8003"]

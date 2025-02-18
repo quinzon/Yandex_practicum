@@ -1,5 +1,6 @@
 import pytest
 from unittest.mock import AsyncMock
+
 from authlib.integrations.starlette_client import OAuth
 from fastapi import Request
 

@@ -4,6 +4,8 @@ from datetime import timedelta, datetime
 from functools import lru_cache
 from http import HTTPStatus
 
+from typing import Tuple
+
 from fastapi import HTTPException, Depends
 from jose import JWTError, jwt
 from redis.asyncio import Redis
@@ -30,7 +32,7 @@ class TokenService:
 
     @staticmethod
     def _get_ttl(payload: dict) -> float:
-        exp: float = payload.get('exp')
+        exp: float = float(str(payload.get('exp')))
         expire_datetime = datetime.utcfromtimestamp(exp)
         now = datetime.utcnow()
         return (expire_datetime - now).total_seconds()
@@ -38,7 +40,7 @@ class TokenService:
     def create_access_token(self, token_data: TokenData) -> str:
         expire = datetime.utcnow() + timedelta(minutes=self.settings.access_token_expire_minutes)
 
-        is_superuser = 'superadmin' in token_data.roles
+        is_superuser = 'superadmin' in token_data.roles if token_data.roles else False
 
         to_encode = {
             'sub': token_data.user_id,
@@ -48,8 +50,7 @@ class TokenService:
             'is_superuser': is_superuser
         }
 
-        token = jwt.encode(to_encode, self.settings.secret_key, algorithm=self.settings.algorithm)
-        return token
+        return jwt.encode(to_encode, self.settings.secret_key, algorithm=self.settings.algorithm)
 
     async def create_refresh_token(self, token_data: TokenData) -> str:
         expire = datetime.utcnow() + timedelta(minutes=self.settings.refresh_token_expire_minutes)
@@ -93,16 +94,16 @@ class TokenService:
         blacklist_key = f'blacklist:{access_token}'
         return await self.redis.exists(blacklist_key)
 
-    async def check_access_token(self, access_token: str) -> TokenData:
+    async def check_access_token(self, access_token: str) -> TokenData | None:
         token_data = await self.get_token_data(access_token)
         if await self.is_token_blacklisted(access_token):
             raise HTTPException(status_code=HTTPStatus.UNAUTHORIZED,
                                 detail=ErrorMessages.TOKEN_REVOKED)
         return token_data
 
-    async def check_refresh_token(self, refresh_token: str) -> (TokenData, RefreshToken):
+    async def check_refresh_token(self, refresh_token: str) -> Tuple[TokenData | None, RefreshToken]:
         token_data = await self.get_token_data(refresh_token)
-        db_token = await self.token_repository.get_by_user_id(uuid.UUID(token_data.user_id))
+        db_token = await self.token_repository.get_by_user_id(uuid.UUID(token_data.user_id)) if token_data else None
         if not db_token or self._hash_token(refresh_token) != db_token.token_value:
             raise HTTPException(status_code=HTTPStatus.UNAUTHORIZED,
                                 detail=ErrorMessages.INVALID_REFRESH_TOKEN)
@@ -110,10 +111,16 @@ class TokenService:
 
     async def get_token_data(self, token: str) -> TokenData | None:
         payload = self._verify_token(token)
-        user_id: str = payload.get('sub')
-        email: str = payload.get('email')
-        roles: list = payload.get('roles', [])
-        is_superuser: bool = payload.get('is_superuser')
+        if payload:
+            user_id: str | None = payload.get('sub')
+            email: str | None = payload.get('email')
+            roles: list = payload.get('roles', [])
+            is_superuser: bool = payload.get('is_superuser', False)
+        else:
+            user_id = ""
+            email = ""
+            roles = []
+            is_superuser = False
         if not is_superuser:
             is_superuser = False
         return TokenData(user_id=user_id, email=email, roles=roles, is_superuser=is_superuser)
@@ -141,6 +148,8 @@ class TokenService:
 
     async def add_blacklist(self, access_token: str) -> None:
         payload = self._verify_token(access_token)
+        if not payload:
+            raise ValueError("Invalid token: payload is None")
         blacklist_key = f'blacklist:{access_token}'
         ttl = self._get_ttl(payload)
         await self.redis.set(blacklist_key, 'true', ex=int(ttl if ttl > 0 else 0))

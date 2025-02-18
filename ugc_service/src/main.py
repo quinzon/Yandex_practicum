@@ -4,14 +4,15 @@ from fastapi import FastAPI
 from fastapi.responses import ORJSONResponse
 
 
-from sentry.sentry_client import SentryClient
 from ugc_service.src.core.config import settings
 from ugc_service.src.api.v1 import bookmark, film_rating, review
 from ugc_service.src.core.mongo import mongo_client
 from ugc_service.src.setup_mongo import init_mongo_and_shard
 
 
-sentry_client = SentryClient()
+if settings.env != 'test':
+    from sentry.sentry_client import SentryClient
+    sentry_client = SentryClient()
 
 
 @asynccontextmanager

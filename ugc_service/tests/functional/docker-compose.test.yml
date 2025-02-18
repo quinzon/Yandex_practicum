@@ -1,0 +1,47 @@
+x-common-variables: &common-variables
+  networks:
+    - ugc_test_network
+  labels:
+    com.example.project: "functional-ugc-tests"
+  env_file:
+    - .env.tests
+
+services:
+  mongo_test:
+    image: mongo:8.0.4
+    ports:
+      - "27017:27017"
+    <<: *common-variables
+
+  api:
+    build: ../../
+    image: ugc_service
+    ports:
+      - "8003:8003"
+    container_name: ugc_service
+    <<: *common-variables
+    entrypoint: [ "uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8003", "--reload" ]
+
+  wiremock:
+    image: wiremock/wiremock:2.33.2
+    container_name: wiremock
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./wiremock/mappings:/home/wiremock/mappings
+      - ./wiremock/__files:/home/wiremock/__files
+    <<: *common-variables
+
+  tests:
+    image: ugc_service
+    env_file:
+      - .env.tests
+    <<: *common-variables
+    entrypoint: >
+      sh -c "export PYTHONPATH=/opt
+      && pip install -r /opt/ugc_service/tests/functional/requirements.txt
+      && python3 /opt/ugc_service/tests/functional/utils/wait_for_mongo.py
+      && pytest /opt/ugc_service/tests/functional/src"
+
+networks:
+  ugc_test_network:

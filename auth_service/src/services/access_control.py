@@ -1,5 +1,6 @@
 from functools import lru_cache
-from fastapi import Depends
+
+from fastapi import Depends, HTTPException
 
 from auth_service.src.services.token import TokenService, get_token_service
 from auth_service.src.models.entities.role import Role
@@ -14,10 +15,13 @@ class AccessControlService:
     async def check_permission(self, token: str, resource: str, http_method: str) -> bool:
         token_data = await self.token_service.check_access_token(token)
 
+        if token_data is None:
+            raise HTTPException(status_code=401, detail="Invalid or expired token")
+
         if token_data.is_superuser:
             return True
 
-        roles = token_data.roles
+        roles = str(token_data.roles)
 
         for role_name in roles:
             role = await self.role_repository.get_by_name(role_name)

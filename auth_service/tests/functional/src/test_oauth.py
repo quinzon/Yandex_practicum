@@ -1,6 +1,6 @@
 import pytest
 from unittest.mock import AsyncMock, patch
-from auth_service.tests.functional.fixtures.oauth import oauth_service, oauth_client, mock_request
+
 
 pytestmark = pytest.mark.asyncio
 
@@ -81,7 +81,7 @@ async def test_empty_token(oauth_service):
             return_value=AsyncMock(userinfo=AsyncMock(return_value={}))
     ) as mock_get_client:
         user_info = await oauth_service.get_user_info('provider', mock_token)
-        assert user_info == {}
+        assert not user_info
         mock_get_client.assert_called_once_with('provider')
 
 
