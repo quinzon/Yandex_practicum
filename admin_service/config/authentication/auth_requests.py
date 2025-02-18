@@ -81,3 +81,20 @@ def get_user_profile(request: HttpRequest, access_token: str) -> dict:
         raise PermissionDenied('Ошибка получения профиля.')
 
     return response.json()
+
+
+def get_users(request: HttpRequest, access_token: str, params: dict) -> dict:
+    response = requests.get(
+        f'{AUTH_SERVICE_URL}/users/users',
+        params=params,
+        headers=prepare_headers(
+            request,
+            {
+                'Authorization': f'Bearer {access_token}',
+            }
+        ),
+    )
+    if response.status_code != HTTPStatus.OK:
+        raise PermissionDenied('Ошибка получения пользователей.')
+
+    return response.json()

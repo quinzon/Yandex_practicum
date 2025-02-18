@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     'drf_spectacular',
     'movies.apps.MoviesConfig',
     'notification.apps.NotificationConfig',
+    'profiles.apps.ProfilesConfig'
 ]
 
 MIDDLEWARE = [
@@ -57,7 +58,9 @@ ROOT_URLCONF = 'config.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [
+            BASE_DIR / "profiles/templates/profiles"
+        ],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
