@@ -1,8 +1,7 @@
 import uuid
+from http import HTTPStatus
 
 import pytest
-
-from http import HTTPStatus
 
 from auth_service.tests.functional.testdata.authentication import valid_user, valid_login
 from auth_service.tests.functional.testdata.authorization import already_exist_role, roles, \
@@ -111,11 +110,11 @@ async def test_set_roles_for_user(make_put_request, setup_superuser, setup_roles
     access_token, _ = await get_tokens(already_exist_superuser['email'], already_exist_superuser['password'])
 
     user_id = setup_superuser
-    role_names = setup_roles
+    role_ids = setup_roles
 
     response_body, _, status = await make_put_request(
         f'{ENDPOINT}/{user_id}/roles',
-        json={'role_names': role_names},
+        json={'role_ids': role_ids},
         headers={'Authorization': f'Bearer {access_token}'}
     )
     assert status == HTTPStatus.OK
@@ -129,11 +128,11 @@ async def test_set_not_exist_roles_for_user(make_put_request, setup_superuser, s
     access_token, _ = await get_tokens(already_exist_superuser['email'], already_exist_superuser['password'])
 
     user_id = setup_superuser
-    role_names = [str(uuid.uuid4())]
+    role_ids = [str(uuid.uuid4())]
 
     _, _, status = await make_put_request(
         f'{ENDPOINT}/{user_id}/permissions',
-        json={'role_names': role_names},
+        json={'role_ids': role_ids},
         headers={'Authorization': f'Bearer {access_token}'}
     )
 
@@ -146,11 +145,11 @@ async def test_set_roles_for_not_exist_user(make_put_request, setup_superuser, s
     access_token, _ = await get_tokens(already_exist_superuser['email'], already_exist_superuser['password'])
 
     user_id = str(uuid.uuid4())
-    role_names = setup_roles
+    role_ids = setup_roles
 
     _, _, status = await make_put_request(
         f'{ENDPOINT}/{user_id}/permissions',
-        json={'role_names': role_names},
+        json={'role_ids': role_ids},
         headers={'Authorization': f'Bearer {access_token}'}
     )
 
@@ -166,18 +165,18 @@ async def test_check_permission(make_get_request, make_post_request, make_put_re
     superuser_access_token, _ = await get_tokens(already_exist_superuser['email'], already_exist_superuser['password'])
 
     user_id = setup_user
-    role_names = setup_roles
+    role_ids = setup_roles
     permission_ids = setup_permissions
 
     await make_put_request(
-        f'/api/v1/auth/roles/{role_names[0]}/permissions',
+        f'/api/v1/auth/roles/{role_ids[0]}/permissions',
         json={'permission_ids': permission_ids},
         headers={'Authorization': f'Bearer {superuser_access_token}'}
     )
 
     await make_put_request(
         f'{ENDPOINT}/{user_id}/roles',
-        json={'role_names': role_names},
+        json={'role_ids': role_ids},
         headers={'Authorization': f'Bearer {superuser_access_token}'}
     )
 
@@ -195,16 +194,11 @@ async def test_check_permission(make_get_request, make_post_request, make_put_re
 @pytest.mark.parametrize('setup_superuser', [already_exist_superuser], indirect=True)
 @pytest.mark.parametrize('setup_roles', [roles], indirect=True)
 @pytest.mark.parametrize('setup_user', [already_exist_user], indirect=True)
-@pytest.mark.asyncio
-async def test_get_users(async_client, access_token):
-    response = await async_client.get(
-        f"{ENDPOINT}/users",
+async def test_get_users(make_get_request, access_token, setup_superuser, setup_roles, setup_user):
+    _, _, status = await make_get_request(
+        f"{ENDPOINT}",
         params={"role_name": None, "page_size": 10, "page_number": 1},
         headers={"Authorization": f"Bearer {access_token}"}
     )
 
-    assert response.status_code == HTTPStatus.OK
-
-    response_json = response.json()
-
-    assert isinstance(response_json, list)
+    assert status == HTTPStatus.OK

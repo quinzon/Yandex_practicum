@@ -13,18 +13,18 @@
 
     <div class="mb-3 d-flex justify-content-between align-items-center">
         <div class="input-group me-2" style="flex: 1;">
-            <input type="text" id="search-input" class="form-control" placeholder="Введите email или ID для поиска">
-            <button class="btn btn-outline-secondary" type="button" id="search-button">Поиск</button>
+            <input type="text" id="search-input" class="form-control border-dark-subtle" placeholder="Введите email для поиска">
+            <button class="btn btn-outline-dark" type="button" id="search-button">Поиск</button>
         </div>
 
         <div class="input-group me-2" style="flex: 1;">
-            <input type="text" id="role-input" class="form-control" placeholder="Введите роль для фильтрации">
-            <button class="btn btn-outline-secondary" type="button" id="filter-role-button">Фильтровать по роли</button>
+            <input type="text" id="role-input" class="form-control border-dark-subtle" placeholder="Введите роль для фильтрации">
+            <button class="btn btn-outline-dark" type="button" id="filter-role-button">Фильтровать по роли</button>
         </div>
 
         <div class="input-group w-auto">
-            <label for="page-size-select" class="input-group-text">Размер страницы:</label>
-            <select class="form-select" id="page-size-select">
+            <label for="page-size-select" class="input-group-text border-dark-subtle">Размер страницы:</label>
+            <select class="form-select border-dark-subtle" id="page-size-select">
                 <option value="25">25</option>
                 <option value="50">50</option>
                 <option value="100">100</option>
@@ -57,6 +57,113 @@ document.addEventListener('DOMContentLoaded', function() {
     let currentPage = 1;
     let pageSize = 25;
     let totalResults = 0;
+    const resultsContainer = document.getElementById('results-container');
+
+    function displayResults(results) {
+        resultsContainer.innerHTML = '';
+
+        if (results.length === 0) {
+            resultsContainer.innerHTML = '<p>Ничего не найдено.</p>';
+            return;
+        }
+
+        let table = '<table class="table"><thead><tr><th>ID</th><th>Email</th><th>Имя</th><th>Фамилия</th><th>Отчество</th><th>Телефон</th><th>Роли</th></tr></thead><tbody>';
+
+        results.forEach(result => {
+            let rolesHtml = '';
+            if (result.roles && result.roles.length > 0) {
+                rolesHtml = result.roles.join(', ');
+            } else {
+                rolesHtml = 'Нет ролей';
+            }
+            table += `<tr><td>${result.id}</td><td>${result.email}</td><td>${result.first_name}</td><td>${result.last_name}</td><td>${result.patronymic}</td><td>${result.phone_number}</td><td>${rolesHtml}</td></tr>`;
+        });
+
+        table += '</tbody></table>';
+        resultsContainer.innerHTML = table;
+    }
+
+    function updatePaginationButtons() {
+        const totalPages = Math.ceil(totalResults / pageSize);
+        const previousButtonTop = document.getElementById('previous-page-top');
+        const nextButtonTop = document.getElementById('next-page-top');
+        const previousButtonBottom = document.getElementById('previous-page-bottom');
+        const nextButtonBottom = document.getElementById('next-page-bottom');
+
+        if (currentPage <= 1) {
+            previousButtonTop.classList.add('disabled');
+            previousButtonBottom.classList.add('disabled');
+        } else {
+            previousButtonTop.classList.remove('disabled');
+            previousButtonBottom.classList.remove('disabled');
+        }
+
+        if (currentPage >= totalPages) {
+            nextButtonTop.classList.add('disabled');
+            nextButtonBottom.classList.add('disabled');
+        } else {
+            nextButtonTop.classList.remove('disabled');
+            nextButtonBottom.classList.remove('disabled');
+        }
+    }
+
+    function loadProfiles(page, pageSize, query, role) {
+        let url = "{% url 'get_profiles' %}?page_number=" + page + "&page_size=" + pageSize;
+
+        if (role) {
+            url += "&role_name=" + encodeURIComponent(role);
+        }
+
+        fetch(url, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            displayResults(data.results);
+            totalResults = data.total_results;
+            currentPage = data.page_number;
+            pageSize = data.page_size;
+            updatePaginationButtons();
+
+            document.getElementById('current-page-input-top').value = currentPage;
+            document.getElementById('current-page-input-bottom').value = currentPage;
+        })
+        .catch(error => {
+            resultsContainer.innerHTML = '<p>Ошибка при загрузке профилей.</p>';
+        });
+    }
+
+    function loadProfileByEmail(query) {
+        const url = "{% url 'find_profile' %}?query=" + encodeURIComponent(query);
+
+        fetch(url, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            displayResults([data.results]);
+        })
+        .catch(error => {
+            resultsContainer.innerHTML = '<p>Профиль не найден.</p>';
+        });
+    }
+
 
     loadProfiles(currentPage, pageSize, '', '');
 
@@ -99,8 +206,12 @@ document.addEventListener('DOMContentLoaded', function() {
    attachListeners('bottom');
 
    document.getElementById('search-button').addEventListener('click', function() {
-       currentPage = 1;
-       loadProfiles(currentPage, pageSize, document.getElementById('search-input').value, document.getElementById('role-input').value);
+       const query = document.getElementById('search-input').value;
+       if (query) {
+           loadProfileByEmail(query);
+       } else {
+           loadProfiles(currentPage, pageSize, '', document.getElementById('role-input').value);
+       }
    });
 
    document.getElementById('filter-role-button').addEventListener('click', function() {
@@ -113,89 +224,6 @@ document.addEventListener('DOMContentLoaded', function() {
        currentPage = 1;
        loadProfiles(currentPage, pageSize, document.getElementById('search-input').value, document.getElementById('role-input').value);
    });
-
-   function loadProfiles(page, pageSize, query, role) {
-       const url = "{% url 'search_profiles' %}?page="
-           + page + "&page_size="
-           + pageSize + "&query="
-           + encodeURIComponent(query) + "&role="
-           + encodeURIComponent(role);
-
-       fetch(url, {
-           method: 'GET',
-           headers: {
-               'Content-Type': 'application/json'
-           }
-       })
-       .then(response => {
-           if (!response.ok) {
-               throw new Error('Network response was not ok');
-           }
-           return response.json();
-       })
-       .then(data => {
-           displayResults(data.results);
-           totalResults = data.total_results;
-           currentPage = data.page;
-           pageSize = data.page_size;
-           updatePaginationButtons();
-
-           document.getElementById('current-page-input-top').value = currentPage;
-           document.getElementById('current-page-input-bottom').value = currentPage;
-       })
-       .catch(error => {
-           document.getElementById('results-container').innerHTML = '<p>Ошибка при загрузке профилей.</p>';
-       });
-   }
-
-    function displayResults(results) {
-        const resultsContainer = document.getElementById('results-container');
-        resultsContainer.innerHTML = '';
-
-        if (results.length === 0) {
-            resultsContainer.innerHTML = '<p>Ничего не найдено.</p>';
-            return;
-        }
-
-        let table = '<table class="table"><thead><tr><th>ID</th><th>Email</th><th>Имя</th><th>Фамилия</th><th>Отчество</th><th>Телефон</th><th>Роли</th></tr></thead><tbody>';
-
-        results.forEach(result => {
-            let rolesHtml = '';
-            if (result.roles && result.roles.length > 0) {
-                rolesHtml = result.roles.join(', ');
-            } else {
-                rolesHtml = 'Нет ролей';
-            }
-            table += `<tr><td>${result.id}</td><td>${result.email}</td><td>${result.first_name}</td><td>${result.last_name}</td><td>${result.patronymic}</td><td>${result.phone_number}</td><td>${rolesHtml}</td></tr>`;
-        });
-
-        table += '</tbody></table>';
-        resultsContainer.innerHTML = table;
-    }
-
-   function updatePaginationButtons() {
-       const totalPages = Math.ceil(totalResults / pageSize);
-       const previousButtonTop = document.getElementById('previous-page-top');
-       const nextButtonTop = document.getElementById('next-page-top');
-       const previousButtonBottom = document.getElementById('previous-page-bottom');
-       const nextButtonBottom = document.getElementById('next-page-bottom');
-
-       if (currentPage <= 1) {
-           previousButtonTop.classList.add('disabled');
-           previousButtonBottom.classList.add('disabled');
-       } else {
-           previousButtonTop.classList.remove('disabled');
-           previousButtonBottom.classList.remove('disabled');
-       }
-
-       if (currentPage >= totalPages) {
-           nextButtonTop.classList.add('disabled');
-           nextButtonBottom.classList.add('disabled');
-       } else {
-           nextButtonTop.classList.remove('disabled');
-           nextButtonBottom.classList.remove('disabled');
-       }
-   }
 });
 </script>
 </body>

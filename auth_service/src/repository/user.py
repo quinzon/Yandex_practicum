@@ -2,11 +2,12 @@ from functools import lru_cache
 from typing import Type
 
 from fastapi import Depends
-from sqlalchemy import select, insert
+from sqlalchemy import select, insert, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
 from auth_service.src.db.postgres import get_session
+from auth_service.src.models.entities.role import Role
 from auth_service.src.models.entities.user import User, SocialAccount, user_role
 from auth_service.src.repository.base import BaseRepository
 
@@ -19,6 +20,24 @@ class UserRepository(BaseRepository[User]):
         query = select(User).options(joinedload(User.roles)).filter(User.email == email)
         result = await self.session.execute(query)
         return result.scalars().first()
+
+    async def get_users_by_role(self, role_name: str | None, page_size: int, page_number: int) -> list[User]:
+        query = select(User)
+        if role_name:
+            query = query.join(User.roles).filter(Role.name == role_name)
+
+        result = await self.session.execute(
+            query.offset((page_number - 1) * page_size).limit(page_size)
+        )
+        return result.scalars().all()
+
+    async def get_total_users_count(self, role_name: str | None) -> int:
+        query = select(User)
+        if role_name:
+            query = query.join(User.roles).filter(Role.name == role_name)
+
+        total_count = await self.session.execute(select(func.count()).select_from(query.subquery()))
+        return total_count.scalar_one()
 
     async def assign_role(self, user_id: str, role_id: str) -> None:
         stmt = insert(user_role).values(user_id=user_id, role_id=role_id)
