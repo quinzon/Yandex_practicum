@@ -1,7 +1,7 @@
 from django.db import connection
 
 
-def get_users_by_role(role, page=1, page_size=10):
+def get_users_by_role(role, page=1, page_size=10) -> list[dict]:
     offset = (page - 1) * page_size
 
     with connection.cursor() as cursor:

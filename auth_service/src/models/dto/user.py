@@ -53,7 +53,7 @@ class UserCreate(BaseModel):
 
 class UserResponse(BaseDto):
     id: str
-    email: EmailStr
+    email: EmailStr | None = None
     first_name: str | None = None
     last_name: str | None = None
     patronymic: str | None = None

@@ -19,7 +19,7 @@ router = APIRouter()
 
 @router.get('/profile', response_model=UserResponse)
 async def get_profile(
-        user_id: UUID,
+        user_id: UUID | None = None,
         token: str = Depends(oauth2_scheme),
         token_service: TokenService = Depends(get_token_service),
         user_service: UserService = Depends(get_user_service),
@@ -36,13 +36,11 @@ async def get_profile(
 
     if token_data:
         if user_id != token_data.user_id:
-            has_permission = await access_control_service.check_permission(token, "user:get_profile", "GET")
-            if not has_permission:
-                raise HTTPException(status_code=HTTPStatus.FORBIDDEN, detail=ErrorMessages.PERMISSION_DENIED)
-            user.roles = []
-            user.email = None
-            user.phone_number = None
-
+            has_permission_ = await access_control_service.check_permission(token, "user:get_users", "GET")
+            if not has_permission_:
+                user.roles = []
+                user.email = None
+                user.phone_number = None
     return user
 
 
@@ -115,18 +113,35 @@ async def check_permission(
                         detail=ErrorMessages.PERMISSION_DENIED)
 
 
-@router.get('/users', response_model=Pagination[UserResponse])
+@router.get('', response_model=Pagination[UserResponse])
 @paginated_response()
 async def get_users(
-        role_id: UUID,
+        role_name: str | None = None,
         page_size: int = Query(10, gt=0, description='Number of items per page'),
         page_number: int = Query(1, gt=0, description='The page number to retrieve'),
         token: str = Depends(oauth2_scheme),
         user_service: UserService = Depends(get_user_service),
         access_control_service: AccessControlService = Depends(get_access_control_service)
 ):
-    has_permission = await access_control_service.check_permission(token, "user:get_users", "GET")
-    if not has_permission:
+    has_permission_ = await access_control_service.check_permission(token, "user:get_users", "GET")
+    if not has_permission_:
         raise HTTPException(status_code=HTTPStatus.FORBIDDEN, detail=ErrorMessages.PERMISSION_DENIED)
 
-    return await user_service.get_all_users(role_id=str(role_id), page_size=page_size, page_number=page_number)
+    return await user_service.get_users(role_name=role_name, page_size=page_size, page_number=page_number)
+
+
+@router.get('/find', response_model=UserResponse)
+async def search_user(
+        email: str,
+        token: str = Depends(oauth2_scheme),
+        user_service: UserService = Depends(get_user_service),
+        access_control_service: AccessControlService = Depends(get_access_control_service)
+):
+    has_permission_ = await access_control_service.check_permission(token, "user:get_users", "GET")
+    if not has_permission_:
+        raise HTTPException(status_code=HTTPStatus.FORBIDDEN, detail=ErrorMessages.PERMISSION_DENIED)
+
+    user = await user_service.get_user_by_email(email)
+    if not user:
+        raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail=ErrorMessages.NOT_FOUND)
+    return user

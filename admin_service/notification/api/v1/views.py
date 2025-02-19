@@ -1,4 +1,3 @@
-from typing import List, Dict, Union
 from rest_framework import viewsets, status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -29,20 +28,9 @@ class NotificationTemplateViewSet(viewsets.ModelViewSet):
 )
 @api_view(['GET'])
 def get_user_data(request: Request) -> DRFResponse:
-    """
-    Получить данные пользователей по роли с пагинацией.
-
-    Параметры:
-        - role (str): Обязательный параметр для фильтрации по роли.
-        - page (int, необязательный): Номер страницы (по умолчанию 1).
-        - page_size (int, необязательный): Количество пользователей на странице (по умолчанию 50).
-
-    Возвращает:
-        DRFResponse: JSON с данными пользователей и пагинацией.
-    """
-    role: Union[str, None] = request.query_params.get('role')
-    page: Union[str, int] = request.query_params.get('page', 1)
-    page_size: Union[str, int] = request.query_params.get('page_size', 50)
+    role: str | None = request.query_params.get('role')
+    page: str | int = request.query_params.get('page', 1)
+    page_size: str | int = request.query_params.get('page_size', 50)
 
     if role is None:
         return Response({'error': "Parameter 'role' is required."}, status=status.HTTP_400_BAD_REQUEST)
@@ -62,9 +50,9 @@ def get_user_data(request: Request) -> DRFResponse:
             status=status.HTTP_400_BAD_REQUEST
         )
 
-    rows: List[tuple] = get_users_by_role(role, page, page_size)
+    rows = get_users_by_role(role, page, page_size)
 
-    result: List[Dict[str, str]] = [
+    result: list[dict[str, str]] = [
         {'email': row[0], 'first_name': row[1], 'last_name': row[2]}
         for row in rows
     ]

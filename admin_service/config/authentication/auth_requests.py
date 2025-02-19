@@ -3,7 +3,7 @@ import requests
 
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.conf import settings
-from django.http import HttpRequest
+from django.http import HttpRequest, Http404
 
 from config.utils import prepare_headers
 
@@ -79,5 +79,41 @@ def get_user_profile(request: HttpRequest, access_token: str) -> dict:
     )
     if response.status_code != HTTPStatus.OK:
         raise PermissionDenied('Ошибка получения профиля.')
+
+    return response.json()
+
+
+def get_users(request: HttpRequest, access_token: str, params: dict) -> dict:
+    """Получает профили пользователей по параметрам через auth-сервис."""
+    response = requests.get(
+        f'{AUTH_SERVICE_URL}/users',
+        params=params,
+        headers=prepare_headers(
+            request,
+            {
+                'Authorization': f'Bearer {access_token}',
+            }
+        ),
+    )
+    if response.status_code != HTTPStatus.OK:
+        raise Http404('Ошибка получения пользователей.')
+
+    return response.json()
+
+
+def find_user(request: HttpRequest, access_token: str, params: dict) -> dict:
+    """Находит профиль пользователя по запросу через auth-сервис."""
+    response = requests.get(
+        f'{AUTH_SERVICE_URL}/users/find',
+        params=params,
+        headers=prepare_headers(
+            request,
+            {
+                'Authorization': f'Bearer {access_token}',
+            }
+        ),
+    )
+    if response.status_code != HTTPStatus.OK:
+        raise Http404('Ошибка получения пользователя.')
 
     return response.json()

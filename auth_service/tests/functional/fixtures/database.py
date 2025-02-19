@@ -1,16 +1,13 @@
 import uuid
-
+import bcrypt
 from datetime import datetime
 
 import pytest_asyncio
-
 import psycopg2
 from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 from psycopg2.extras import RealDictCursor
 
 from auth_service.tests.functional.settings import test_settings
-
-import bcrypt
 
 
 @pytest_asyncio.fixture(scope='function', autouse=True)
@@ -54,26 +51,26 @@ async def setup_roles(request):
     conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
     cur = conn.cursor()
 
-    role_names = []
+    role_ids = []
     for role in roles:
-        role_name = str(uuid.uuid4())
+        role_id = str(uuid.uuid4())
         cur.execute("""
             INSERT INTO auth.role (id, name) VALUES (%s, %s);
-        """, (role_name, role['name']))
-        role_names.append(role_name)
+        """, (role_id, role['name']))
+        role_ids.append(role_id)
 
     conn.commit()
 
-    yield role_names
+    yield role_ids
 
-    for role_name in role_names:
+    for role_id in role_ids:
         cur.execute("""
             DELETE FROM auth.user_role WHERE role_id = %s;
-        """, (role_name,))
+        """, (role_id,))
 
         cur.execute("""
             DELETE FROM auth.role WHERE id = %s;
-        """, (role_name,))
+        """, (role_id,))
 
     conn.commit()
 
@@ -201,12 +198,12 @@ async def setup_superuser(request):
     superuser_role = cur.fetchone()
 
     if not superuser_role:
-        role_name = str(uuid.uuid4())
+        role_id = str(uuid.uuid4())
         cur.execute("""
             INSERT INTO auth.role (id, name) VALUES (%s, %s);
-        """, (role_name, superuser_role_name))
+        """, (role_id, superuser_role_name))
         conn.commit()
-        superuser_role_id = role_name
+        superuser_role_id = role_id
     else:
         superuser_role_id = superuser_role['id']
 
