@@ -24,7 +24,7 @@ class NotificationTemplateAdmin(PermissionAdmin):
     list_display = ('title', 'template', 'created_at', 'updated_at', 'send_button')
     search_fields = ('title', 'id')
 
-    def has_send_permission(self, request: HttpRequest | None) -> bool:
+    def has_send_permission(self, request: HttpRequest) -> bool:
         return self._check_permission(request, 'send')
 
     def send_button(self, obj: NotificationTemplate) -> str:
@@ -33,7 +33,7 @@ class NotificationTemplateAdmin(PermissionAdmin):
             reverse('admin:send_notification_template', args=[obj.id])
         )
 
-    send_button.short_description = _('Sending message')
+    send_button.short_description = _('Sending message')  # type: ignore
 
     def get_urls(self):
         urls = super().get_urls()
@@ -43,7 +43,7 @@ class NotificationTemplateAdmin(PermissionAdmin):
         ]
         return custom_urls + urls
 
-    def send_notification(self, request: HttpRequest | None, notification_template_id: str) -> HttpResponse | None:
+    def send_notification(self, request: HttpRequest, notification_template_id: str) -> HttpResponse | None:
         """Отправляет уведомление на основе шаблона."""
         if not self.has_send_permission(request):
             raise PermissionDenied("У вас нет прав для отправки уведомлений.")

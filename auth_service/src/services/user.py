@@ -20,6 +20,10 @@ pwd_context = CryptContext(schemes=['bcrypt'], deprecated='auto')
 
 
 class UserService(BaseService[User]):
+    def __init__(self, repository: UserRepository):
+        super().__init__(repository)
+        self.repository: UserRepository = repository
+
     async def register_user(self, user_create: UserCreate) -> UserResponse:
         user = User.create(user_create)
         user = await self.create(user)

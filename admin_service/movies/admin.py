@@ -42,4 +42,4 @@ class FilmWorkAdmin(PermissionAdmin):
     def get_genres(self, obj):
         return ','.join([genre.name for genre in obj.genres.all()])
 
-    get_genres.short_description = _('genres')
+    get_genres.short_description = _('genres')  # type: ignore
