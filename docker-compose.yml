@@ -57,7 +57,7 @@ services:
     <<: [ *common-variables, *common-env ]
 
   redis:
-    image: redis:latest
+    image: redis:7.4.1
     volumes:
       - redis-data:/data
     healthcheck:

@@ -94,7 +94,7 @@ class TokenService:
         blacklist_key = f'blacklist:{access_token}'
         return await self.redis.exists(blacklist_key)
 
-    async def check_access_token(self, access_token: str) -> TokenData | None:
+    async def check_access_token(self, access_token: str) -> TokenData:
         token_data = await self.get_token_data(access_token)
         if await self.is_token_blacklisted(access_token):
             raise HTTPException(status_code=HTTPStatus.UNAUTHORIZED,
@@ -109,23 +109,17 @@ class TokenService:
                                 detail=ErrorMessages.INVALID_REFRESH_TOKEN)
         return token_data, db_token
 
-    async def get_token_data(self, token: str) -> TokenData | None:
+    async def get_token_data(self, token: str) -> TokenData:
         payload = self._verify_token(token)
-        if payload:
-            user_id: str | None = payload.get('sub')
-            email: str | None = payload.get('email')
-            roles: list = payload.get('roles', [])
-            is_superuser: bool = payload.get('is_superuser', False)
-        else:
-            user_id = ""
-            email = ""
-            roles = []
-            is_superuser = False
+        user_id: str = payload.get('sub', '')
+        email: str = payload.get('email', '')
+        roles: list = payload.get('roles', [])
+        is_superuser: bool = payload.get('is_superuser', False)
         if not is_superuser:
             is_superuser = False
         return TokenData(user_id=user_id, email=email, roles=roles, is_superuser=is_superuser)
 
-    def _verify_token(self, token: str) -> dict | None:
+    def _verify_token(self, token: str) -> dict:
         try:
             payload = jwt.decode(token, self.settings.secret_key,
                                  algorithms=[self.settings.algorithm])

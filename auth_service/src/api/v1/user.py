@@ -27,7 +27,7 @@ async def get_profile(
 ):
     token_data = await token_service.check_access_token(token)
 
-    if not user_id and token_data:
+    if not user_id and token_data.user_id:
         user_id = UUID(token_data.user_id)
 
     user = await user_service.get_by_id(user_id) if user_id else None
@@ -48,11 +48,9 @@ async def get_profile(
 async def update_profile(
         update_data: UpdateProfileRequest,
         token: str = Depends(oauth2_scheme),
-        token_service: TokenService = Depends(get_token_service),
         user_service: UserService = Depends(get_user_service)
 ):
-    token_data = await token_service.check_access_token(token)
-    user = await user_service.get_by_id(UUID(token_data.user_id)) if token_data else None
+    user = await user_service.get_user_by_token(token)
     if not user:
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail=ErrorMessages.USER_NOT_FOUND)
 
@@ -60,8 +58,9 @@ async def update_profile(
     user.last_name = update_data.last_name
     user.patronymic = update_data.patronymic
     user.phone_number = update_data.phone_number
-    if update_data.password:
-        user.password_hash = user_service.hash_password(update_data.password.get_secret_value())
+    if update_data.password and update_data.new_password:
+        user_service.verify_password(str(update_data.password), user.password_hash)
+        user.password_hash = user_service.hash_password(update_data.new_password.get_secret_value())
 
     return await user_service.update(user)
 
@@ -76,9 +75,6 @@ async def get_login_history(
         page_number: int = Query(1, gt=0, description='The page number to retrieve'),
 ):
     token_data = await token_service.check_access_token(token)
-
-    if token_data is None:
-        raise HTTPException(status_code=401, detail="Invalid or expired token data")
 
     return await login_history_service.get_login_history(
         token_data.user_id,
