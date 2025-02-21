@@ -13,16 +13,17 @@ from auth_service.src.models.entities.user import User
 from auth_service.src.repository.user import UserRepository, get_user_repository
 from auth_service.src.services.base import BaseService
 from auth_service.src.core.helpers import generate_password
-
+from auth_service.src.services.token import TokenService, get_token_service
 
 logger = logging.getLogger('UserService')
 pwd_context = CryptContext(schemes=['bcrypt'], deprecated='auto')
 
 
 class UserService(BaseService[User]):
-    def __init__(self, repository: UserRepository):
+    def __init__(self, repository: UserRepository, token_service: TokenService):
         super().__init__(repository)
         self.repository: UserRepository = repository
+        self.token_service: TokenService = token_service
 
     async def register_user(self, user_create: UserCreate) -> UserResponse:
         user = User.create(user_create)
@@ -87,6 +88,12 @@ class UserService(BaseService[User]):
     async def get_user_by_email(self, email: str) -> User | None:
         return await self.repository.get_user_by_email(email)
 
+    async def get_user_by_token(self, token: str) -> User | None:
+        token_data = await self.token_service.check_access_token(token)
+        if not token_data.user_id:
+            return None
+        return await self.get_by_id(UUID(token_data.user_id))
+
     def _get_provider_user_id(self, user_info: dict) -> str:
         provider_user_id = user_info.get('id')
         if not provider_user_id:
@@ -122,5 +129,6 @@ class UserService(BaseService[User]):
 
 def get_user_service(
         user_repository: UserRepository = Depends(get_user_repository),
+        token_service: TokenService = Depends(get_token_service)
 ) -> UserService:
-    return UserService(user_repository)
+    return UserService(user_repository, token_service)

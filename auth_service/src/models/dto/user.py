@@ -78,7 +78,8 @@ class UpdateProfileRequest(BaseModel):
     last_name: str | None = Field(None, max_length=50, description='Updated last name')
     patronymic: str | None = Field(None, max_length=50, description='Updated patronymic')
     phone_number: str | None = Field(None, max_length=20, description='Updated phone number')
-    password: SecretStr | None = Field(None, min_length=8, description='New password')
+    password: SecretStr | None = Field(None, min_length=8, description='Actual password')
+    new_password: SecretStr | None = Field(None, min_length=8, description='New password')
 
     @field_validator('phone_number')
     def validate_phone_number(cls, phone_number: str | None) -> str | None:
