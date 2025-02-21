@@ -76,9 +76,6 @@ async def get_login_history(
 ):
     token_data = await token_service.check_access_token(token)
 
-    if token_data is None:
-        raise HTTPException(status_code=401, detail="Invalid or expired token data")
-
     return await login_history_service.get_login_history(
         token_data.user_id,
         page_size,
