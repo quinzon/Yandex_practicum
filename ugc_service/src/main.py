@@ -26,10 +26,11 @@ app = FastAPI(
     title=settings.project_name,
     docs_url='/api/openapi',
     openapi_url='/api/openapi.json',
+    root_path='/api/v1/ugc',
     default_response_class=ORJSONResponse,
     lifespan=lifespan
 )
 
-app.include_router(bookmark.router, prefix='/api/v1/ugc', tags=['bookmark'])
-app.include_router(film_rating.router, prefix='/api/v1/ugc', tags=['film_rating'])
-app.include_router(review.router, prefix='/api/v1/ugc', tags=['review'])
+app.include_router(bookmark.router, prefix='/bookmarks', tags=['bookmark'])
+app.include_router(film_rating.router, prefix='/ratings', tags=['film_rating'])
+app.include_router(review.router, prefix='/reviews', tags=['review'])

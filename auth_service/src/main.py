@@ -45,6 +45,7 @@ app = FastAPI(
     title=settings.project_name,
     docs_url='/api/openapi',
     openapi_url='/api/openapi.json',
+    root_path='/api/v1/auth',
     default_response_class=ORJSONResponse,
     lifespan=lifespan
 )
@@ -79,7 +80,7 @@ app.add_middleware(SlowAPIMiddleware)
 app.add_middleware(SessionMiddleware, secret_key=settings.session_secret_key,
                    session_cookie='session')
 
-app.include_router(auth.router, prefix='/api/v1/auth', tags=['auth'])
-app.include_router(user.router, prefix='/api/v1/auth/users', tags=['users'])
-app.include_router(role.router, prefix='/api/v1/auth/roles', tags=['roles'])
-app.include_router(permission.router, prefix='/api/v1/auth/permissions', tags=['permissions'])
+app.include_router(auth.router, tags=['auth'])
+app.include_router(user.router, prefix='/users', tags=['users'])
+app.include_router(role.router, prefix='/roles', tags=['roles'])
+app.include_router(permission.router, prefix='/permissions', tags=['permissions'])

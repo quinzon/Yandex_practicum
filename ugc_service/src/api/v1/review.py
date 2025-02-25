@@ -11,7 +11,7 @@ from ugc_service.src.services.review import ReviewService, get_review_service
 router = APIRouter(dependencies=[Depends(has_permission)])
 
 
-@router.post('/reviews/search', response_model=PaginatedResponse[ReviewResponse])
+@router.post('/search', response_model=PaginatedResponse[ReviewResponse])
 async def search_reviews(
         request: SearchRequest,
         service: ReviewService = Depends(get_review_service)
@@ -21,7 +21,7 @@ async def search_reviews(
     return await service.search_reviews(filters, request.skip, request.limit, sort_params)
 
 
-@router.get('/reviews/users/{user_id}', response_model=PaginatedResponse[ReviewResponse])
+@router.get('/users/{user_id}', response_model=PaginatedResponse[ReviewResponse])
 async def get_user_bookmarks(  # noqa: WPS211
         user_id: str,
         skip: int = Query(0, ge=0),
@@ -35,7 +35,7 @@ async def get_user_bookmarks(  # noqa: WPS211
     return await service.search_reviews(filters, skip, limit, sort_params)
 
 
-@router.post('/reviews', response_model=ReviewResponse)
+@router.post('', response_model=ReviewResponse)
 async def create_review(
         data: ReviewCreate,
         service: ReviewService = Depends(get_review_service)
@@ -49,7 +49,7 @@ async def create_review(
         )
 
 
-@router.get('/reviews/{review_id}', response_model=ReviewResponse)
+@router.get('/{review_id}', response_model=ReviewResponse)
 async def get_review(
         review_id: str,
         service: ReviewService = Depends(get_review_service)
@@ -60,7 +60,7 @@ async def get_review(
     return review
 
 
-@router.put('/reviews/{review_id}', response_model=ReviewResponse)
+@router.put('/{review_id}', response_model=ReviewResponse)
 async def update_review(
         review_id: str,
         data: ReviewUpdate,
@@ -72,7 +72,7 @@ async def update_review(
     return updated
 
 
-@router.delete('/reviews/{review_id}', status_code=HTTPStatus.NO_CONTENT)
+@router.delete('/{review_id}', status_code=HTTPStatus.NO_CONTENT)
 async def delete_review(
         review_id: str,
         service: ReviewService = Depends(get_review_service)
@@ -81,7 +81,7 @@ async def delete_review(
     return {'message': 'Review deleted successfully'}
 
 
-@router.patch('/reviews/{review_id}/reaction', status_code=HTTPStatus.NO_CONTENT)
+@router.patch('/{review_id}/reaction', status_code=HTTPStatus.NO_CONTENT)
 async def react_to_review(
         review_id: str,
         reaction: ReactionRequest,

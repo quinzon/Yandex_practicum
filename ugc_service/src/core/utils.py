@@ -5,9 +5,10 @@ from fastapi import Depends, Request, HTTPException
 from fastapi.security import OAuth2PasswordBearer
 from http import HTTPStatus
 
+from ugc_service.src.core.config import settings
 from ugc_service.src.services.auth import AuthServiceClient, get_auth_service_client
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl='token')
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl=settings.docs_token_url)
 
 
 def get_user_id(token: str) -> dict:
