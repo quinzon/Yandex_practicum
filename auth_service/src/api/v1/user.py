@@ -35,7 +35,7 @@ async def get_profile(
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail=ErrorMessages.USER_NOT_FOUND)
 
     if token_data:
-        if user_id != token_data.user_id:
+        if user_id != UUID(token_data.user_id):
             has_permission_ = await access_control_service.check_permission(token, "user:get_users", "GET")
             if not has_permission_:
                 user.roles = []
