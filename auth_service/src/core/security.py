@@ -7,7 +7,7 @@ from auth_service.src.models.dto.common import ErrorMessages
 from auth_service.src.services.access_control import AccessControlService, \
     get_access_control_service
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl='/api/v1/auth/login')
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl='/api/v1/auth/docs-login')
 
 
 async def has_permission(

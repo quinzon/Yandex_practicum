@@ -2,6 +2,7 @@ from http import HTTPStatus
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.exc import IntegrityError
 from starlette.requests import Request
 from starlette.responses import JSONResponse
@@ -16,7 +17,6 @@ from auth_service.src.services.login_history import LoginHistoryService, get_log
 from auth_service.src.services.oauth import OAuthService, get_oauth_service
 from auth_service.src.services.token import TokenService, get_token_service
 from auth_service.src.services.user import UserService, get_user_service
-
 
 router = APIRouter()
 
@@ -133,4 +133,23 @@ async def auth_callback(
     await login_history_service.add_login_history(str(user.id), user_agent, client_address)
 
     token_data = TokenData(user_id=str(user.id), email=str(user.email), roles=user.roles)
+    return await token_service.create_tokens(token_data)
+
+
+@router.post('/docs-login', response_model=TokenResponse, include_in_schema=False)
+async def login_docs(
+        user_service: UserService = Depends(get_user_service),
+        token_service: TokenService = Depends(get_token_service),
+        login_data: OAuth2PasswordRequestForm = Depends()
+) -> TokenResponse:
+    login_data = LoginRequest(email=login_data.username, password=login_data.password)
+    user = await user_service.authenticate_user(login_data)
+
+    if not user:
+        raise HTTPException(
+            status_code=HTTPStatus.UNAUTHORIZED,
+            detail=ErrorMessages.INVALID_CREDENTIALS
+        )
+
+    token_data = TokenData(user_id=user.id, email=user.email, roles=user.roles)
     return await token_service.create_tokens(token_data)

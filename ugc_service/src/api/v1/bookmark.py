@@ -11,7 +11,7 @@ from ugc_service.src.services.bookmark import BookmarkService, get_bookmark_serv
 router = APIRouter(dependencies=[Depends(has_permission)])
 
 
-@router.post('/bookmarks', response_model=BookmarkResponse)
+@router.post('', response_model=BookmarkResponse)
 async def create_bookmark(
         bookmark_request: BookmarkRequest,
         user_id: str = Depends(has_permission),
@@ -26,7 +26,7 @@ async def create_bookmark(
         )
 
 
-@router.get('/bookmarks/{bookmark_id}', response_model=BookmarkResponse)
+@router.get('/{bookmark_id}', response_model=BookmarkResponse)
 async def get_bookmark(
         bookmark_id: str,
         service: BookmarkService = Depends(get_bookmark_service)
@@ -37,7 +37,7 @@ async def get_bookmark(
     return bookmark
 
 
-@router.delete('/bookmarks/{bookmark_id}', status_code=HTTPStatus.NO_CONTENT)
+@router.delete('/{bookmark_id}', status_code=HTTPStatus.NO_CONTENT)
 async def delete_bookmark(
         bookmark_id: str,
         service: BookmarkService = Depends(get_bookmark_service)
@@ -46,7 +46,7 @@ async def delete_bookmark(
     return {'message': 'Bookmark deleted successfully'}
 
 
-@router.get('/bookmarks/users/{user_id}', response_model=PaginatedResponse[BookmarkResponse])
+@router.get('/users/{user_id}', response_model=PaginatedResponse[BookmarkResponse])
 async def get_user_bookmarks(  # noqa: WPS211
         user_id: str,
         skip: int = Query(0, ge=0),
@@ -60,7 +60,7 @@ async def get_user_bookmarks(  # noqa: WPS211
     return await service.search_bookmarks(filters, skip, limit, sort_params)
 
 
-@router.post('/bookmarks/search', response_model=PaginatedResponse[BookmarkResponse])
+@router.post('/search', response_model=PaginatedResponse[BookmarkResponse])
 async def search_bookmarks(
         request: SearchRequest,
         user_id: str = Depends(has_permission),

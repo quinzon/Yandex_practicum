@@ -11,7 +11,7 @@ from ugc_service.src.services.film_rating import FilmRatingService, get_film_rat
 router = APIRouter(dependencies=[Depends(has_permission)])
 
 
-@router.post('/ratings', response_model=FilmRatingResponse)
+@router.post('', response_model=FilmRatingResponse)
 async def create_rating(
         rating: FilmRatingCreate,
         service: FilmRatingService = Depends(get_film_rating_service)
@@ -25,7 +25,7 @@ async def create_rating(
         )
 
 
-@router.get('/ratings/{rating_id}', response_model=FilmRatingResponse)
+@router.get('/{rating_id}', response_model=FilmRatingResponse)
 async def get_rating(
         rating_id: str,
         service: FilmRatingService = Depends(get_film_rating_service)
@@ -36,7 +36,7 @@ async def get_rating(
     return rating
 
 
-@router.delete('/ratings/{rating_id}', status_code=HTTPStatus.NO_CONTENT)
+@router.delete('/{rating_id}', status_code=HTTPStatus.NO_CONTENT)
 async def delete_rating(
         rating_id: str,
         service: FilmRatingService = Depends(get_film_rating_service)
@@ -45,7 +45,7 @@ async def delete_rating(
     return {'message': 'Rating deleted successfully'}
 
 
-@router.get('/ratings/{film_id}/average', response_model=FilmAggregatedRatingResponse)
+@router.get('/{film_id}/average', response_model=FilmAggregatedRatingResponse)
 async def get_average_rating(
         film_id: str,
         service: FilmRatingService = Depends(get_film_rating_service)
@@ -53,7 +53,7 @@ async def get_average_rating(
     return await service.get_average_rating(film_id)
 
 
-@router.get('/ratings/users/{user_id}', response_model=PaginatedResponse[FilmRatingResponse])
+@router.get('/users/{user_id}', response_model=PaginatedResponse[FilmRatingResponse])
 async def get_user_ratings(  # noqa: WPS211
         user_id: str,
         skip: int = Query(0, ge=0),
